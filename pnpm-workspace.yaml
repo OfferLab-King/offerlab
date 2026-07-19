@@ -1,0 +1,18 @@
+packages:
+  - "."
+
+engineStrict: true
+saveExact: true
+strictPeerDependencies: true
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Security override for GHSA-qx2v-qp2m-jg93 in Next.js's pinned PostCSS dependency.
+minimumReleaseAgeExclude:
+  - postcss@8.5.20
+
+overrides:
+  postcss: 8.5.20

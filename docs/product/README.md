@@ -1,5 +1,7 @@
 # OfferLab Product Documents
 
+> Approved clarifications for implementation are recorded in `../architecture/founder-decisions.md` and take precedence where these draft documents are ambiguous.
+
 This bundle contains the three product documents recommended before asking Codex to propose the technical architecture.
 
 ## Files

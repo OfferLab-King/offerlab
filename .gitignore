@@ -7,4 +7,10 @@ dist/
 build/
 coverage/
 .next/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.supabase/
+supabase/.branches/
+supabase/.temp/
 *.log
