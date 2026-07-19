@@ -29,6 +29,15 @@ If sources conflict, do not guess. Apply the precedence above, document the conf
 
 Module contracts are described in `docs/architecture/overview.md`. Route handlers and React components must not contain domain rules or issue ad hoc database queries.
 
+The declared modules are identity and access, member profile, applications, taxonomy, preparation resources, recommendations, dashboard, administration, audit, analytics, and observability. Modules may use shared primitives and declared public module APIs, but must not import another module's internal persistence implementation.
+
+## Toolchain
+
+- Use Node.js 24.x, as pinned in `.nvmrc` and `package.json`.
+- Use pnpm 11.9.0, as pinned by the `packageManager` and `engines` fields in `package.json`.
+- Use Docker Desktop or another Docker-compatible runtime for local Supabase.
+- Install dependencies with `pnpm install --frozen-lockfile`.
+
 ## Routine commands
 
 ```bash
