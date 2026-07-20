@@ -57,7 +57,7 @@ Run the dependency security policy separately with `pnpm security:audit`. CI als
 Create a migration:
 
 ```bash
-pnpm db:new-migration -- add_example
+pnpm db:new-migration add_example
 ```
 
 Write explicit, reviewed SQL in the resulting file. Then replay the database:

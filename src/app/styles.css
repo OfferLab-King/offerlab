@@ -53,11 +53,16 @@ label {
 }
 
 input,
+select,
 textarea {
   border: 1px solid #9daf9f;
   border-radius: 0.5rem;
   font: inherit;
   padding: 0.8rem;
+}
+
+select {
+  background: white;
 }
 
 textarea {
@@ -237,6 +242,146 @@ textarea[aria-invalid="true"] {
   color: #17643a;
 }
 
+.applications-shell {
+  max-width: 68rem;
+}
+
+.member-nav,
+.applications-heading,
+.application-card {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.member-nav button,
+.member-nav a {
+  margin: 0;
+}
+
+.applications-heading {
+  align-items: flex-end;
+  margin: 2.5rem 0 1.5rem;
+}
+
+.applications-heading h1 {
+  margin-bottom: 0.5rem;
+}
+
+.view-tabs {
+  border-bottom: 1px solid #c8d4ca;
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-tabs a {
+  padding: 0.8rem 0;
+  text-decoration: none;
+}
+
+.view-tabs a[aria-current="page"] {
+  border-bottom: 3px solid #17643a;
+  font-weight: 750;
+}
+
+.application-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.application-card {
+  background: white;
+  border: 1px solid #dce4dd;
+  border-radius: 0.8rem;
+  padding: 1.25rem;
+}
+
+.application-card h2,
+.application-company,
+.application-meta,
+.application-date {
+  margin: 0.3rem 0;
+}
+
+.application-company {
+  color: #17643a;
+  font-weight: 750;
+}
+
+.application-meta,
+.application-date {
+  color: #506057;
+}
+
+.empty-state {
+  text-align: center;
+}
+
+.application-form-card h1 {
+  max-width: 14ch;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.application-fields {
+  border: 0;
+  margin: 0;
+  min-inline-size: 0;
+  padding: 0;
+}
+
+.archive-confirmation {
+  background: #fff7ed;
+  border: 2px solid #9a3412;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.archive-confirmation h2 {
+  margin-top: 0;
+}
+
+.sr-only {
+  block-size: 1px;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+.form-grid > div {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field-full {
+  grid-column: 1 / -1;
+}
+
+.required,
+.optional {
+  color: #506057;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.button-danger {
+  background: #8b2f2f;
+  margin-left: auto;
+}
+
 @media (max-width: 40rem) {
   main {
     margin: 1rem auto;
@@ -253,6 +398,37 @@ textarea[aria-invalid="true"] {
 
   .form-actions,
   .form-actions button {
+    width: 100%;
+  }
+
+  .applications-heading,
+  .application-card,
+  .member-header,
+  .member-nav {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .applications-heading .button-link,
+  .application-card .button-link,
+  .member-nav button,
+  .member-nav a {
+    box-sizing: border-box;
+    min-height: 44px;
+    text-align: center;
+    width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field-full {
+    grid-column: auto;
+  }
+
+  .form-actions .button-link {
+    box-sizing: border-box;
     width: 100%;
   }
 }
