@@ -13,7 +13,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     screenshot: "only-on-failure",
-    trace: "retain-on-failure",
+    trace: "off",
   },
   webServer: {
     command: "pnpm dev",
@@ -21,5 +21,5 @@ export default defineConfig({
     timeout: 120_000,
     url: "http://127.0.0.1:3000/api/health",
   },
-  ...(process.env.CI ? { workers: 1 } : {}),
+  workers: 1,
 });

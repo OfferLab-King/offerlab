@@ -39,7 +39,7 @@ Member-owned records use two independent controls:
 1. Application repositories require internal owner IDs and include ownership in every query.
 2. PostgreSQL RLS restricts the application database role using a transaction-scoped internal user ID.
 
-Tests must use two users and attempt direct-object access. Privileged database credentials are limited to migrations, identity synchronization, and explicit administrative commands.
+Tests must use two users and attempt direct-object access. Migration credentials exist only in controlled deployment and command environments. The web runtime uses a least-privileged login that may assume `offerlab_app`. A separate identity-sync login may execute only reviewed authentication gateway functions; it has no direct table or DDL privileges. Neither runtime login owns tables or bypasses RLS.
 
 ## Portability
 

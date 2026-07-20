@@ -16,7 +16,7 @@ describe("parseServerEnvironment", () => {
     expect(parseServerEnvironment(validEnvironment).APP_ENV).toBe("test");
   });
 
-  it("requires database and service credentials in production", () => {
+  it("requires runtime and identity credentials but not migration credentials in production", () => {
     expect(() =>
       parseServerEnvironment({
         ...validEnvironment,
@@ -24,5 +24,15 @@ describe("parseServerEnvironment", () => {
         NODE_ENV: "production",
       }),
     ).toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+        DATABASE_URL: "postgresql://runtime.invalid/database",
+        IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        NODE_ENV: "production",
+      }),
+    ).not.toThrow();
   });
 });

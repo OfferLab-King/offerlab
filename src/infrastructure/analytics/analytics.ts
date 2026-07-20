@@ -1,7 +1,14 @@
 export const analyticsEventDefinitions = {
+  beta_access_denied: { allowedProperties: [] as const },
+  email_verified: { allowedProperties: [] as const },
   health_check_observed: {
     allowedProperties: ["source"] as const,
   },
+  invitation_accepted: { allowedProperties: [] as const },
+  identity_linked: { allowedProperties: [] as const },
+  password_recovery_completed: { allowedProperties: [] as const },
+  registration_completed: { allowedProperties: [] as const },
+  sign_out_completed: { allowedProperties: [] as const },
 } as const;
 
 export type AnalyticsEventName = keyof typeof analyticsEventDefinitions;

@@ -15,10 +15,18 @@ describe("createLogger", () => {
     });
     const logger = createLogger({ destination, level: "info" });
 
-    logger.info({ notes: "private", token: "secret" }, "test");
+    logger.info(
+      {
+        notes: "private",
+        token: "secret",
+        url: "/auth/callback?token_hash=credential-value",
+      },
+      "test",
+    );
     await new Promise((resolve) => setImmediate(resolve));
 
     expect(output).not.toContain("private");
     expect(output).not.toContain("secret");
+    expect(output).not.toContain("credential-value");
   });
 });

@@ -15,7 +15,7 @@ if (invalidValues.length > 0) {
 }
 
 const actualKeys = entries.map(([key]) => key).sort();
-const expectedKeys = [...environmentKeys].sort();
+const expectedKeys = [...environmentKeys, "DATABASE_MIGRATION_URL", "TEST_DATABASE_URL"].sort();
 
 if (JSON.stringify(actualKeys) !== JSON.stringify(expectedKeys)) {
   throw new Error(

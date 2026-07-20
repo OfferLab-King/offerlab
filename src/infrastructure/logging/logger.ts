@@ -12,7 +12,13 @@ const redactedPaths = [
   "password",
   "req.headers.authorization",
   "req.headers.cookie",
+  "req.query",
+  "req.url",
+  "request.url",
+  "searchParams",
   "token",
+  "token_hash",
+  "url",
   "*.applicationNotes",
   "*.notes",
   "*.onboardingAnswers",
@@ -34,3 +40,7 @@ export function createLogger(
     options?.destination,
   );
 }
+
+export const logger = createLogger(
+  process.env.LOG_LEVEL ? { level: process.env.LOG_LEVEL } : undefined,
+);

@@ -23,6 +23,8 @@ pnpm dev
 
 Fill `.env.local` with the local values printed by `pnpm db:start`. The web application runs at `http://127.0.0.1:3000`, health is available at `/api/health`, Supabase Studio at `http://127.0.0.1:55323`, and captured local email at `http://127.0.0.1:55324`. OfferLab uses the 5532x port range to avoid collisions with other local Supabase projects. Supabase's local services use development credentials and may bind on all interfaces; use a host firewall and do not run them on an untrusted network.
 
+After `pnpm db:reset`, set `DATABASE_URL` to the local `offerlab_runtime_login` URL and `IDENTITY_SYNC_DATABASE_URL` to the local `offerlab_identity_sync_login` URL; both local-only passwords are `postgres`. Set a synthetic `AUTH_RATE_LIMIT_SECRET`. `DATABASE_MIGRATION_URL` is used only by migrations and explicit CLI commands, never by the running application. Production role provisioning is documented in `docs/operations/authentication.md`.
+
 Exact start command after dependencies and `.env.local` are present:
 
 ```bash
@@ -78,6 +80,22 @@ pnpm admin:promote -- founder@example.com --confirm
 ```
 
 `DATABASE_MIGRATION_URL` must be available in `.env.local` or the shell. The command refuses missing or unverified users, refuses an already-promoted user, refuses to create a second administrator, and writes a durable audit event in the same transaction.
+
+## Invite-only beta access
+
+Create a seven-day invitation with the isolated development/administrator command:
+
+```bash
+pnpm invite:create -- invited@example.com 7
+```
+
+The command prints a fragment-based acceptance link once. The browser fragment keeps the raw token out of HTTP request logs; only its SHA-256 hash is stored. Revoke an unused invitation by its database UUID:
+
+```bash
+pnpm invite:revoke -- 00000000-0000-0000-0000-000000000000
+```
+
+Registration, verified identity linkage, invitation consumption, and explicit beta entitlement are separate states. See `docs/operations/authentication.md` for the flow and deployment controls.
 
 ## Environments
 
