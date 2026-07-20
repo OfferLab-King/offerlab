@@ -6,10 +6,9 @@ export const environmentKeys = [
   "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  "AUTH_RATE_LIMIT_SECRET",
   "DATABASE_URL",
-  "DATABASE_MIGRATION_URL",
-  "TEST_DATABASE_URL",
+  "IDENTITY_SYNC_DATABASE_URL",
   "LOG_LEVEL",
 ] as const;
 
@@ -22,22 +21,21 @@ const optionalString = z.preprocess(
 const serverEnvironmentSchema = z
   .object({
     APP_ENV: z.enum(["local", "test", "staging", "production"]),
-    DATABASE_MIGRATION_URL: optionalString,
+    AUTH_RATE_LIMIT_SECRET: optionalString,
     DATABASE_URL: optionalString,
+    IDENTITY_SYNC_DATABASE_URL: optionalString,
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     NEXT_PUBLIC_APP_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     NEXT_PUBLIC_SUPABASE_URL: z.url(),
     NODE_ENV: z.enum(["development", "test", "production"]),
-    SUPABASE_SERVICE_ROLE_KEY: optionalString,
-    TEST_DATABASE_URL: optionalString,
   })
   .superRefine((environment, context) => {
     if (environment.APP_ENV === "production") {
       for (const key of [
-        "DATABASE_MIGRATION_URL",
         "DATABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY",
+        "IDENTITY_SYNC_DATABASE_URL",
+        "AUTH_RATE_LIMIT_SECRET",
       ] as const) {
         if (!environment[key]) {
           context.addIssue({

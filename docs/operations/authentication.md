@@ -1,0 +1,86 @@
+# Authentication and invite operations
+
+## Credential and role boundaries
+
+`DATABASE_MIGRATION_URL` is deploy/CLI-only. The running Next.js application never imports or reads it. `DATABASE_URL` authenticates as a non-owner, non-superuser, non-`BYPASSRLS` login which may assume only `offerlab_app`. `IDENTITY_SYNC_DATABASE_URL` authenticates as a separate non-owner login which may assume only `offerlab_identity_sync`; that group has EXECUTE on the reviewed authentication gateway functions and no direct table or DDL privileges.
+
+Local and CI logins are created by `supabase/roles.sql`. After hosted migrations, provision production logins with `supabase/snippets/provision-runtime-roles.sql`, supplying both passwords from the provider secret store without echoing them. Verify `rolsuper`, `rolcreatedb`, `rolcreaterole`, and `rolbypassrls` are false before launch.
+
+The migrations create `offerlab_auth_function_owner` as `NOLOGIN`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOINHERIT`, `NOREPLICATION`, and `NOBYPASSRLS`. It owns only the reviewed authentication gateway and cleanup functions. It has schema usage, read access to the security-barrier `app.auth_user_identity` projection (`id`, `email`, and `email_confirmed_at` only), and operation-specific grants on `app.invitation`, `app.user`, `app.beta_entitlement`, `app.audit_event`, and `app.auth_rate_limit`; it owns no schema or table. Neither runtime login is a member.
+
+Supabase's local migration principal cannot `SET ROLE supabase_auth_admin` and cannot grant a new role direct privileges on provider-owned `auth.users`. The migration therefore uses the narrow projection, owned by the migration role, instead of retaining `postgres` ownership on the authentication functions. Hosted migration acceptance must verify that the same projection, role attributes, ownership, grants, and function ACLs are present. If the hosted project rejects role creation or ownership transfer, stop the release and record the provider error; do not fall back to `postgres` function ownership.
+
+Supabase owns passwords, email verification, recovery, password updates, access tokens, refresh tokens, and sessions. OfferLab issues no reset credential and does not use a service-role client for password changes.
+
+## Bearer invitation and identity lifecycle
+
+An authorised migration-credential command creates a 32-byte random token for one normalized email. Only its SHA-256 hash is stored. The raw value is printed once in a URL fragment, captured by the registration page, and removed from the address immediately.
+
+The cross-system state machine is:
+
+1. OfferLab checks the token hash, normalized email, expiry, revocation, and consumption state through a narrow function.
+2. Supabase independently creates the external Auth identity.
+3. OfferLab binds that exact invitation row to the returned external identity. The function reads the identity email from `auth.users`; it does not trust a request-supplied identity email.
+4. Supabase independently verifies the email and establishes a session.
+5. The callback passes the verified external ID to the narrow linkage function.
+6. One PostgreSQL transaction advisory-locks the external ID, re-reads trusted verified identity data, locks only its bound invitation, creates the internal user, consumes that exact invitation, activates entitlement, and appends audit events.
+7. Completed linkage is idempotent. Concurrent retries return the same internal authorization state.
+
+Supabase identity creation and the PostgreSQL binding/linkage operations are not one ACID transaction. If Auth creation succeeds but initial binding fails, the user verifies/signs in, reopens the original invitation link, and submits it while authenticated; OfferLab then binds it to that trusted session identity. A revoked or expired invitation cannot be linked. A replacement invitation may be bound after the previous one is revoked or expired. Temporary callback failure is recovered by a later protected request, which retries the same bound linkage.
+
+## Supabase SSR sessions
+
+`src/proxy.ts` uses the supported `@supabase/ssr` request pattern. It calls `getClaims()` early, passes refreshed cookies to the request, returns rotated cookies to the browser, and propagates the library's private/no-store cache headers. Server Components independently validate claims and enforce route authorization; the proxy is session maintenance, not the authorization boundary.
+
+Authenticated and auth-flow routes are dynamic/private and receive `Cache-Control: private, no-store`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and a restrictive auth-surface CSP. Application logging redacts URLs, query objects, cookies, authorization headers, and token fields.
+
+## Access decisions
+
+- No authenticated Supabase user: redirect to sign in.
+- Authenticated but unverified: verification guidance.
+- Verified without active entitlement: beta access denied.
+- Verified active member: member routes allowed.
+- Administrator role is checked separately and never replaces beta entitlement.
+- Revoked members and administrators are denied on the next server request because authorization is read from PostgreSQL each time.
+
+## Enforced rate limits
+
+OfferLab uses a PostgreSQL fixed-window limiter through the narrow identity-sync principal. Keys are HMAC-SHA-256 fingerprints using `AUTH_RATE_LIMIT_SECRET`; raw emails, IP/token combinations, and tokens are never stored or logged.
+
+- Registration/invitation assertion: 5 attempts per 15 minutes for each IP, account fingerprint, and token fingerprint.
+- Identity linkage: 10 attempts per 15 minutes for each IP and authenticated identity fingerprint.
+- Recovery request: 5 attempts per 15 minutes for each IP and account fingerprint.
+- Verification resend: 3 attempts per 15 minutes for each IP and account fingerprint.
+
+Limited endpoints return generic `429` responses with `Retry-After`. In staging and production the application trusts only `x-vercel-forwarded-for`, validates that its first value is an IP address, and maps missing or invalid values to `unknown`. Vercel or the selected deployment adapter must remove any client-supplied value and overwrite that header at the trusted ingress. The application deliberately ignores `x-forwarded-for`, `x-real-ip`, and `cf-connecting-ip` in deployed environments. Local and test environments may use those headers to preserve loopback development behavior. This application control supplements, rather than replaces, Supabase limits for sign-up, sign-in, verification, token refresh, recovery, and email delivery.
+
+Limiter rows have a 24-hour retention period, longer than the 15-minute active window. `app.cleanup_expired_auth_rate_limits()` deletes only rows whose window began more than 24 hours ago, orders through the retention index, locks with `SKIP LOCKED`, and caps every call at 500 rows. Repeated calls make incremental progress without deleting active windows. Only `offerlab_identity_sync` may execute it; the function owner has only the table operations it needs. Schedule `pnpm auth-rate-limits:cleanup` with `IDENTITY_SYNC_DATABASE_URL`; the command repeats capped calls until fewer than 500 rows are deleted and has a 100-batch safety stop. Scheduling is operational acceleration, not required for correctness, and no PostgreSQL scheduler extension is assumed.
+
+Before launch, record hosted Supabase rate-limit values from the dashboard or Management API, confirm custom SMTP limits, verify platform trusted-proxy behavior, and exercise a `429` canary in staging. These hosted settings are operational requirements, not controls implemented by this repository.
+
+## Enumeration, analytics, and recovery
+
+Registration, recovery, resend, invitation, and callback failures use generic public responses. Recovery and resend return the same body for known and unknown accounts. Analytics is property-free and emitted only by server code at completed transitions; there is no anonymous auth-event ingestion endpoint.
+
+If a session-bound password update succeeds but provider logout fails, the endpoint clears local Supabase cookies, records only the fixed event name `password_update_logout_failed`, and tells the member that the password changed but global logout is unconfirmed. The member is told to close the browser and sign in again with the new password; the response does not recommend repeating the password change.
+
+## Callback-token logging controls
+
+Supabase verification and recovery may place `token_hash` in the callback query string. Repository code cannot guarantee that infrastructure upstream of OfferLab never records that URL.
+
+Controls implemented in OfferLab are application logger redaction of URLs, query objects, and token fields; `Referrer-Policy: no-referrer`; private/no-store cache headers; an immediate redirect away from the callback URL after token exchange; exclusion of callback credentials from analytics and database audit events; and generic restricted error payloads. These controls apply within the application and are not evidence about upstream logs.
+
+Controls requiring deployment verification include Vercel or other hosting access logs, CDN logs, reverse-proxy logs, WAF logs, APM and error-monitoring request capture, Supabase Auth logs, load-balancer telemetry, and request tracing.
+
+### Production acceptance checklist
+
+Production launch is gated on recorded evidence for every item below, with a named owner and review date:
+
+- Disable, exclude, or redact callback query strings in every hosting, CDN, proxy, WAF, load-balancer, and tracing log under OfferLab's control.
+- Restrict access to any unavoidable token-bearing logs and minimize their retention.
+- Exclude `token_hash`, `code`, and token-bearing URLs from APM and error payloads.
+- Send a staging verification and recovery canary containing a unique synthetic token marker.
+- Search all accessible platform, proxy, WAF, APM, error-monitoring, Supabase Auth, tracing, and application logs and record evidence that the marker cannot be found.
+- Record the control owner, configuration evidence, exceptions, and approval before production launch.
+
+This checklist is a production acceptance gate, not an implemented runtime control. Until the deployed configuration and canary evidence are recorded, upstream callback-token logging protection remains unverified.

@@ -65,6 +65,12 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+[auth.email.template.confirmation]
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+content_path = "./supabase/templates/recovery.html"
+
 [auth.sms]
 enable_signup = false
 enable_confirmations = false

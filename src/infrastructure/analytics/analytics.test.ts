@@ -22,4 +22,14 @@ describe("assertAllowedAnalyticsProperties", () => {
 
     expect(() => assertAllowedAnalyticsProperties(event)).toThrow("email");
   });
+
+  it("rejects tokens and identifiers on security transition events", () => {
+    const event = {
+      name: "invitation_accepted",
+      occurredAt: new Date("2026-07-19T00:00:00.000Z"),
+      properties: { token: "credential-value" },
+    } as unknown as AnalyticsEvent;
+
+    expect(() => assertAllowedAnalyticsProperties(event)).toThrow("token");
+  });
 });

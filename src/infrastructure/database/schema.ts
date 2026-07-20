@@ -2,8 +2,10 @@ import { sql } from "drizzle-orm";
 import {
   check,
   index,
+  integer,
   jsonb,
   pgSchema,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -51,4 +53,64 @@ export const auditEvents = appSchema.table(
     metadata: jsonb("metadata").$type<Readonly<Record<string, unknown>>>().default({}).notNull(),
   },
   (table) => [index("audit_event_entity_idx").on(table.entityType, table.entityId)],
+);
+
+export const invitations = appSchema.table(
+  "invitation",
+  {
+    boundAt: timestamp("bound_at", { mode: "date", withTimezone: true }),
+    boundAuthUserId: uuid("bound_auth_user_id").references(() => authUsers.id, {
+      onDelete: "restrict",
+    }),
+    consumedAt: timestamp("consumed_at", { mode: "date", withTimezone: true }),
+    consumedByUserId: uuid("consumed_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { mode: "date", withTimezone: true }).notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    revokedAt: timestamp("revoked_at", { mode: "date", withTimezone: true }),
+    tokenHash: text("token_hash").notNull(),
+  },
+  (table) => [
+    index("invitation_bound_identity_lookup")
+      .on(table.boundAuthUserId, table.boundAt)
+      .where(sql`${table.boundAuthUserId} is not null`),
+    index("invitation_email_lookup").on(table.email, table.createdAt),
+    uniqueIndex("invitation_token_hash_unique").on(table.tokenHash),
+  ],
+);
+
+export const betaEntitlements = appSchema.table(
+  "beta_entitlement",
+  {
+    activatedAt: timestamp("activated_at", { mode: "date", withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { mode: "date", withTimezone: true }),
+    status: text("status").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    check("beta_entitlement_status_check", sql`${table.status} in ('active', 'revoked')`),
+  ],
+);
+
+export const authRateLimits = appSchema.table(
+  "auth_rate_limit",
+  {
+    action: text("action").notNull(),
+    attemptCount: integer("attempt_count").notNull(),
+    keyHash: text("key_hash").notNull(),
+    windowStartedAt: timestamp("window_started_at", { mode: "date", withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index("auth_rate_limit_window_started_at_idx").on(table.windowStartedAt),
+    primaryKey({ columns: [table.action, table.keyHash] }),
+  ],
 );
