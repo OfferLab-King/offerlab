@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -123,6 +124,39 @@ export const onboardingProfiles = appSchema.table(
       "onboarding_completion_derived_check",
       sql`(${table.completedAt} is not null) = (${table.educationStage} is not null and cardinality(${table.opportunityTypes}) > 0 and cardinality(${table.industries}) > 0 and cardinality(${table.preparationPriorities}) > 0)`,
     ),
+  ],
+);
+
+export const applications = appSchema.table(
+  "application",
+  {
+    appliedDate: date("applied_date"),
+    applicationDeadline: date("application_deadline"),
+    archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+    companyName: text("company_name").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    currentStage: text("current_stage").notNull(),
+    industry: text("industry"),
+    id: uuid("id").defaultRandom().primaryKey(),
+    location: text("location"),
+    nextStageDeadline: date("next_stage_deadline"),
+    notes: text("notes"),
+    opportunityType: text("opportunity_type").notNull(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    roleTitle: text("role_title").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    check("application_version_check", sql`${table.version} > 0`),
+    index("application_owner_active_deadline_idx")
+      .on(table.ownerUserId, table.nextStageDeadline, table.applicationDeadline)
+      .where(sql`${table.archivedAt} is null`),
+    index("application_owner_archived_idx")
+      .on(table.ownerUserId, table.archivedAt)
+      .where(sql`${table.archivedAt} is not null`),
   ],
 );
 

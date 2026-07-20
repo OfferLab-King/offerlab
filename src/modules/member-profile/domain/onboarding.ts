@@ -1,27 +1,15 @@
 import { z } from "zod";
 
+import { opportunityTypes } from "../../taxonomy/domain/opportunity-types";
+import { industries } from "../../taxonomy/domain/industries";
+
+export { opportunityTypes } from "../../taxonomy/domain/opportunity-types";
+export { industries } from "../../taxonomy/domain/industries";
+
 export const educationStages = {
   undergraduate: "Undergraduate",
   postgraduate: "Postgraduate",
   recent_graduate: "Recent graduate",
-} as const;
-
-export const opportunityTypes = {
-  graduate_scheme: "Graduate scheme",
-  internship: "Internship",
-  placement: "Placement year",
-  entry_level_role: "Entry-level role",
-} as const;
-
-export const industries = {
-  consulting: "Consulting",
-  accounting_professional_services: "Accounting and professional services",
-  financial_services: "Financial services",
-  technology: "Technology",
-  public_sector: "Public sector",
-  consumer_retail: "Consumer and retail",
-  general_corporate: "General corporate",
-  other: "Other",
 } as const;
 
 export const preparationPriorities = {

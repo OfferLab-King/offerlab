@@ -15,6 +15,9 @@ This bundle contains the three product documents recommended before asking Codex
 3. `vertical-slice-01.md`  
    Defines the first end-to-end engineering slice: onboarding, application tracking and rule-based recommendations.
 
+4. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
+   Record the implemented Increment 2 and Increment 3 data contracts and privacy boundaries.
+
 ## Suggested repository location
 
 ```text

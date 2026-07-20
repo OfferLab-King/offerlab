@@ -61,7 +61,7 @@ pnpm security:audit
 
 ## Migrations and seeds
 
-- Create a migration with `pnpm db:new-migration -- <description>`.
+- Create a migration with `pnpm db:new-migration <description>`.
 - Write and review explicit SQL in `supabase/migrations/`.
 - Never use schema push as a production migration mechanism.
 - Run `pnpm db:reset` to replay all migrations and `supabase/seed.sql` from zero.

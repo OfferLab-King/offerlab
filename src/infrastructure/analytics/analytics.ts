@@ -1,4 +1,9 @@
 export const analyticsEventDefinitions = {
+  application_archived: { allowedProperties: [] as const },
+  application_created: { allowedProperties: [] as const },
+  application_restored: { allowedProperties: [] as const },
+  application_stage_changed: { allowedProperties: [] as const },
+  application_updated: { allowedProperties: [] as const },
   beta_access_denied: { allowedProperties: [] as const },
   email_verified: { allowedProperties: [] as const },
   health_check_observed: {

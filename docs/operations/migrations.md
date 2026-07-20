@@ -1,6 +1,6 @@
 # Database migrations
 
-SQL migrations in `supabase/migrations/` are immutable after shared use. Create one with `pnpm db:new-migration -- <description>`, review the SQL, and validate by running `pnpm db:reset` against local Supabase.
+SQL migrations in `supabase/migrations/` are immutable after shared use. Create one with `pnpm db:new-migration <description>`, review the SQL, and validate by running `pnpm db:reset` against local Supabase.
 
 Use expand-and-contract changes:
 
