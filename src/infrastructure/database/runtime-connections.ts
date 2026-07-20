@@ -1,6 +1,6 @@
 import "server-only";
 
-import postgres, { type Sql } from "postgres";
+import postgres, { type Sql, type TransactionSql } from "postgres";
 
 function required(name: "DATABASE_URL" | "IDENTITY_SYNC_DATABASE_URL"): string {
   const value = process.env[name];
@@ -22,4 +22,15 @@ export function getIdentitySyncDatabase(): Sql {
     prepare: false,
   });
   return identitySyncDatabase;
+}
+
+export async function withApplicationUser<T>(
+  userId: string,
+  operation: (transaction: TransactionSql) => PromiseLike<T>,
+): Promise<T> {
+  return (await getApplicationDatabase().begin(async (transaction) => {
+    await transaction`set local role offerlab_app`;
+    await transaction`select set_config('app.current_user_id', ${userId}, true)`;
+    return await operation(transaction);
+  })) as T;
 }

@@ -35,6 +35,7 @@ const roleDatabaseUrl = (role: string) => {
   url.password = "postgres";
   return url.toString();
 };
+const e2ePort = process.env.E2E_PORT ?? "3000";
 const environment = {
   ...process.env,
   APP_ENV: process.env.APP_ENV ?? "local",
@@ -44,7 +45,7 @@ const environment = {
   IDENTITY_SYNC_DATABASE_URL:
     process.env.IDENTITY_SYNC_DATABASE_URL ?? roleDatabaseUrl("offerlab_identity_sync_login"),
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000",
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${e2ePort}`,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.PUBLISHABLE_KEY,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? local.API_URL,

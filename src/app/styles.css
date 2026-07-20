@@ -52,11 +52,18 @@ label {
   margin-top: 0.5rem;
 }
 
-input {
+input,
+textarea {
   border: 1px solid #9daf9f;
   border-radius: 0.5rem;
   font: inherit;
   padding: 0.8rem;
+}
+
+textarea {
+  box-sizing: border-box;
+  resize: vertical;
+  width: 100%;
 }
 
 button,
@@ -94,4 +101,158 @@ button:disabled {
 
 a {
   color: #17643a;
+}
+
+.onboarding-shell {
+  max-width: 64rem;
+}
+
+.member-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.member-header button {
+  margin: 0;
+}
+
+.onboarding-card h1 {
+  max-width: 14ch;
+}
+
+.intro {
+  color: #405249;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  max-width: 44rem;
+}
+
+.form-section {
+  border-top: 1px solid #dce4dd;
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+}
+
+.form-section h2 {
+  margin: 0.25rem 0;
+}
+
+.step-label {
+  color: #17643a;
+  font-size: 0.8rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+legend {
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.choice-grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.8rem;
+}
+
+.choice {
+  align-items: flex-start;
+  border: 1px solid #c8d4ca;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.choice:has(input:checked) {
+  background: #edf5ee;
+  border-color: #17643a;
+}
+
+.choice input {
+  accent-color: #17643a;
+  margin: 0.2rem 0 0;
+}
+
+.field-error {
+  color: #9b2424;
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+}
+
+.error-summary {
+  background: #fff4f2;
+  border: 2px solid #9b2424;
+  border-radius: 0.65rem;
+  padding: 1rem;
+}
+
+.error-summary p:first-child {
+  margin-top: 0;
+}
+
+.error-summary p:last-child,
+.error-summary ul:last-child {
+  margin-bottom: 0;
+}
+
+fieldset[aria-invalid="true"] .choice,
+textarea[aria-invalid="true"] {
+  border-color: #9b2424;
+  border-width: 2px;
+}
+
+:focus-visible,
+.error-summary:focus {
+  outline: 3px solid #f0a500;
+  outline-offset: 3px;
+}
+
+.form-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.button-secondary {
+  background: white;
+  border: 1px solid #17643a;
+  color: #17643a;
+}
+
+@media (max-width: 40rem) {
+  main {
+    margin: 1rem auto;
+    padding: 0 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+  }
+
+  .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions,
+  .form-actions button {
+    width: 100%;
+  }
 }

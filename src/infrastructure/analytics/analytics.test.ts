@@ -32,4 +32,18 @@ describe("assertAllowedAnalyticsProperties", () => {
 
     expect(() => assertAllowedAnalyticsProperties(event)).toThrow("token");
   });
+
+  it.each([
+    "onboarding_started",
+    "onboarding_saved",
+    "onboarding_completed",
+    "onboarding_updated",
+  ] as const)("keeps %s property-free", (name) => {
+    const event = {
+      name,
+      occurredAt: new Date("2026-07-20T00:00:00.000Z"),
+      properties: { educationStage: "undergraduate", internalUserId: "private" },
+    } as unknown as AnalyticsEvent;
+    expect(() => assertAllowedAnalyticsProperties(event)).toThrow(/educationStage/);
+  });
 });
