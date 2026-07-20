@@ -31,6 +31,28 @@ export async function currentAuthorization(): Promise<AuthorizationState | null>
   }
 }
 
+export type MemberAccessDecision =
+  | Readonly<{ authorization: AuthorizationState; status: "eligible" }>
+  | Readonly<{ status: "denied" | "unauthenticated" | "unverified" }>;
+
+export async function currentMemberAccess(): Promise<MemberAccessDecision> {
+  const authUserId = await authenticatedUserId();
+  if (!authUserId) return { status: "unauthenticated" };
+  try {
+    const authorization = await authorizationForIdentity(authUserId);
+    if (authorization?.entitlementStatus !== "active") return { status: "denied" };
+    return { authorization, status: "eligible" };
+  } catch (authorizationError) {
+    if (
+      authorizationError instanceof IdentityAccessError &&
+      authorizationError.code === "unverified_identity"
+    ) {
+      return { status: "unverified" };
+    }
+    throw authorizationError;
+  }
+}
+
 async function authorizationForIdentity(authUserId: string): Promise<AuthorizationState | null> {
   const database = getIdentitySyncDatabase();
   const existing = await readAuthorizationForIdentity(database, authUserId);
@@ -58,25 +80,12 @@ async function authorizationForIdentity(authUserId: string): Promise<Authorizati
 }
 
 export async function requireMember(): Promise<AuthorizationState> {
-  const authUserId = await authenticatedUserId();
-  if (!authUserId) redirect("/sign-in?next=/member");
-  let authorization: AuthorizationState | null;
-  try {
-    authorization = await authorizationForIdentity(authUserId);
-  } catch (authorizationError) {
-    if (
-      authorizationError instanceof IdentityAccessError &&
-      authorizationError.code === "unverified_identity"
-    ) {
-      redirect("/verify-email");
-    }
-    throw authorizationError;
-  }
-  if (authorization?.entitlementStatus !== "active") {
-    await captureAnalyticsEvent("beta_access_denied");
-    redirect("/beta-access-denied");
-  }
-  return authorization;
+  const decision = await currentMemberAccess();
+  if (decision.status === "eligible") return decision.authorization;
+  if (decision.status === "unauthenticated") redirect("/sign-in?next=/member");
+  if (decision.status === "unverified") redirect("/verify-email");
+  await captureAnalyticsEvent("beta_access_denied");
+  redirect("/beta-access-denied");
 }
 
 async function authenticatedUserId(): Promise<string | null> {

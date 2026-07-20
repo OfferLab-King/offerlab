@@ -10,6 +10,7 @@ import { createInvitation } from "../src/modules/identity-access/infrastructure/
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 const mailpitUrl = "http://127.0.0.1:55324";
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
 
 type MailSummary = Readonly<{
   ID: string;
@@ -130,7 +131,82 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Welcome to OfferLab" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tell us where you’re heading" })).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    const companies = page.getByLabel("Target companies");
+    await companies.fill(Array.from({ length: 11 }, (_, index) => `Company ${index}`).join(","));
+    await page.getByRole("button", { name: "Complete onboarding" }).click();
+    const errorSummary = page.locator("#onboarding-error-summary");
+    await expect(errorSummary).toBeFocused();
+    await expect(errorSummary).toHaveAttribute("role", "alert");
+    await expect(companies).toHaveAttribute("aria-invalid", "true");
+    await expect(companies).toHaveAttribute(
+      "aria-describedby",
+      /targetCompanies-hint targetCompanies-error/,
+    );
+    await expect(page.locator("#targetCompanies-error")).toBeVisible();
+    await companies.fill("Example Plc");
+    await expect(companies).toHaveAttribute("aria-invalid", "false");
+    await expect(page.locator("#targetCompanies-error")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Complete onboarding" }).click();
+    await expect(errorSummary).toBeFocused();
+    const undergraduate = page.getByLabel("Undergraduate");
+    await expect(page.locator("#educationStage-group")).toHaveAttribute("aria-invalid", "true");
+    await errorSummary
+      .getByRole("link", { name: "Choose your education or career stage." })
+      .click();
+    await expect(undergraduate).toBeFocused();
+    await expect(undergraduate).toHaveAttribute("aria-invalid", "true");
+    const educationDescription = await undergraduate.getAttribute("aria-describedby");
+    expect(educationDescription).toBe("educationStage-error");
+    await expect(page.locator(`#${educationDescription}`)).toBeVisible();
+    await expect(errorSummary).toContainText("Choose at least one opportunity type");
+
+    await undergraduate.check();
+    await expect(undergraduate).toHaveAttribute("aria-invalid", "false");
+    await expect(page.locator("#educationStage-error")).toHaveCount(0);
+
+    const graduateScheme = page.getByLabel("Graduate scheme");
+    await errorSummary.getByRole("link", { name: "Choose at least one opportunity type." }).click();
+    await expect(graduateScheme).toBeFocused();
+    await expect(graduateScheme).toHaveAttribute("aria-invalid", "true");
+    await expect(graduateScheme).toHaveAttribute(
+      "aria-describedby",
+      /opportunityTypes-description opportunityTypes-error/,
+    );
+    await graduateScheme.check();
+    await expect(graduateScheme).toHaveAttribute("aria-invalid", "false");
+    await expect(page.locator("#opportunityTypes-error")).toHaveCount(0);
+
+    const consulting = page.getByLabel("Consulting");
+    await errorSummary.getByRole("link", { name: "Choose at least one target industry." }).click();
+    await expect(consulting).toBeFocused();
+    await expect(consulting).toHaveAttribute("aria-invalid", "true");
+    await consulting.check();
+    await expect(consulting).toHaveAttribute("aria-invalid", "false");
+    await expect(page.locator("#industries-error")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Save and finish later" }).click();
+    await expect(page.getByText(/progress has been saved/i)).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel("Undergraduate")).toBeChecked();
+    await page.getByLabel("Graduate scheme").check();
+    await page.getByLabel("Consulting").check();
+    await page.getByLabel("Applications and CV").check();
+    await page.getByLabel("Target companies").fill(" Example Plc, example plc\nAcme UK ");
+    await page.getByRole("button", { name: "Complete onboarding" }).click();
+    await page.waitForURL("**/member");
+    await expect(
+      page.getByRole("heading", { name: "You’re ready for what comes next" }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: /review or update/i }).click();
+    await page.getByLabel("I feel confident overall").check();
+    await page.getByRole("button", { name: "Update profile" }).click();
+    await expect(page.getByText(/profile changes have been saved/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/member\/onboarding$/);
 
     const authCookies = (await page.context().cookies(page.url())).filter(
       ({ name }) => name.includes("-auth-token") && !name.includes("code-verifier"),
@@ -150,7 +226,9 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
       },
     ]);
     const refreshedResponse = await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Welcome to OfferLab" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "You’re ready for what comes next" }),
+    ).toBeVisible();
     expect(refreshedResponse?.headers()["cache-control"]).not.toContain("public");
     expect(refreshedResponse?.headers()["vercel-cdn-cache-control"]).toContain("no-store");
     const rotatedCookies = (await page.context().cookies(page.url())).filter(
@@ -183,7 +261,9 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     `;
     await database`update app."user" set role = 'administrator' where id = ${internalUserId}::uuid`;
     await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Welcome to OfferLab" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "You’re ready for what comes next" }),
+    ).toBeVisible();
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "OfferLab administration" })).toBeVisible();
     await database`
@@ -208,7 +288,9 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Welcome to OfferLab" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "You’re ready for what comes next" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Sign out" }).click();
 
     await page.getByRole("link", { name: "Forgot your password?" }).click();
@@ -243,7 +325,9 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(newPassword);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Welcome to OfferLab" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "You’re ready for what comes next" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Sign out" }).click();
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -294,6 +378,126 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     `;
     expect(unlinked[0]?.count).toBe(0);
   } finally {
+    await database`delete from app.auth_rate_limit where action = 'registration'`;
+    await database.end();
+  }
+});
+
+test("direct onboarding endpoint preserves authenticated ownership", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "One real direct-endpoint integration run is sufficient.",
+  );
+  test.setTimeout(60_000);
+  const database = postgres(databaseUrl, { max: 2, prepare: false });
+  const suffix = `direct-${Date.now()}`;
+  const password = "StrongPassword123!";
+
+  async function registerAndSignIn(email: string): Promise<void> {
+    const invitation = await createInvitation(database, {
+      email,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
+    await page.getByLabel("Invited email").fill(email);
+    await page.getByLabel("Create password").fill(password);
+    await page.getByRole("button", { name: "Create account" }).click();
+    await page.goto(await latestEmailLink(email, "confirm"));
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(password);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByRole("heading", { name: "Tell us where you’re heading" })).toBeVisible();
+  }
+
+  try {
+    const ownerEmail = `owner-${suffix}@example.com`;
+    await registerAndSignIn(ownerEmail);
+    const payload = {
+      confidence: null,
+      educationStage: "recent_graduate",
+      industries: ["technology"],
+      intent: "complete",
+      opportunityTypes: ["entry_level_role"],
+      preparationPriorities: ["application_planning"],
+      supportNeeds: [],
+      targetCompanies: ["Example Technology Plc"],
+    };
+    const completion = await page.evaluate(async (body) => {
+      const response = await fetch("/api/member/onboarding", {
+        body: JSON.stringify(body),
+        headers: { "content-type": "application/json" },
+        method: "PUT",
+      });
+      return { body: await response.json(), status: response.status };
+    }, payload);
+    expect(completion).toMatchObject({
+      body: { completed: true, outcome: "completed" },
+      status: 200,
+    });
+
+    const ownerRows = await database<{ id: string }[]>`
+      select id from app."user" where email = ${ownerEmail}
+    `;
+    const ownerId = ownerRows[0]?.id;
+    if (!ownerId) throw new Error("Direct-endpoint owner was not linked.");
+    const persisted = await database<
+      { audits: number; profiles: number; target_companies: string[] }[]
+    >`
+      select
+        (select count(*)::int from app.onboarding_profile where user_id = ${ownerId}::uuid)
+          as profiles,
+        (select target_companies from app.onboarding_profile where user_id = ${ownerId}::uuid)
+          as target_companies,
+        (
+          select count(*)::int from app.audit_event
+          where entity_id = ${ownerId}::uuid and action = 'onboarding.completed'
+        ) as audits
+    `;
+    expect(persisted).toEqual([
+      { audits: 1, profiles: 1, target_companies: ["Example Technology Plc"] },
+    ]);
+
+    await page.goto("/member");
+    await page.getByRole("button", { name: "Sign out" }).click();
+    const secondEmail = `second-${suffix}@example.com`;
+    await registerAndSignIn(secondEmail);
+    const crossUserAttempt = await page.evaluate(async (firstOwnerId) => {
+      const read = await fetch(`/api/member/onboarding?userId=${encodeURIComponent(firstOwnerId)}`);
+      const write = await fetch("/api/member/onboarding", {
+        body: JSON.stringify({
+          confidence: null,
+          educationStage: "recent_graduate",
+          industries: ["technology"],
+          intent: "complete",
+          opportunityTypes: ["entry_level_role"],
+          preparationPriorities: ["application_planning"],
+          supportNeeds: [],
+          targetCompanies: [],
+          userId: firstOwnerId,
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PUT",
+      });
+      return {
+        readBody: await read.json(),
+        readStatus: read.status,
+        writeStatus: write.status,
+      };
+    }, ownerId);
+    expect(crossUserAttempt).toEqual({
+      readBody: { profile: null },
+      readStatus: 200,
+      writeStatus: 422,
+    });
+    const ownerStillIsolated = await database<{ count: number }[]>`
+      select count(*)::int as count
+      from app.onboarding_profile
+      where user_id = ${ownerId}::uuid
+        and target_companies = array['Example Technology Plc']::text[]
+    `;
+    expect(ownerStillIsolated).toEqual([{ count: 1 }]);
+  } finally {
+    await database`delete from app.auth_rate_limit where action = 'registration'`;
     await database.end();
   }
 });
@@ -325,7 +529,7 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
 
   const missingSession = await request.post("/api/auth/update-password", {
     data: { password: "AnotherStrongPassword123!" },
-    headers: { origin: "http://127.0.0.1:3000" },
+    headers: { origin: appUrl },
   });
   expect(missingSession.status()).toBe(401);
   expect(await missingSession.json()).toEqual({ updated: false });
@@ -337,7 +541,7 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
     const response = await request.post("/api/auth/recovery", {
       data: { email: "unknown-rate-limit@example.com" },
       headers: {
-        origin: "http://127.0.0.1:3000",
+        origin: appUrl,
         "x-vercel-forwarded-for": "192.0.2.44",
       },
     });
@@ -379,7 +583,7 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
     const response = await request.post("/api/auth/resend", {
       data: { email },
       headers: {
-        origin: "http://127.0.0.1:3000",
+        origin: appUrl,
         "x-vercel-forwarded-for": `192.0.2.${60 + index}`,
       },
     });

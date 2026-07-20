@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
 
@@ -32,5 +32,30 @@ describe("runtime source boundaries", () => {
     expect(operations).toContain("This checklist is a production acceptance gate");
     expect(operations).toContain("upstream callback-token logging protection remains unverified");
     expect(operations).not.toContain("token-bearing URLs are universally excluded from logs");
+  });
+
+  it("keeps generated Supabase types at the public API boundary", async () => {
+    const [generated, drizzleSchema, packageJson, dictionary, sourceEntries] = await Promise.all([
+      readFile("src/infrastructure/database/generated.types.ts", "utf8"),
+      readFile("src/infrastructure/database/schema.ts", "utf8"),
+      readFile("package.json", "utf8"),
+      readFile("docs/product/onboarding-data-dictionary.md", "utf8"),
+      readdir("src", { recursive: true }),
+    ]);
+    expect(generated).not.toMatch(/^\s*app:/m);
+    expect(drizzleSchema).toContain('"onboarding_profile"');
+    expect(packageJson).toContain('"db:types": "supabase gen types typescript --local');
+    expect(dictionary).toContain("intentionally represents only schemas exposed");
+
+    const privateSources = sourceEntries.filter(
+      (entry) =>
+        typeof entry === "string" &&
+        entry.endsWith(".ts") &&
+        entry !== "infrastructure/database/generated.types.ts",
+    );
+    const contents = await Promise.all(
+      privateSources.map((entry) => readFile(`src/${entry}`, "utf8")),
+    );
+    expect(contents.join("\n")).not.toMatch(/from ["'][^"']*generated\.types["']/);
   });
 });

@@ -101,6 +101,31 @@ export const betaEntitlements = appSchema.table(
   ],
 );
 
+export const onboardingProfiles = appSchema.table(
+  "onboarding_profile",
+  {
+    completedAt: timestamp("completed_at", { mode: "date", withTimezone: true }),
+    confidence: text("confidence"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    educationStage: text("education_stage"),
+    industries: text("industries").array().default([]).notNull(),
+    opportunityTypes: text("opportunity_types").array().default([]).notNull(),
+    preparationPriorities: text("preparation_priorities").array().default([]).notNull(),
+    supportNeeds: text("support_needs").array().default([]).notNull(),
+    targetCompanies: text("target_companies").array().default([]).notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    check(
+      "onboarding_completion_derived_check",
+      sql`(${table.completedAt} is not null) = (${table.educationStage} is not null and cardinality(${table.opportunityTypes}) > 0 and cardinality(${table.industries}) > 0 and cardinality(${table.preparationPriorities}) > 0)`,
+    ),
+  ],
+);
+
 export const authRateLimits = appSchema.table(
   "auth_rate_limit",
   {
