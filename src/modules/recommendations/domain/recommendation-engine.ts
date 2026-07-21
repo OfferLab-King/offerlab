@@ -25,6 +25,7 @@ export type EvaluatedRecommendation = Readonly<{
   identity: RecommendationIdentity;
   title: string;
   urgency: RecommendationUrgency;
+  resourceSlug: string;
 }>;
 
 export type RecommendationApplication = Readonly<{
@@ -316,6 +317,7 @@ function candidateFor(
       },
       title: definition.title,
       urgency,
+      resourceSlug: definition.resourceSlug ?? "application-planning-checklist",
     },
     // ADR 0008: ordering follows the eligible recommendation-window deadline.
     // The urgency deadline is deliberately separate and may be an overdue

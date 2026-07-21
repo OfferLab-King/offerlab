@@ -65,6 +65,38 @@ function withState(
   };
 }
 
+function expectedResourceKey(slug: string): string {
+  return slug.replaceAll("-", "_");
+}
+async function availableRecommendationSlugs(
+  ownerId: string,
+  recommendations: readonly EvaluatedRecommendation[],
+): Promise<ReadonlySet<string>> {
+  const expected = new Map(
+    recommendations.map((item) => [item.resourceSlug, expectedResourceKey(item.resourceSlug)]),
+  );
+  if (expected.size === 0) return new Set();
+  const rows = await withApplicationUser(
+    ownerId,
+    (database) => database<{ resourceKey: string; slug: string }[]>`
+    select r.resource_key "resourceKey",r.slug from app.preparation_resource r
+    join app.content_category c on c.id=r.primary_category_id and c.archived_at is null
+    where r.publication_state='published' and r.archived_at is null and r.slug=any(${[...expected.keys()]}::text[])
+  `,
+  );
+  return new Set(
+    rows.filter((row) => expected.get(row.slug) === row.resourceKey).map((row) => row.slug),
+  );
+}
+
+async function retainAvailable(
+  ownerId: string,
+  recommendations: readonly EvaluatedRecommendation[],
+) {
+  const available = await availableRecommendationSlugs(ownerId, recommendations);
+  return recommendations.filter((item) => available.has(item.resourceSlug));
+}
+
 async function readStates(
   ownerId: string,
   applications: readonly RecommendationApplicationContext[],
@@ -87,15 +119,19 @@ export async function readApplicationRecommendations(
 ): Promise<readonly MemberRecommendation[]> {
   if (application.archivedAt) return [];
   const states = await readStates(ownerId, [application]);
-  const evaluated = evaluateAllApplicationRecommendations(application, {
-    ...(catalogue ? { catalogue } : {}),
-    ...(clock ? { clock } : {}),
-  }).map((recommendation) => withState(recommendation, states));
-  const pending = evaluated
+  const evaluated = await retainAvailable(
+    ownerId,
+    evaluateAllApplicationRecommendations(application, {
+      ...(catalogue ? { catalogue } : {}),
+      ...(clock ? { clock } : {}),
+    }),
+  );
+  const evaluatedWithState = evaluated.map((recommendation) => withState(recommendation, states));
+  const pending = evaluatedWithState
     .filter(({ state }) => state === "pending")
     .slice(0, APPLICATION_RECOMMENDATION_LIMIT);
-  const completed = evaluated.filter(({ state }) => state === "completed");
-  const dismissed = evaluated.filter(({ state }) => state === "dismissed");
+  const completed = evaluatedWithState.filter(({ state }) => state === "completed");
+  const dismissed = evaluatedWithState.filter(({ state }) => state === "dismissed");
   return [...pending, ...completed, ...dismissed];
 }
 
@@ -107,17 +143,20 @@ export async function readDashboardRecommendations(
   const activeApplications = applications.filter(({ archivedAt }) => !archivedAt);
   if (activeApplications.length === 0) return [];
   const states = await readStates(ownerId, activeApplications);
-  const evaluated = evaluateDashboardRecommendations(activeApplications, {
-    ...(clock ? { clock } : {}),
-    include: (recommendation) =>
-      (states.get(
-        identityKey(
-          recommendation.identity.applicationId,
-          recommendation.identity.key,
-          recommendation.identity.ruleVersion,
-        ),
-      )?.state ?? "pending") === "pending",
-  });
+  const evaluated = await retainAvailable(
+    ownerId,
+    evaluateDashboardRecommendations(activeApplications, {
+      ...(clock ? { clock } : {}),
+      include: (recommendation) =>
+        (states.get(
+          identityKey(
+            recommendation.identity.applicationId,
+            recommendation.identity.key,
+            recommendation.identity.ruleVersion,
+          ),
+        )?.state ?? "pending") === "pending",
+    }),
+  );
   return evaluated.map((recommendation) => withState(recommendation, states));
 }
 
@@ -160,6 +199,12 @@ export async function mutateRecommendationState(
       clock ? { clock } : {},
     );
     if (!currentRecommendation) return { outcome: "not_applicable" } as const;
+    const expectedKey = expectedResourceKey(currentRecommendation.resourceSlug);
+    const target = await database<{ found: boolean }[]>`select exists(
+      select 1 from app.preparation_resource r join app.content_category c on c.id=r.primary_category_id and c.archived_at is null
+      where r.resource_key=${expectedKey} and r.slug=${currentRecommendation.resourceSlug} and r.publication_state='published' and r.archived_at is null
+    ) found`;
+    if (!target[0]?.found) return { outcome: "not_applicable" } as const;
 
     const transition = await transitionRecommendationState(database, {
       applicationId,

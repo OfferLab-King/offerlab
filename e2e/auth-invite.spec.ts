@@ -149,6 +149,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
   const database = postgres(databaseUrl, { max: 2, prepare: false });
 
   try {
+    await database`delete from app.auth_rate_limit`;
     await page.goto("/member");
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
     await page.goto("/admin");
@@ -478,7 +479,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     `;
     expect(unlinked[0]?.count).toBe(0);
   } finally {
-    await database`delete from app.auth_rate_limit where action = 'registration'`;
+    await database`delete from app.auth_rate_limit`;
     await database.end();
   }
 });

@@ -144,6 +144,9 @@ export function RecommendationList({
         )}
         <p className="recommendation-guidance">{recommendation.guidance}</p>
         <p className="recommendation-explanation">{recommendation.explanation}</p>
+        <p>
+          <a href={`/member/learn/${recommendation.resourceSlug}`}>Open preparation resource</a>
+        </p>
         <div className="recommendation-actions">
           {recommendation.state === "pending" ? (
             <>
