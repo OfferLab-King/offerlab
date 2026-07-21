@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -9,6 +10,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -157,6 +159,62 @@ export const applications = appSchema.table(
     index("application_owner_archived_idx")
       .on(table.ownerUserId, table.archivedAt)
       .where(sql`${table.archivedAt} is not null`),
+    unique("application_owner_id_unique").on(table.ownerUserId, table.id),
+  ],
+);
+
+export const recommendationStates = appSchema.table(
+  "recommendation_state",
+  {
+    applicationId: uuid("application_id").notNull(),
+    completedAt: timestamp("completed_at", { mode: "date", withTimezone: true }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    dismissedAt: timestamp("dismissed_at", { mode: "date", withTimezone: true }),
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    recommendationKey: text("recommendation_key").notNull(),
+    ruleVersion: integer("rule_version").notNull(),
+    state: text("state").default("pending").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.ownerUserId, table.applicationId],
+      foreignColumns: [applications.ownerUserId, applications.id],
+      name: "recommendation_state_application_owner_fk",
+    }).onDelete("restrict"),
+    check(
+      "recommendation_state_key_check",
+      sql`${table.recommendationKey} ~ '^[a-z][a-z0-9_]{0,79}$'`,
+    ),
+    check("recommendation_state_rule_version_check", sql`${table.ruleVersion} > 0`),
+    check(
+      "recommendation_state_state_check",
+      sql`${table.state} in ('pending', 'completed', 'dismissed')`,
+    ),
+    check("recommendation_state_version_check", sql`${table.version} > 0`),
+    check(
+      "recommendation_state_timestamps_check",
+      sql`${table.updatedAt} >= ${table.createdAt} and (${table.completedAt} is null or ${table.completedAt} between ${table.createdAt} and ${table.updatedAt}) and (${table.dismissedAt} is null or ${table.dismissedAt} between ${table.createdAt} and ${table.updatedAt})`,
+    ),
+    check(
+      "recommendation_state_transition_timestamps_check",
+      sql`(${table.state} = 'pending' and ${table.completedAt} is null and ${table.dismissedAt} is null) or (${table.state} = 'completed' and ${table.completedAt} is not null and ${table.dismissedAt} is null) or (${table.state} = 'dismissed' and ${table.completedAt} is null and ${table.dismissedAt} is not null)`,
+    ),
+    unique("recommendation_state_identity_unique").on(
+      table.ownerUserId,
+      table.applicationId,
+      table.recommendationKey,
+      table.ruleVersion,
+    ),
+    index("recommendation_state_owner_application_state_idx").on(
+      table.ownerUserId,
+      table.applicationId,
+      table.state,
+    ),
   ],
 );
 

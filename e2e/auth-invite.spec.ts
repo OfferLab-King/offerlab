@@ -3,7 +3,7 @@ import type { JsonWebKey as NodeJsonWebKey } from "node:crypto";
 
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import postgres from "postgres";
+import postgres, { type Sql } from "postgres";
 
 import { createInvitation } from "../src/modules/identity-access/infrastructure/invitations";
 
@@ -17,6 +17,25 @@ type MailSummary = Readonly<{
   Subject: string;
   To: readonly Readonly<{ Address: string }>[];
 }>;
+
+async function cleanUpEndpointMembers(database: Sql, emails: readonly string[]) {
+  const users = await database<{ id: string }[]>`
+    select id from app."user" where email = any(${emails}::text[])
+  `;
+  const userIds = users.map(({ id }) => id);
+  if (userIds.length > 0) {
+    await database`delete from app.audit_event where actor_user_id = any(${userIds}::uuid[])`;
+    await database`delete from app.recommendation_state where owner_user_id = any(${userIds}::uuid[])`;
+    await database`delete from app.application where owner_user_id = any(${userIds}::uuid[])`;
+    await database`delete from app.onboarding_profile where user_id = any(${userIds}::uuid[])`;
+    await database`delete from app.beta_entitlement where user_id = any(${userIds}::uuid[])`;
+  }
+  await database`delete from app.invitation where email = any(${emails}::text[])`;
+  if (userIds.length > 0) {
+    await database`delete from app."user" where id = any(${userIds}::uuid[])`;
+  }
+  await database`delete from auth.users where email = any(${emails}::text[])`;
+}
 
 function encodeSessionCookie(session: Record<string, unknown>): string {
   return `base64-${Buffer.from(JSON.stringify(session), "utf8").toString("base64url")}`;
@@ -229,8 +248,8 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Applications and CV").check();
     await page.getByLabel("Target companies").fill(" Example Plc, example plc\nAcme UK ");
     await page.getByRole("button", { name: "Complete onboarding" }).click();
-    await page.waitForURL("**/member/applications");
-    await expect(page.getByRole("heading", { name: "Your applications" })).toBeVisible();
+    await page.waitForURL("**/member");
+    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Add your first application" })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -320,7 +339,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
       },
     ]);
     const refreshedResponse = await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Your applications" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     expect(refreshedResponse?.headers()["cache-control"]).not.toContain("public");
     expect(refreshedResponse?.headers()["vercel-cdn-cache-control"]).toContain("no-store");
     const rotatedCookies = (await page.context().cookies(page.url())).filter(
@@ -348,7 +367,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     `;
     await database`update app."user" set role = 'administrator' where id = ${internalUserId}::uuid`;
     await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Your applications" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "OfferLab administration" })).toBeVisible();
     await database`
@@ -373,7 +392,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Your applications" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await page.getByRole("button", { name: "Sign out" }).click();
 
     await page.getByRole("link", { name: "Forgot your password?" }).click();
@@ -408,7 +427,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(newPassword);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Your applications" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await page.getByRole("button", { name: "Sign out" }).click();
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -583,7 +602,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
   }
 });
 
-test("direct application endpoints enforce real authentication and private outcomes", async ({
+test("direct application and recommendation endpoints enforce real authentication and private outcomes", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "One real endpoint matrix is sufficient.");
@@ -644,14 +663,64 @@ test("direct application endpoints enforce real authentication and private outco
     role: "PRIVATE ROLE SENTINEL",
     stage: "preparing",
   };
+  const recommendationMutation = {
+    expectedVersion: null,
+    recommendationKey: "preparing_confirm_deadline_plan",
+    ruleVersion: 1,
+    targetState: "completed",
+  } as const;
+  const unknownApplicationId = randomUUID();
+  const ownerEmail = `owner-${suffix}@example.com`;
+  const secondEmail = `second-${suffix}@example.com`;
+  const unverifiedEmail = `unverified-${suffix}@example.com`;
 
   try {
     await page.goto("/");
     expect(await jsonRequest("/api/member/applications")).toMatchObject({ status: 401 });
+    expect(
+      await jsonRequest(
+        `/api/member/applications/${unknownApplicationId}/recommendations`,
+        "POST",
+        recommendationMutation,
+      ),
+    ).toMatchObject({ status: 401 });
+    const unauthenticatedParsingStatuses = await page.evaluate(
+      async ({ path, validMutation }) => {
+        const cases = [
+          { body: "{", contentType: "application/json" },
+          { body: JSON.stringify({ padding: "x".repeat(9_000) }), contentType: "application/json" },
+          { body: "plain", contentType: "text/plain" },
+          {
+            body: JSON.stringify({ ...validMutation, ownerId: "forged-owner" }),
+            contentType: "application/json",
+          },
+        ];
+        return Promise.all(
+          cases.map(async ({ body, contentType }) =>
+            fetch(path, {
+              body,
+              headers: { "content-type": contentType },
+              method: "POST",
+            }).then((response) => response.status),
+          ),
+        );
+      },
+      {
+        path: `/api/member/applications/${unknownApplicationId}/recommendations`,
+        validMutation: recommendationMutation,
+      },
+    );
+    expect(unauthenticatedParsingStatuses).toEqual([401, 401, 401, 401]);
 
-    const ownerEmail = `owner-${suffix}@example.com`;
     await registerAndSignIn(ownerEmail);
     expect(await jsonRequest("/api/member/applications")).toMatchObject({ status: 403 });
+    expect(
+      await jsonRequest(
+        `/api/member/applications/${unknownApplicationId}/recommendations`,
+        "POST",
+        recommendationMutation,
+      ),
+    ).toMatchObject({ status: 403 });
     expect(await jsonRequest("/api/member/onboarding", "PUT", onboarding)).toMatchObject({
       status: 200,
     });
@@ -722,6 +791,11 @@ test("direct application endpoints enforce real authentication and private outco
         version: 2,
       }),
     ).toMatchObject({ body: { outcome: "archived" }, status: 200 });
+    const recommendationEndpoint = `/api/member/applications/${applicationId}/recommendations`;
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toEqual({
+      body: { ok: true, outcome: "not_applicable" },
+      status: 409,
+    });
     expect(
       await jsonRequest(`/api/member/applications/${applicationId}`, "PUT", {
         ...application,
@@ -741,11 +815,87 @@ test("direct application endpoints enforce real authentication and private outco
       }),
     ).toMatchObject({ body: { outcome: "restored" }, status: 200 });
 
+    const malformedRecommendation = await page.evaluate(async (path) => {
+      const response = await fetch(path, {
+        body: "{",
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      });
+      return response.status;
+    }, recommendationEndpoint);
+    expect(malformedRecommendation).toBe(400);
+    const unsupportedRecommendation = await page.evaluate(async (path) => {
+      const response = await fetch(path, {
+        body: "plain",
+        headers: { "content-type": "text/plain" },
+        method: "POST",
+      });
+      return response.status;
+    }, recommendationEndpoint);
+    expect(unsupportedRecommendation).toBe(415);
+    expect(
+      await jsonRequest(recommendationEndpoint, "POST", {
+        ...recommendationMutation,
+        ownerId: "forged-owner",
+      }),
+    ).toMatchObject({ status: 422 });
+    expect(
+      await jsonRequest(recommendationEndpoint, "POST", {
+        ...recommendationMutation,
+        padding: "x".repeat(9_000),
+      }),
+    ).toMatchObject({ status: 413 });
+    expect(
+      await jsonRequest(recommendationEndpoint, "POST", {
+        ...recommendationMutation,
+        recommendationKey: "unknown_key",
+      }),
+    ).toMatchObject({ status: 422 });
+    expect(
+      await jsonRequest(recommendationEndpoint, "POST", {
+        ...recommendationMutation,
+        ruleVersion: 999,
+      }),
+    ).toMatchObject({ status: 422 });
+
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toEqual({
+      body: { ok: true, outcome: "completed", stateVersion: 1 },
+      status: 200,
+    });
+    const recommendationConflict = await jsonRequest(recommendationEndpoint, "POST", {
+      ...recommendationMutation,
+      targetState: "dismissed",
+    });
+    expect(recommendationConflict).toEqual({
+      body: { ok: true, outcome: "conflict" },
+      status: 409,
+    });
+    const recommendationConflictText = JSON.stringify(recommendationConflict);
+    for (const prohibited of [
+      recommendationMutation.recommendationKey,
+      applicationId,
+      "completed",
+      "dismissed",
+      "version",
+      "preparing",
+      "entry_level_role",
+      "2026-09-30",
+      "PRIVATE",
+    ]) {
+      expect(recommendationConflictText).not.toContain(prohibited);
+    }
+
     const ownerRows = await database<{ id: string }[]>`
       select id from app."user" where email = ${ownerEmail}
     `;
     const ownerId = ownerRows[0]?.id;
     if (!ownerId) throw new Error("Endpoint owner was not linked.");
+    const recommendationStateRows = await database<{ id: string }[]>`
+      select id from app.recommendation_state
+      where owner_user_id = ${ownerId}::uuid and application_id = ${applicationId}::uuid
+    `;
+    const recommendationStateId = recommendationStateRows[0]?.id;
+    if (!recommendationStateId) throw new Error("Recommendation state was not persisted.");
     const authCookie = (await page.context().cookies()).find(
       ({ name }) => name.includes("-auth-token") && !name.includes("code-verifier"),
     );
@@ -753,7 +903,6 @@ test("direct application endpoints enforce real authentication and private outco
     await page.goto("/member");
     await page.getByRole("button", { name: "Sign out" }).click();
 
-    const secondEmail = `second-${suffix}@example.com`;
     await registerAndSignIn(secondEmail);
     expect(await jsonRequest("/api/member/onboarding", "PUT", onboarding)).toMatchObject({
       status: 200,
@@ -763,6 +912,16 @@ test("direct application endpoints enforce real authentication and private outco
       body: genericMissing,
       status: 404,
     });
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toEqual({
+      body: genericMissing,
+      status: 404,
+    });
+    expect(
+      await jsonRequest(recommendationEndpoint, "POST", {
+        ...recommendationMutation,
+        stateId: recommendationStateId,
+      }),
+    ).toMatchObject({ status: 422 });
     const secondRows = await database<{ id: string }[]>`
       select id from app."user" where email = ${secondEmail}
     `;
@@ -773,15 +932,21 @@ test("direct application endpoints enforce real authentication and private outco
       body: genericMissing,
       status: 404,
     });
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toEqual({
+      body: genericMissing,
+      status: 404,
+    });
     await database`update app."user" set role = 'member' where id = ${secondId}::uuid`;
     await database`
       update app.beta_entitlement set status = 'revoked', revoked_at = now(), updated_at = now()
       where user_id = ${secondId}::uuid
     `;
     expect(await jsonRequest("/api/member/applications")).toMatchObject({ status: 403 });
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toMatchObject(
+      { status: 403 },
+    );
 
     const unverifiedAuthId = randomUUID();
-    const unverifiedEmail = `unverified-${suffix}@example.com`;
     await database`
       insert into auth.users (
         instance_id, id, aud, role, email, encrypted_password, raw_app_meta_data,
@@ -810,12 +975,16 @@ test("direct application endpoints enforce real authentication and private outco
       },
     ]);
     expect(await jsonRequest("/api/member/applications")).toMatchObject({ status: 403 });
+    expect(await jsonRequest(recommendationEndpoint, "POST", recommendationMutation)).toMatchObject(
+      { status: 403 },
+    );
 
     const ownerCount = await database<{ count: number }[]>`
       select count(*)::int as count from app.application where owner_user_id = ${ownerId}::uuid
     `;
     expect(ownerCount).toEqual([{ count: 1 }]);
   } finally {
+    await cleanUpEndpointMembers(database, [ownerEmail, secondEmail, unverifiedEmail]);
     await database`delete from app.auth_rate_limit where action = 'registration'`;
     await database.end();
   }

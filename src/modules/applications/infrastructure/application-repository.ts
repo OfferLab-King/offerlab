@@ -145,7 +145,7 @@ function values(application: TrackedApplication): ApplicationValues {
   };
 }
 
-async function lockApplication(
+export async function lockApplication(
   database: TransactionSql,
   ownerId: string,
   applicationId: string,

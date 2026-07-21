@@ -46,4 +46,21 @@ describe("assertAllowedAnalyticsProperties", () => {
     } as unknown as AnalyticsEvent;
     expect(() => assertAllowedAnalyticsProperties(event)).toThrow(/educationStage/);
   });
+
+  it.each([
+    "recommendation_completed",
+    "recommendation_dismissed",
+    "recommendation_restored",
+  ] as const)("keeps %s property-free", (name) => {
+    const event = {
+      name,
+      occurredAt: new Date("2026-07-20T00:00:00.000Z"),
+      properties: {
+        applicationId: "private",
+        recommendationKey: "stage_revealing_key",
+        ruleVersion: 1,
+      },
+    } as unknown as AnalyticsEvent;
+    expect(() => assertAllowedAnalyticsProperties(event)).toThrow(/applicationId/);
+  });
 });
