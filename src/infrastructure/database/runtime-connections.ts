@@ -34,3 +34,12 @@ export async function withApplicationUser<T>(
     return await operation(transaction);
   })) as T;
 }
+
+export async function withApplicationRole<T>(
+  operation: (transaction: TransactionSql) => PromiseLike<T>,
+): Promise<T> {
+  return (await getApplicationDatabase().begin(async (transaction) => {
+    await transaction`set local role offerlab_app`;
+    return await operation(transaction);
+  })) as T;
+}

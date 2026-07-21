@@ -18,6 +18,9 @@ This bundle contains the three product documents recommended before asking Codex
 4. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
    Record the implemented Increment 2 and Increment 3 data contracts and privacy boundaries.
 
+5. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
+   Record the deterministic recommendation and canonical preparation-resource contracts.
+
 ## Suggested repository location
 
 ```text

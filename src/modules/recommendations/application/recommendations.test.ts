@@ -5,14 +5,17 @@ const mocks = vi.hoisted(() => ({
   listStates: vi.fn(),
   lockApplication: vi.fn(),
   transition: vi.fn(),
+  availabilityRows: [] as { resourceKey?: string; slug?: string; found?: boolean }[],
 }));
 
 vi.mock("../../../infrastructure/analytics/capture", () => ({
   captureAnalyticsEvent: mocks.analytics,
 }));
 vi.mock("../../../infrastructure/database/runtime-connections", () => ({
-  withApplicationUser: (_ownerId: string, operation: (database: object) => unknown) =>
-    operation({ transaction: true }),
+  withApplicationUser: (_ownerId: string, operation: (database: object) => unknown) => {
+    const database = vi.fn().mockImplementation(async () => mocks.availabilityRows);
+    return operation(database);
+  },
 }));
 vi.mock("../../applications/application/applications", () => ({
   lockApplicationForRecommendationMutation: mocks.lockApplication,
@@ -78,10 +81,38 @@ describe("recommendation application service", () => {
     vi.clearAllMocks();
     mocks.listStates.mockResolvedValue([]);
     mocks.lockApplication.mockResolvedValue(application);
+    mocks.availabilityRows = [
+      {
+        resourceKey: "application_planning_checklist",
+        slug: "application-planning-checklist",
+        found: true,
+      },
+      {
+        resourceKey: "video_interview_preparation",
+        slug: "video-interview-preparation",
+        found: true,
+      },
+      { resourceKey: "online_test_preparation", slug: "online-test-preparation", found: true },
+      {
+        resourceKey: "assessment_centre_group_exercise",
+        slug: "assessment-centre-group-exercise",
+        found: true,
+      },
+      {
+        resourceKey: "final_interview_preparation",
+        slug: "final-interview-preparation",
+        found: true,
+      },
+    ];
     mocks.transition.mockResolvedValue({
       outcome: "completed",
       recommendationState: { version: 1 },
     });
+  });
+
+  it("excludes unavailable persisted targets without exposing their recommendation copy", async () => {
+    mocks.availabilityRows = [];
+    await expect(readApplicationRecommendations(ownerId, application, clock)).resolves.toEqual([]);
   });
 
   it("merges absence as pending and a persisted state by stable identity", async () => {

@@ -33,6 +33,7 @@ export type RecommendationDefinition = Readonly<{
   stages: readonly RecruitmentStage[];
   title: string;
   urgencyEligible: boolean;
+  resourceSlug?: string;
 }>;
 
 const deadlineWindows = [
@@ -61,7 +62,10 @@ function matchingVariants(
 }
 
 function defineRecommendation(
-  definition: Omit<RecommendationDefinition, "accessibilityLabels" | "active" | "applicability"> &
+  definition: Omit<
+    RecommendationDefinition,
+    "accessibilityLabels" | "active" | "applicability" | "resourceSlug"
+  > &
     Readonly<{ opportunityTypes?: readonly OpportunityType[] }>,
 ): RecommendationDefinition {
   const { opportunityTypes, ...content } = definition;
@@ -74,7 +78,17 @@ function defineRecommendation(
     },
     active: true,
     applicability: matchingVariants(definition.urgencyEligible, opportunityTypes),
+    resourceSlug: resourceSlugForStages(definition.stages),
   };
+}
+
+function resourceSlugForStages(stages: readonly RecruitmentStage[]): string {
+  const stage = stages[0];
+  if (stage === "video_interview") return "video-interview-preparation";
+  if (stage === "online_assessment") return "online-test-preparation";
+  if (stage === "assessment_centre") return "assessment-centre-group-exercise";
+  if (stage === "interview" || stage === "offer") return "final-interview-preparation";
+  return "application-planning-checklist";
 }
 
 const structuredEarlyCareerOpportunities = [

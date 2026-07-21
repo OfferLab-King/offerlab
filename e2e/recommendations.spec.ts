@@ -133,6 +133,7 @@ async function cleanUpMember(database: Sql, email: string): Promise<void> {
   const ownerId = owners[0]?.id;
   if (ownerId) {
     await database`delete from app.audit_event where actor_user_id = ${ownerId}::uuid`;
+    await database`delete from app.member_resource_state where owner_user_id = ${ownerId}::uuid`;
     await database`delete from app.recommendation_state where owner_user_id = ${ownerId}::uuid`;
     await database`delete from app.application where owner_user_id = ${ownerId}::uuid`;
     await database`delete from app.onboarding_profile where user_id = ${ownerId}::uuid`;
@@ -188,6 +189,24 @@ test("member recommendations remain deterministic and stateful", async ({
         })
         .first(),
     ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto("/member/learn?q=video&stage=video_interview");
+    await expect(page.getByRole("heading", { name: "Learn what to do next" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Video interview preparation" })).toBeVisible();
+    await page.getByRole("link", { name: "Open resource" }).click();
+    await expect(page.getByRole("heading", { name: "Prepare with purpose" })).toBeVisible();
+    await page.getByRole("button", { name: "Save resource" }).click();
+    await expect(page.getByText("Resource updated.")).toBeVisible();
+    await page.getByRole("button", { name: "Mark complete" }).click();
+    await expect(page.getByRole("button", { name: "Mark incomplete" })).toBeVisible();
+    await page.goto("/member/learn?saved=1&completed=complete");
+    await expect(page.getByRole("heading", { name: "Video interview preparation" })).toBeVisible();
+    await page.getByRole("link", { name: "Open resource" }).click();
+    await page.getByRole("button", { name: "Mark incomplete" }).click();
+    await expect(page.getByRole("button", { name: "Mark complete" })).toBeVisible();
+    await page.getByRole("button", { name: "Unsave" }).click();
+    await expect(page.getByRole("button", { name: "Save resource" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     const detailPath = `/member/applications/${member.applicationId}`;

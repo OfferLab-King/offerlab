@@ -99,4 +99,60 @@ describe("createLogger", () => {
     expect(output).not.toContain("PRIVATE_RULE_VERSION");
     expect(output).not.toContain("PRIVATE_RECOMMENDATION_PAYLOAD");
   });
+
+  it("keeps private search terms out of operational request fields", async () => {
+    let output = "";
+    const destination = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        output += chunk.toString();
+        callback();
+      },
+    });
+    const logger = createLogger({ destination, level: "info" });
+    const sentinel = "OFFERLAB_PRIVATE_SEARCH_SENTINEL_7F39";
+    logger.info(
+      {
+        req: { query: { q: sentinel }, url: `/member/learn?q=${sentinel}` },
+        request: { url: `/member/learn?q=${sentinel}` },
+        searchParams: { q: sentinel },
+        url: `/member/learn?q=${sentinel}`,
+      },
+      "library request",
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(output).not.toContain(sentinel);
+  });
+
+  it("redacts submitted CMS content and identifiers", async () => {
+    let output = "";
+    const destination = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        output += chunk.toString();
+        callback();
+      },
+    });
+    const logger = createLogger({ destination, level: "info" });
+    const cms = {
+      archivedAt: "CMS_ARCHIVED_TIMESTAMP",
+      categories: ["CMS_CATEGORY"],
+      firstPublishedAt: "CMS_FIRST_PUBLISHED_TIMESTAMP",
+      links: ["CMS_LINK"],
+      markdownBody: "CMS_MARKDOWN",
+      opportunityTypes: ["CMS_OPPORTUNITY"],
+      publishedAt: "CMS_PUBLISHED_TIMESTAMP",
+      recruitmentStages: ["CMS_STAGE"],
+      relatedResources: ["CMS_RELATED_RESOURCE"],
+      resourceId: "CMS_RESOURCE_UUID",
+      shortDescription: "CMS_SUMMARY",
+      slug: "CMS_SLUG",
+      tags: ["CMS_TAG"],
+      title: "CMS_TITLE",
+      updatedAt: "CMS_UPDATED_TIMESTAMP",
+    };
+
+    logger.info({ cms }, "CMS request rejected");
+    await new Promise((resolve) => setImmediate(resolve));
+
+    for (const value of Object.values(cms).flat()) expect(output).not.toContain(value);
+  });
 });

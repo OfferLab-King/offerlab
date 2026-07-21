@@ -19,6 +19,11 @@ export const analyticsEventDefinitions = {
   recommendation_completed: { allowedProperties: [] as const },
   recommendation_dismissed: { allowedProperties: [] as const },
   recommendation_restored: { allowedProperties: [] as const },
+  resource_completed: { allowedProperties: [] as const },
+  resource_marked_incomplete: { allowedProperties: [] as const },
+  resource_opened: { allowedProperties: [] as const },
+  resource_saved: { allowedProperties: [] as const },
+  resource_unsaved: { allowedProperties: [] as const },
   registration_completed: { allowedProperties: [] as const },
   sign_out_completed: { allowedProperties: [] as const },
 } as const;

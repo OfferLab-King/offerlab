@@ -11,6 +11,7 @@ export function MemberApplicationsHeader() {
       <nav aria-label="Member navigation" className="member-nav">
         <Link href="/member">Home</Link>
         <Link href="/member/applications">Applications</Link>
+        <Link href="/member/learn">Learn</Link>
         <Link href="/member/onboarding">Profile</Link>
         <SignOutButton />
       </nav>
