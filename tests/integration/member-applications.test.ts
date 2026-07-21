@@ -61,7 +61,8 @@ async function audits() {
 }
 
 beforeEach(async () => {
-  await migrationDatabase`delete from app.audit_event where entity_type = 'application'`;
+  await migrationDatabase`delete from app.audit_event where entity_type in ('application', 'recommendation_state')`;
+  await migrationDatabase`delete from app.recommendation_state`;
   await migrationDatabase`delete from app.application`;
   await migrationDatabase`update app."user" set role = 'member' where id = ${userTwo}::uuid`;
 });

@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { TransactionSql } from "postgres";
+
 import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture";
 import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
 import { parseApplicationInput } from "../domain/application";
@@ -7,6 +9,7 @@ import {
   createApplication,
   findApplication,
   listApplications,
+  lockApplication,
   setApplicationArchived,
   updateApplication,
   type ApplicationMutationResult,
@@ -43,6 +46,44 @@ export async function readApplication(
   return withApplicationUser(ownerId, (database) =>
     findApplication(database, ownerId, applicationId),
   );
+}
+
+/**
+ * Public applications-module contract for a recommendation-state mutation.
+ * The caller supplies its transaction so the stage/archive check, state write,
+ * and audit event share one database snapshot and commit boundary.
+ */
+export async function lockApplicationForRecommendationMutation(
+  database: TransactionSql,
+  ownerId: string,
+  applicationId: string,
+): Promise<RecommendationApplicationContext | null> {
+  const application = await lockApplication(database, ownerId, applicationId);
+  return application ? recommendationApplicationContext(application) : null;
+}
+
+export type RecommendationApplicationContext = Readonly<{
+  applicationDeadline: string | null;
+  appliedDate: string | null;
+  archivedAt: Date | null;
+  id: string;
+  nextStageDeadline: string | null;
+  opportunityType: TrackedApplication["opportunityType"];
+  stage: TrackedApplication["stage"];
+}>;
+
+export function recommendationApplicationContext(
+  application: TrackedApplication,
+): RecommendationApplicationContext {
+  return {
+    applicationDeadline: application.applicationDeadline,
+    appliedDate: application.appliedDate,
+    archivedAt: application.archivedAt,
+    id: application.id,
+    nextStageDeadline: application.nextStageDeadline,
+    opportunityType: application.opportunityType,
+    stage: application.stage,
+  };
 }
 
 export async function addApplication(ownerId: string, input: unknown) {

@@ -20,6 +20,11 @@ const redactedPaths = [
   "roleTitle",
   "notes",
   "onboardingAnswers",
+  "recommendation",
+  "recommendations",
+  "recommendationKey",
+  "recommendation_key",
+  "ruleVersion",
   "password",
   "req.headers.authorization",
   "req.headers.cookie",
@@ -44,6 +49,11 @@ const redactedPaths = [
   "*.nextStageDeadline",
   "*.notes",
   "*.onboardingAnswers",
+  "*.recommendation",
+  "*.recommendations",
+  "*.recommendationKey",
+  "*.recommendation_key",
+  "*.ruleVersion",
 ];
 
 export function createLogger(

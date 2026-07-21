@@ -73,4 +73,30 @@ describe("createLogger", () => {
 
     for (const sentinel of sentinels) expect(output).not.toContain(sentinel);
   });
+
+  it("redacts recommendation payloads and stage-revealing keys", async () => {
+    let output = "";
+    const destination = new Writable({
+      write(chunk: Buffer, _encoding, callback) {
+        output += chunk.toString();
+        callback();
+      },
+    });
+    const logger = createLogger({ destination, level: "info" });
+    logger.info(
+      {
+        mutation: {
+          recommendationKey: "PRIVATE_RECOMMENDATION_KEY",
+          ruleVersion: "PRIVATE_RULE_VERSION",
+        },
+        recommendations: "PRIVATE_RECOMMENDATION_PAYLOAD",
+      },
+      "test",
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(output).not.toContain("PRIVATE_RECOMMENDATION_KEY");
+    expect(output).not.toContain("PRIVATE_RULE_VERSION");
+    expect(output).not.toContain("PRIVATE_RECOMMENDATION_PAYLOAD");
+  });
 });

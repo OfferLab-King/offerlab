@@ -53,7 +53,7 @@ export default async function ApplicationsPage({ searchParams }: Props) {
           <p>
             {archived
               ? "Applications you archive will remain available here."
-              : "Track an application now. Stage-based preparation recommendations will be introduced in the next increment."}
+              : "Track an application now to receive stage-based preparation recommendations."}
           </p>
           {!archived && (
             <Link className="button-link" href="/member/applications/new">

@@ -382,6 +382,157 @@ textarea[aria-invalid="true"] {
   margin-left: auto;
 }
 
+.dashboard-shell {
+  max-width: 72rem;
+}
+
+.dashboard-section {
+  background: #f9fbf9;
+  border: 1px solid #dce4dd;
+  border-radius: 1rem;
+  margin: 1.5rem 0 2rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.section-heading,
+.recommendation-card-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.section-heading h2,
+.recommendation-card h3,
+.recommendation-card h4 {
+  margin-top: 0;
+}
+
+.section-heading > div > p,
+.application-count {
+  color: #506057;
+  margin-bottom: 0;
+}
+
+.application-count {
+  white-space: nowrap;
+}
+
+.recommendations {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.recommendation-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.recommendation-card {
+  background: white;
+  border: 1px solid #c8d4ca;
+  border-radius: 0.8rem;
+  box-sizing: border-box;
+  height: 100%;
+  overflow-wrap: anywhere;
+  padding: 1.25rem;
+}
+
+.recommendation-card h3 {
+  font-size: 1.2rem;
+  line-height: 1.25;
+  margin-bottom: 0.75rem;
+}
+
+.urgency,
+.state-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 750;
+  margin: 0 0 0.75rem;
+  padding: 0.3rem 0.55rem;
+  text-transform: capitalize;
+}
+
+.urgency-urgent {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.urgency-high {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.urgency-normal,
+.state-badge {
+  background: #edf5ee;
+  color: #174f31;
+}
+
+.recommendation-application,
+.recommendation-guidance,
+.recommendation-explanation {
+  line-height: 1.55;
+}
+
+.recommendation-application {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.recommendation-explanation {
+  border-left: 3px solid #7ba087;
+  color: #405249;
+  font-size: 0.9rem;
+  padding-left: 0.75rem;
+}
+
+.recommendation-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.recommendation-actions button {
+  margin: 0;
+  min-height: 44px;
+}
+
+.dismiss-confirmation {
+  background: #fff7ed;
+  border: 2px solid #9a3412;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.dismiss-confirmation h4 {
+  margin-bottom: 0.5rem;
+}
+
+.recommendation-history {
+  border-top: 1px solid #c8d4ca;
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+}
+
+.recommendation-history summary {
+  color: #17643a;
+  cursor: pointer;
+  font-weight: 750;
+  padding: 0.75rem 0;
+}
+
+.recommendation-history .recommendation-grid {
+  margin-top: 0.75rem;
+}
+
 @media (max-width: 40rem) {
   main {
     margin: 1rem auto;
@@ -421,6 +572,26 @@ textarea[aria-invalid="true"] {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .recommendation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading,
+  .recommendation-card-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .application-count {
+    white-space: normal;
+  }
+
+  .recommendation-actions,
+  .recommendation-actions button {
+    box-sizing: border-box;
+    width: 100%;
   }
 
   .field-full {

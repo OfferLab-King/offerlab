@@ -16,6 +16,9 @@ export const analyticsEventDefinitions = {
   onboarding_started: { allowedProperties: [] as const },
   onboarding_updated: { allowedProperties: [] as const },
   password_recovery_completed: { allowedProperties: [] as const },
+  recommendation_completed: { allowedProperties: [] as const },
+  recommendation_dismissed: { allowedProperties: [] as const },
+  recommendation_restored: { allowedProperties: [] as const },
   registration_completed: { allowedProperties: [] as const },
   sign_out_completed: { allowedProperties: [] as const },
 } as const;
