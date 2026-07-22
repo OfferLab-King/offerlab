@@ -20,10 +20,10 @@ export function PathFollowControls({ following, pathId }: { following: boolean; 
                 method: "PUT",
               });
               if (!response.ok) throw new Error("request failed");
-              setStatus(following ? "Path stopped." : "Path started.");
+              setStatus(following ? "Plan stopped." : "Plan started.");
               router.refresh();
             } catch {
-              setStatus("The path could not be updated. Please try again.");
+              setStatus("The plan could not be updated. Please try again.");
             } finally {
               setPending(false);
             }
@@ -31,7 +31,7 @@ export function PathFollowControls({ following, pathId }: { following: boolean; 
         }}
         type="button"
       >
-        {pending ? "Updating…" : following ? "Stop following" : "Start this path"}
+        {pending ? "Updating…" : following ? "Stop following" : "Follow this plan"}
       </button>
       <span aria-live="polite" className="status" role="status">
         {status}

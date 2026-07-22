@@ -2,11 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
-import {
-  continueItem,
-  readLearningPaths,
-} from "../../../../modules/learning-paths/application/learning-paths";
+import { readLearningPaths } from "../../../../modules/learning-paths/application/learning-paths";
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
+import { LearnNavigation } from "../learn-navigation";
+import { planAction } from "../learn-presenters";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -23,13 +22,17 @@ export default async function Page({
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
+      <LearnNavigation active="paths" />
       <section className="applications-heading">
         <div>
           <p className="eyebrow">Guided preparation</p>
-          <h1>Learning paths</h1>
-          <p className="intro">Follow a recommended sequence, or open any resource in any order.</p>
+          <h1>Preparation Plans</h1>
+          <p className="intro">
+            Follow a complete preparation structure for the stage you are facing. The order is
+            recommended, not locked.
+          </p>
         </div>
-        <Link href="/member/learn">Explore all resources</Link>
+        <Link href="/member/learn/resources">Browse Resources</Link>
       </section>
       {categories.length > 1 && (
         <form className="path-filter">
@@ -46,12 +49,11 @@ export default async function Page({
         </form>
       )}
       <p aria-live="polite" role="status">
-        {paths.length} learning path{paths.length === 1 ? "" : "s"}
+        {paths.length} Preparation Plan{paths.length === 1 ? "" : "s"}
       </p>
       {paths.length ? (
         <div className="path-grid">
           {paths.map((path) => {
-            const next = continueItem(path);
             const status =
               path.progress === 100
                 ? "Complete"
@@ -60,11 +62,12 @@ export default async function Page({
                   : "Not started";
             return (
               <article className="card path-card" key={path.id}>
-                <p className="eyebrow">{path.categoryName ?? "Learning path"}</p>
+                <p className="eyebrow">{path.categoryName ?? "Preparation outcome"}</p>
                 <h2>{path.title}</h2>
                 <p>{path.shortDescription}</p>
                 <p>
-                  {path.totalCount} resources · {path.estimatedMinutes || "Flexible"}{" "}
+                  {path.sections.length} preparation areas · {path.totalCount} resources ·{" "}
+                  {path.estimatedMinutes || "Flexible"}{" "}
                   {path.estimatedMinutes ? "minutes" : "timing"}
                 </p>
                 <progress
@@ -75,13 +78,8 @@ export default async function Page({
                 <p>
                   {path.completedCount} of {path.totalCount} complete · {status}
                 </p>
-                <Link
-                  className="button-link"
-                  href={
-                    next ? `/member/learn/paths/${path.slug}` : `/member/learn/paths/${path.slug}`
-                  }
-                >
-                  {next ? "Continue learning" : "Revisit path"}
+                <Link className="button-link" href={`/member/learn/paths/${path.slug}`}>
+                  {planAction(path)}
                 </Link>
               </article>
             );
@@ -89,8 +87,8 @@ export default async function Page({
         </div>
       ) : (
         <section className="card empty-state">
-          <h2>No learning paths found</h2>
-          <p>Try another category, or continue exploring the Knowledge Library.</p>
+          <h2>No Preparation Plans found</h2>
+          <p>Try another category, or browse focused resources in the Resource Library.</p>
           <Link href="/member/learn/paths">Clear filter</Link>
         </section>
       )}

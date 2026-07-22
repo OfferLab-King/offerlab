@@ -8,6 +8,10 @@ import {
 } from "../../../../../modules/learning-paths/application/learning-paths";
 import { MarkdownContent } from "../../../../components/resource-content";
 import { PathFollowControls } from "../path-follow-controls";
+import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
+import { LearnNavigation } from "../../learn-navigation";
+import { resourceAction } from "../../learn-presenters";
+import { resourceTypeLabel } from "../../../../../modules/taxonomy/domain/display-labels";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -25,11 +29,16 @@ export default async function Page({
   const next = continueItem(path);
   return (
     <main className="applications-shell path-detail">
-      <Link href="/member/learn/paths">← All learning paths</Link>
-      <p className="eyebrow">{path.categoryName ?? "Learning path"}</p>
+      <MemberApplicationsHeader />
+      <LearnNavigation active="paths" />
+      <Link href="/member/learn/paths">← All Preparation Plans</Link>
+      <p className="eyebrow">{path.categoryName ?? "Preparation Plan"}</p>
       <h1>{path.title}</h1>
       <p className="intro">{path.shortDescription}</p>
-      <p>Recommended order, not a requirement. You can open any resource at any time.</p>
+      <p>
+        {path.sections.length} preparation areas · {path.totalCount} resources. The order is
+        recommended, not locked, so you can open any resource at any time.
+      </p>
       <progress aria-label={`${path.progress}% complete`} max="100" value={path.progress} />
       <p>
         {path.completedCount} of {path.totalCount} complete · {path.progress}%
@@ -37,10 +46,10 @@ export default async function Page({
       <div className="form-actions">
         {next ? (
           <Link className="button-link" href={`/member/learn/${next.slug}?path=${path.slug}`}>
-            Continue learning
+            Continue Preparation
           </Link>
         ) : (
-          <p className="status">Path complete — revisit any resource below.</p>
+          <p className="status">Plan complete — review any resource below.</p>
         )}
         <PathFollowControls following={path.following} pathId={path.id} />
       </div>
@@ -58,14 +67,16 @@ export default async function Page({
               <li className="card" key={item.id}>
                 <div>
                   <p className="eyebrow">
-                    {item.resourceType}
+                    {resourceTypeLabel(item.resourceType)}
                     {item.estimatedMinutes ? ` · ${item.estimatedMinutes} min` : ""}
                   </p>
                   <h3>{item.title}</h3>
                   {item.contextNote && <p>{item.contextNote}</p>}
-                  <p>{item.completedAt ? "✓ Completed" : "Not completed"}</p>
+                  <p>{item.completedAt ? "Completed" : "Not started"}</p>
                 </div>
-                <Link href={`/member/learn/${item.slug}?path=${path.slug}`}>Open resource</Link>
+                <Link href={`/member/learn/${item.slug}?path=${path.slug}`}>
+                  {resourceAction(Boolean(item.completedAt))}
+                </Link>
               </li>
             ))}
           </ol>

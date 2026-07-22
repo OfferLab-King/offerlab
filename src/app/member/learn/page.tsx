@@ -1,155 +1,152 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  continueItem,
+  readLearningPaths,
+} from "../../../modules/learning-paths/application/learning-paths";
 import { requireMember } from "../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
-import {
-  parseLibraryFilters,
-  readLibrary,
-  readLibraryTaxonomy,
-} from "../../../modules/preparation-resources/application/resources";
 import { MemberApplicationsHeader } from "../applications/member-applications-header";
+import { LearnNavigation } from "./learn-navigation";
+import { planAction, selectContinuePreparation } from "./learn-presenters";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export default async function LearnPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+
+export default async function LearnPage() {
   const auth = await requireMember();
   if (!(await readOnboardingProfile(auth.userId))?.completedAt) redirect("/member/onboarding");
-  const raw = await searchParams;
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(raw)) if (typeof v === "string") params.set(k, v);
-  const filters = parseLibraryFilters(params);
-  const [resources, taxonomy] = await Promise.all([
-    readLibrary(auth.userId, filters),
-    readLibraryTaxonomy(auth.userId),
-  ]);
+  const paths = await readLearningPaths(auth.userId);
+  const continuedPath = selectContinuePreparation(paths);
+  const nextResource = continuedPath ? continueItem(continuedPath) : null;
+  const followedPaths = paths.filter((path) => path.following);
+  const allFollowedComplete =
+    followedPaths.length > 0 && followedPaths.every((path) => path.progress === 100);
+
   return (
-    <main className="applications-shell">
+    <main className="applications-shell learn-overview">
       <MemberApplicationsHeader />
+      <LearnNavigation active="overview" />
       <section className="applications-heading">
         <div>
-          <p className="eyebrow">Knowledge library</p>
-          <h1>Learn what to do next</h1>
-          <p className="intro">Focused OfferLab guidance for each stage of your applications.</p>
+          <p className="eyebrow">Learn</p>
+          <h1>Prepare for every stage</h1>
+          <p className="intro">
+            Follow a clear preparation plan, continue where you stopped, and use focused resources
+            when you need them.
+          </p>
         </div>
-        <Link className="button-link" href="/member/learn/paths">
-          Learning paths
+      </section>
+
+      <section aria-labelledby="continue-preparation" className="learn-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Your next step</p>
+            <h2 id="continue-preparation">Continue preparation</h2>
+          </div>
+        </div>
+        {continuedPath && nextResource ? (
+          <article className="card continue-card">
+            <div>
+              <p className="eyebrow">{continuedPath.categoryName ?? "Preparation plan"}</p>
+              <h3>{continuedPath.title}</h3>
+              <p>{continuedPath.shortDescription}</p>
+              <progress
+                aria-label={`${continuedPath.title}: ${continuedPath.progress}% complete`}
+                max="100"
+                value={continuedPath.progress}
+              />
+              <p>
+                {continuedPath.completedCount} of {continuedPath.totalCount} resources complete ·{" "}
+                {continuedPath.progress}%
+              </p>
+              <p>
+                <strong>Next:</strong> {nextResource.title}
+              </p>
+            </div>
+            <div className="form-actions">
+              <Link
+                className="button-link"
+                href={`/member/learn/${nextResource.slug}?path=${continuedPath.slug}`}
+              >
+                Continue Preparation
+              </Link>
+              <Link href={`/member/learn/paths/${continuedPath.slug}`}>View full plan</Link>
+            </div>
+          </article>
+        ) : (
+          <article className="card empty-state">
+            <h3>
+              {allFollowedComplete
+                ? "Your followed plans are complete"
+                : "Choose a Preparation Plan"}
+            </h3>
+            <p>
+              {allFollowedComplete
+                ? "Review a completed plan or choose another stage to prepare for."
+                : "Start with the recruitment stage you are preparing for."}
+            </p>
+            <Link className="button-link" href="/member/learn/paths">
+              {allFollowedComplete ? "Review plans" : "View Preparation Plans"}
+            </Link>
+          </article>
+        )}
+      </section>
+
+      <section aria-labelledby="prepare-by-stage" className="learn-section">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Structured preparation</p>
+            <h2 id="prepare-by-stage">Prepare by stage</h2>
+          </div>
+          <Link href="/member/learn/paths">View all Preparation Plans</Link>
+        </div>
+        {paths.length ? (
+          <div className="path-grid overview-path-grid">
+            {paths.map((path) => (
+              <article className="card path-card" key={path.id}>
+                <p className="eyebrow">{path.categoryName ?? "Preparation outcome"}</p>
+                <h3>{path.title}</h3>
+                <p>{path.shortDescription}</p>
+                <p>
+                  {path.sections.length} preparation areas · {path.totalCount} resources
+                </p>
+                <progress
+                  aria-label={`${path.title}: ${path.progress}% complete`}
+                  max="100"
+                  value={path.progress}
+                />
+                <p>
+                  {path.progress === 100
+                    ? "Complete"
+                    : path.completedCount > 0
+                      ? `${path.completedCount} of ${path.totalCount} complete · In progress`
+                      : "Not started"}
+                </p>
+                <Link className="button-link" href={`/member/learn/paths/${path.slug}`}>
+                  {planAction(path)}
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <article className="card empty-state">
+            <h3>Preparation Plans are not currently available</h3>
+            <p>Use the Resource Library for focused preparation material in the meantime.</p>
+          </article>
+        )}
+      </section>
+
+      <section aria-labelledby="explore-resources" className="card explore-resources">
+        <div>
+          <p className="eyebrow">Supporting material</p>
+          <h2 id="explore-resources">Explore resources</h2>
+          <p>Browse guides, exercises, checklists and videos for specific preparation needs.</p>
+        </div>
+        <Link className="button-link" href="/member/learn/resources">
+          Browse Resources
         </Link>
       </section>
-      <form className="library-filters" method="get">
-        <label>
-          Search resources
-          <input defaultValue={filters.query} maxLength={120} name="q" type="search" />
-        </label>
-        <label>
-          Category
-          <select defaultValue={filters.category ?? ""} name="category">
-            <option value="">All categories</option>
-            {taxonomy.categories.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Tag
-          <select defaultValue={filters.tag ?? ""} name="tag">
-            <option value="">All tags</option>
-            {taxonomy.tags.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Content type
-          <select defaultValue={filters.type ?? ""} name="type">
-            <option value="">All types</option>
-            {["guide", "checklist", "template", "video", "exercise", "article"].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Opportunity type
-          <select defaultValue={filters.opportunityType ?? ""} name="opportunityType">
-            <option value="">All opportunities</option>
-            {["graduate_scheme", "internship", "placement", "entry_level_role"].map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Recruitment stage
-          <select defaultValue={filters.stage ?? ""} name="stage">
-            <option value="">All stages</option>
-            {[
-              "preparing",
-              "applied",
-              "online_assessment",
-              "video_interview",
-              "interview",
-              "assessment_centre",
-              "offer",
-            ].map((v) => (
-              <option key={v}>{v.replaceAll("_", " ")}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <input defaultChecked={filters.saved} name="saved" type="checkbox" value="1" /> Saved only
-        </label>
-        <label>
-          Completion
-          <select defaultValue={filters.completed ?? ""} name="completed">
-            <option value="">Any</option>
-            <option value="complete">Completed</option>
-            <option value="incomplete">Incomplete</option>
-          </select>
-        </label>
-        <button type="submit">Apply filters</button>
-        <Link href="/member/learn">Clear filters</Link>
-      </form>
-      <p aria-live="polite" role="status">
-        {resources.length} resource{resources.length === 1 ? "" : "s"} shown
-      </p>
-      {resources.length ? (
-        <div className="resource-grid">
-          {resources.map((r) => (
-            <article className="card resource-card" key={r.id}>
-              <p className="eyebrow">
-                {r.resourceType} · {r.categoryName}
-              </p>
-              <h2>{r.title}</h2>
-              <p>{r.shortDescription}</p>
-              <p>{r.stages.join(", ")}</p>
-              <p>
-                {r.savedAt ? "Saved" : "Not saved"} · {r.completedAt ? "Completed" : "Incomplete"}
-              </p>
-              <Link className="button-link" href={`/member/learn/${r.slug}`}>
-                Open resource
-              </Link>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <section className="card empty-state">
-          <h2>No resources found</h2>
-          <p>Try removing one or more filters.</p>
-          <Link href="/member/learn">Clear filters</Link>
-        </section>
-      )}
-      {resources.length === 12 && (
-        <Link
-          href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(filters.page + 1) })}`}
-        >
-          Next page
-        </Link>
-      )}
     </main>
   );
 }

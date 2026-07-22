@@ -264,23 +264,177 @@ textarea[aria-invalid="true"] {
   max-width: 68rem;
 }
 
-.library-filters,
+.learn-nav {
+  border-bottom: 1px solid #c8d4ca;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.5rem;
+}
+
+.learn-nav a {
+  min-height: 44px;
+  padding: 0.8rem 0.5rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.learn-nav a[aria-current="page"],
+.member-nav a[aria-current="page"] {
+  border-bottom: 3px solid #17643a;
+  font-weight: 750;
+}
+
+.learn-section {
+  margin-block: 2.5rem;
+}
+
+.continue-card,
+.explore-resources,
+.section-heading {
+  align-items: center;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+}
+
+.continue-card > div:first-child {
+  flex: 1;
+}
+
+.explore-resources {
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.library-filters {
+  background: white;
+  border: 1px solid #dce4dd;
+  border-radius: 1rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+}
+
+.primary-filters,
+.secondary-filters {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.primary-filters {
+  align-items: end;
+  grid-template-columns: 2fr 1fr 1fr auto;
+}
+
+.primary-filters label,
+.secondary-filters label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.primary-filters button {
+  min-height: 44px;
+}
+
+.more-filters {
+  border-top: 1px solid #dce4dd;
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+}
+
+.more-filters summary {
+  color: #17643a;
+  cursor: pointer;
+  font-weight: 750;
+  min-height: 44px;
+  padding-top: 0.75rem;
+}
+
+.checkbox-label {
+  align-items: center;
+  display: flex !important;
+  gap: 0.65rem !important;
+  min-height: 44px;
+}
+
+.checkbox-label input {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.filter-actions,
+.active-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.active-filters span {
+  background: #e7f1e9;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+}
+
 .resource-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 1.5rem 0;
 }
-.library-filters label {
-  display: grid;
-  gap: 0.35rem;
-}
+
 .resource-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  padding: 1.25rem;
 }
-.resource-card .button-link {
+
+.resource-card h2 {
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.resource-card-meta,
+.resource-card-footer,
+.resource-card-footer > div {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.resource-card-meta span,
+.resource-status {
+  background: #edf5ee;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.resource-stage {
+  color: #506057;
+}
+
+.resource-card-footer {
   margin-top: auto;
+}
+
+.resource-card-footer .button-link,
+.resource-card-save button {
+  margin-top: 0;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 .path-grid {
   display: grid;
@@ -292,6 +446,10 @@ textarea[aria-invalid="true"] {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.overview-path-grid .path-card {
+  padding: 1.25rem;
 }
 .path-card .button-link {
   margin-top: auto;
@@ -717,7 +875,10 @@ progress {
   .applications-heading,
   .application-card,
   .member-header,
-  .member-nav {
+  .member-nav,
+  .continue-card,
+  .explore-resources,
+  .section-heading {
     align-items: stretch;
     flex-direction: column;
   }
@@ -734,6 +895,18 @@ progress {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .primary-filters,
+  .secondary-filters,
+  .resource-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learn-nav a {
+    align-content: center;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
   }
 
   .recommendation-grid {
@@ -763,5 +936,15 @@ progress {
   .form-actions .button-link {
     box-sizing: border-box;
     width: 100%;
+  }
+}
+
+@media (min-width: 40.01rem) and (max-width: 60rem) {
+  .resource-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primary-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

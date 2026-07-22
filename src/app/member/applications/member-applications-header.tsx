@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { SignOutButton } from "../../components/sign-out-button";
+import { MemberNavLinks } from "./member-nav-links";
 
 export function MemberApplicationsHeader() {
   return (
@@ -9,10 +10,7 @@ export function MemberApplicationsHeader() {
         OfferLab
       </Link>
       <nav aria-label="Member navigation" className="member-nav">
-        <Link href="/member">Home</Link>
-        <Link href="/member/applications">Applications</Link>
-        <Link href="/member/learn">Learn</Link>
-        <Link href="/member/onboarding">Profile</Link>
+        <MemberNavLinks />
         <SignOutButton />
       </nav>
     </header>

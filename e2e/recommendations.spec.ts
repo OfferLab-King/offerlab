@@ -191,18 +191,18 @@ test("member recommendations remain deterministic and stateful", async ({
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    await page.goto("/member/learn?q=video&stage=video_interview");
-    await expect(page.getByRole("heading", { name: "Learn what to do next" })).toBeVisible();
+    await page.goto("/member/learn/resources?q=video&stage=video_interview");
+    await expect(page.getByRole("heading", { name: "Resource Library" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Video interview preparation" })).toBeVisible();
-    await page.getByRole("link", { name: "Open resource" }).click();
+    await page.getByRole("link", { name: "Start" }).click();
     await expect(page.getByRole("heading", { name: "Prepare with purpose" })).toBeVisible();
     await page.getByRole("button", { name: "Save resource" }).click();
     await expect(page.getByText("Resource updated.")).toBeVisible();
     await page.getByRole("button", { name: "Mark complete" }).click();
     await expect(page.getByRole("button", { name: "Mark incomplete" })).toBeVisible();
-    await page.goto("/member/learn?saved=1&completed=complete");
+    await page.goto("/member/learn/resources?saved=1&completed=complete");
     await expect(page.getByRole("heading", { name: "Video interview preparation" })).toBeVisible();
-    await page.getByRole("link", { name: "Open resource" }).click();
+    await page.getByRole("link", { name: "Review" }).click();
     await page.getByRole("button", { name: "Mark incomplete" }).click();
     await expect(page.getByRole("button", { name: "Mark complete" })).toBeVisible();
     await page.getByRole("button", { name: "Unsave" }).click();

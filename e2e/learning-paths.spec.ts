@@ -60,15 +60,41 @@ test("administrator publishes a path and member progress follows resource comple
     await expect(page.getByRole("heading", { name: "Edit learning path" })).toBeVisible();
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Administrator CMS · published", { exact: true })).toBeVisible();
-    await page.goto("/member/learn/paths");
-    await page.getByRole("link", { name: "Continue learning" }).click();
+    await page.goto("/member/learn");
+    await expect(page.getByRole("heading", { name: "Prepare for every stage" })).toBeVisible();
+    await expect(page.getByText("Choose a Preparation Plan")).toBeVisible();
+    await page
+      .getByRole("navigation", { name: "Learn" })
+      .getByRole("link", { name: "Preparation Plans", exact: true })
+      .click();
+    await expect(page.getByRole("heading", { name: "Preparation Plans" })).toBeVisible();
+    await page
+      .locator("article.path-card")
+      .filter({ hasText: title })
+      .getByRole("link", { name: "Start" })
+      .click();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await page.getByRole("button", { name: "Start this path" }).click();
-    await page.getByRole("link", { name: "Continue learning" }).click();
+    await page.getByRole("button", { name: "Follow this plan" }).click();
+    await expect(page.getByRole("button", { name: "Stop following" })).toBeVisible();
+    await page.goto("/member/learn");
+    await expect(page.getByRole("heading", { name: "Continue preparation" })).toBeVisible();
+    await expect(page.locator("article.continue-card").getByText(title)).toBeVisible();
+    await page.getByRole("link", { name: "Continue Preparation" }).click();
     await page.getByRole("button", { name: "Mark complete" }).click();
     await expect(page.getByText("Resource updated.")).toBeVisible();
     await page.goto(`/member/learn/paths/${slug}`);
     await expect(page.getByText("1 of 1 complete · 100%")).toBeVisible();
+    await page.getByRole("link", { name: "Resources", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Resource Library" })).toBeVisible();
+    await page.getByLabel("Search resources").fill("application planning");
+    await page.getByRole("button", { name: "Apply filters", exact: true }).click();
+    await page
+      .locator("article.resource-card")
+      .filter({ hasText: "Application planning checklist" })
+      .getByRole("link", { name: "Review" })
+      .click();
+    await expect(page.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
