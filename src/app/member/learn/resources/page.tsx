@@ -40,6 +40,9 @@ export default async function ResourceLibraryPage({
     filters.saved ||
     filters.completed,
   );
+  const anyFiltersActive = Boolean(
+    filters.query || filters.stage || filters.type || secondaryFiltersActive,
+  );
   const activeFilters = [
     filters.query && `Search: ${filters.query}`,
     filters.stage && recruitmentStages[filters.stage as keyof typeof recruitmentStages],
@@ -94,7 +97,6 @@ export default async function ResourceLibraryPage({
               ))}
             </select>
           </label>
-          <button type="submit">Apply filters</button>
         </div>
         <details className="more-filters" open={secondaryFiltersActive}>
           <summary>More filters</summary>
@@ -147,8 +149,8 @@ export default async function ResourceLibraryPage({
           </div>
         </details>
         <div className="filter-actions">
-          <button type="submit">Apply all filters</button>
-          <Link href="/member/learn/resources">Reset filters</Link>
+          <button type="submit">Apply filters</button>
+          {anyFiltersActive && <Link href="/member/learn/resources">Reset filters</Link>}
         </div>
       </form>
       {activeFilters.length > 0 && (
@@ -171,7 +173,7 @@ export default async function ResourceLibraryPage({
         <section className="card empty-state">
           <h2>No matching resources</h2>
           <p>Try clearing one or more filters.</p>
-          <Link href="/member/learn/resources">Clear filters</Link>
+          {anyFiltersActive && <Link href="/member/learn/resources">Clear filters</Link>}
         </section>
       )}
       {resources.length === 12 && (

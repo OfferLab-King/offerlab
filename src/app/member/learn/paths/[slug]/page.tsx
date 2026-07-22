@@ -10,7 +10,7 @@ import { MarkdownContent } from "../../../../components/resource-content";
 import { PathFollowControls } from "../path-follow-controls";
 import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
 import { LearnNavigation } from "../../learn-navigation";
-import { resourceAction } from "../../learn-presenters";
+import { preparationAreaProgress, readyAreaCount, resourceAction } from "../../learn-presenters";
 import { resourceTypeLabel } from "../../../../../modules/taxonomy/domain/display-labels";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +41,11 @@ export default async function Page({
       </p>
       <progress aria-label={`${path.progress}% complete`} max="100" value={path.progress} />
       <p>
-        {path.completedCount} of {path.totalCount} complete · {path.progress}%
+        <strong>
+          {readyAreaCount(path)} of {path.sections.length} preparation areas ready
+        </strong>
+        <br />
+        {path.completedCount} of {path.totalCount} activities completed
       </p>
       <div className="form-actions">
         {next ? (
@@ -58,30 +62,45 @@ export default async function Page({
           <MarkdownContent markdown={path.introduction} />
         </div>
       )}
-      {path.sections.map((section, index) => (
-        <section className="path-section" key={section.id} aria-labelledby={`section-${index}`}>
-          <h2 id={`section-${index}`}>{section.heading}</h2>
-          {section.description && <p>{section.description}</p>}
-          <ol className="path-items">
-            {section.items.map((item) => (
-              <li className="card" key={item.id}>
-                <div>
-                  <p className="eyebrow">
-                    {resourceTypeLabel(item.resourceType)}
-                    {item.estimatedMinutes ? ` · ${item.estimatedMinutes} min` : ""}
-                  </p>
-                  <h3>{item.title}</h3>
-                  {item.contextNote && <p>{item.contextNote}</p>}
-                  <p>{item.completedAt ? "Completed" : "Not started"}</p>
-                </div>
-                <Link href={`/member/learn/${item.slug}?path=${path.slug}`}>
-                  {resourceAction(Boolean(item.completedAt))}
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
+      {path.sections.map((section, index) => {
+        const area = preparationAreaProgress(section);
+        return (
+          <section className="path-section" key={section.id} aria-labelledby={`section-${index}`}>
+            <div className="path-area-heading">
+              <h2 id={`section-${index}`}>{section.heading}</h2>
+              <span
+                className={`area-status area-status-${area.status.toLowerCase().replace(" ", "-")}`}
+              >
+                {area.status}
+              </span>
+            </div>
+            <p>
+              <strong>
+                {area.completedCount} of {area.totalCount} activities complete
+              </strong>
+            </p>
+            {section.description && <p>{section.description}</p>}
+            <ol className="path-items">
+              {section.items.map((item) => (
+                <li className="card" key={item.id}>
+                  <div>
+                    <p className="eyebrow">
+                      {resourceTypeLabel(item.resourceType)}
+                      {item.estimatedMinutes ? ` · ${item.estimatedMinutes} min` : ""}
+                    </p>
+                    <h3>{item.title}</h3>
+                    {item.contextNote && <p>{item.contextNote}</p>}
+                    <p>{item.completedAt ? "✓ Completed" : "○ Not started"}</p>
+                  </div>
+                  <Link href={`/member/learn/${item.slug}?path=${path.slug}`}>
+                    {resourceAction(Boolean(item.completedAt))}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        );
+      })}
     </main>
   );
 }

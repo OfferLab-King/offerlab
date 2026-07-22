@@ -5,7 +5,7 @@ import { readOnboardingProfile } from "../../../../modules/member-profile/applic
 import { readLearningPaths } from "../../../../modules/learning-paths/application/learning-paths";
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
-import { planAction } from "../learn-presenters";
+import { PreparationPlanCard } from "../preparation-plan-card";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -28,7 +28,7 @@ export default async function Page({
           <p className="eyebrow">Guided preparation</p>
           <h1>Preparation Plans</h1>
           <p className="intro">
-            Follow a complete preparation structure for the stage you are facing. The order is
+            Choose a complete preparation structure for the stage you are facing. The order is
             recommended, not locked.
           </p>
         </div>
@@ -48,49 +48,28 @@ export default async function Page({
           <button type="submit">Filter</button>
         </form>
       )}
-      <p aria-live="polite" role="status">
-        {paths.length} Preparation Plan{paths.length === 1 ? "" : "s"}
-      </p>
-      {paths.length ? (
-        <div className="path-grid">
-          {paths.map((path) => {
-            const status =
-              path.progress === 100
-                ? "Complete"
-                : path.completedCount
-                  ? "In progress"
-                  : "Not started";
-            return (
-              <article className="card path-card" key={path.id}>
-                <p className="eyebrow">{path.categoryName ?? "Preparation outcome"}</p>
-                <h2>{path.title}</h2>
-                <p>{path.shortDescription}</p>
-                <p>
-                  {path.sections.length} preparation areas · {path.totalCount} resources ·{" "}
-                  {path.estimatedMinutes || "Flexible"}{" "}
-                  {path.estimatedMinutes ? "minutes" : "timing"}
-                </p>
-                <progress
-                  aria-label={`${path.title}: ${path.progress}% complete`}
-                  max="100"
-                  value={path.progress}
-                />
-                <p>
-                  {path.completedCount} of {path.totalCount} complete · {status}
-                </p>
-                <Link className="button-link" href={`/member/learn/paths/${path.slug}`}>
-                  {planAction(path)}
-                </Link>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
+      {all.length === 0 ? (
         <section className="card empty-state">
-          <h2>No Preparation Plans found</h2>
-          <p>Try another category, or browse focused resources in the Resource Library.</p>
+          <h2>Preparation Plans are not available yet.</h2>
+          <p>Browse focused resources while new plans are being prepared.</p>
+          <Link href="/member/learn/resources">Browse Resources</Link>
+        </section>
+      ) : paths.length === 0 ? (
+        <section className="card empty-state">
+          <h2>No Preparation Plans match this filter.</h2>
           <Link href="/member/learn/paths">Clear filter</Link>
         </section>
+      ) : (
+        <>
+          <p aria-live="polite" role="status">
+            {paths.length} Preparation Plan{paths.length === 1 ? "" : "s"}
+          </p>
+          <div className="path-grid">
+            {paths.map((path) => (
+              <PreparationPlanCard key={path.id} path={path} />
+            ))}
+          </div>
+        </>
       )}
     </main>
   );

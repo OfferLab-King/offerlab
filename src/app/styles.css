@@ -454,6 +454,52 @@ textarea[aria-invalid="true"] {
 .path-card .button-link {
   margin-top: auto;
 }
+.path-card-summary {
+  color: #405348;
+  font-weight: 650;
+}
+.path-coverage ul {
+  margin-block: 0.5rem;
+  padding-left: 1.25rem;
+}
+.path-coverage p {
+  margin-top: 0.25rem;
+}
+.preparation-steps {
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style-position: inside;
+  padding: 0;
+}
+.preparation-steps li {
+  background: #edf5ee;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+}
+.path-area-heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+.area-status {
+  background: #eef1ef;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  white-space: nowrap;
+}
+.area-status-ready {
+  background: #dcefe1;
+  color: #124e2e;
+}
+.area-status-in-progress {
+  background: #fff0c9;
+  color: #654b00;
+}
 progress {
   accent-color: #17643a;
   height: 1rem;
@@ -899,8 +945,14 @@ progress {
 
   .primary-filters,
   .secondary-filters,
-  .resource-grid {
+  .resource-grid,
+  .preparation-steps {
     grid-template-columns: 1fr;
+  }
+
+  .path-area-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .learn-nav a {
