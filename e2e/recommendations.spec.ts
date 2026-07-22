@@ -388,7 +388,6 @@ test("member recommendations remain deterministic and stateful", async ({
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
   } finally {
-    await page.context().clearCookies();
     if (member) await cleanUpMember(database, member.email);
     await database.end();
   }

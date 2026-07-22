@@ -1,12 +1,19 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 
-function run(command: string, arguments_: readonly string[], env = process.env): void {
+function run(command: string, arguments_: readonly string[], env = process.env): number {
   const result = spawnSync(command, arguments_, { env, stdio: "inherit" });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  return result.status ?? 1;
 }
 
-run("pnpm", ["db:start"]);
-run("pnpm", ["db:reset"]);
+function runRequired(command: string, arguments_: readonly string[], env = process.env): void {
+  const status = run(command, arguments_, env);
+  if (status !== 0) process.exit(status);
+}
+
+runRequired("pnpm", ["db:start"]);
+runRequired("pnpm", ["db:reset"]);
 
 const status = spawnSync("pnpm", ["exec", "supabase", "status", "-o", "json"], {
   encoding: "utf8",
@@ -35,7 +42,28 @@ const roleDatabaseUrl = (role: string) => {
   url.password = "postgres";
   return url.toString();
 };
-const e2ePort = process.env.E2E_PORT ?? "3000";
+async function reserveAvailablePort(): Promise<string> {
+  if (process.env.E2E_PORT) return process.env.E2E_PORT;
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Could not reserve an E2E port.");
+  const port = String(address.port);
+  await new Promise<void>((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
+  return port;
+}
+
+const e2ePort = await reserveAvailablePort();
+const e2eDistDirectory = `.next-e2e-${e2ePort}`;
+const generatedConfigurationFiles = ["next-env.d.ts", "tsconfig.json"].map((path) => ({
+  contents: readFileSync(path),
+  path,
+}));
 const environment = {
   ...process.env,
   APP_ENV: process.env.APP_ENV ?? "local",
@@ -45,13 +73,22 @@ const environment = {
   IDENTITY_SYNC_DATABASE_URL:
     process.env.IDENTITY_SYNC_DATABASE_URL ?? roleDatabaseUrl("offerlab_identity_sync_login"),
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
+  NEXT_DIST_DIR: e2eDistDirectory,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${e2ePort}`,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.PUBLISHABLE_KEY,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? local.API_URL,
   NODE_ENV: process.env.NODE_ENV ?? "development",
+  E2E_PORT: e2ePort,
   TEST_DATABASE_URL: process.env.TEST_DATABASE_URL ?? databaseUrl,
   TEST_SUPABASE_SIGNING_KEYS: process.env.TEST_SUPABASE_SIGNING_KEYS ?? testSigningKeys,
 };
 
-run("pnpm", ["exec", "playwright", "test", ...process.argv.slice(2)], environment);
+let testStatus = 1;
+try {
+  testStatus = run("pnpm", ["exec", "playwright", "test", ...process.argv.slice(2)], environment);
+} finally {
+  rmSync(e2eDistDirectory, { force: true, recursive: true });
+  for (const file of generatedConfigurationFiles) writeFileSync(file.path, file.contents);
+}
+process.exit(testStatus);

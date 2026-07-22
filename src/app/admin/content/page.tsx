@@ -22,6 +22,8 @@ export default async function Page({
         <Link href="/admin/content/new">Create resource</Link> ·{" "}
         <Link href="/admin/content/categories">Categories</Link> ·{" "}
         <Link href="/admin/content/tags">Tags</Link>
+        {" · "}
+        <Link href="/admin/content/paths">Learning paths</Link>
       </nav>
       <div className="resource-grid">
         {resources.map((r) => (
