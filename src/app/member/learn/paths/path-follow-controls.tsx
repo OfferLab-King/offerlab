@@ -1,13 +1,23 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-export function PathFollowControls({ following, pathId }: { following: boolean; pathId: string }) {
+export function PathFollowControls({
+  following,
+  pathId,
+  quiet = false,
+}: {
+  following: boolean;
+  pathId: string;
+  quiet?: boolean;
+}) {
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState("");
   const router = useRouter();
   return (
-    <div>
+    <div className={quiet ? "following-control following-control-quiet" : "following-control"}>
+      {following && <span className="following-status">Following</span>}
       <button
+        className={quiet ? "text-action" : undefined}
         disabled={pending}
         onClick={() => {
           void (async () => {
@@ -31,7 +41,7 @@ export function PathFollowControls({ following, pathId }: { following: boolean; 
         }}
         type="button"
       >
-        {pending ? "Updating…" : following ? "Stop following" : "Follow this plan"}
+        {pending ? "Updating…" : following ? "Stop following" : "Start this plan"}
       </button>
       <span aria-live="polite" className="status" role="status">
         {status}

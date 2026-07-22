@@ -1,4 +1,5 @@
 import type { TransactionSql } from "postgres";
+import { LIBRARY_PAGE_SIZE } from "../domain/resource";
 
 export type ResourceRecord = Readonly<{
   accessLevel: "public" | "member";
@@ -100,8 +101,9 @@ export async function listPublishedResources(
   database: TransactionSql,
   ownerId: string | null,
   filters: LibraryFilters,
+  limit = LIBRARY_PAGE_SIZE,
 ): Promise<readonly ResourceRecord[]> {
-  const offset = (filters.page - 1) * 12;
+  const offset = (filters.page - 1) * LIBRARY_PAGE_SIZE;
   const rows = await database<Row[]>`
     select r.id,r.resource_key,r.slug,r.title,r.short_description,r.resource_type,r.access_level,r.publication_state,
       r.markdown_body,r.estimated_minutes,r.youtube_video_id,r.version,c.name category_name,
@@ -124,7 +126,7 @@ export async function listPublishedResources(
       and (${filters.saved}=false or ms.saved_at is not null)
       and (${filters.completed ?? null}::text is null or (${filters.completed ?? null}='complete' and ms.completed_at is not null) or (${filters.completed ?? null}='incomplete' and ms.completed_at is null))
     group by r.id,c.name,ms.saved_at,ms.completed_at
-    order by r.title asc,r.id asc limit 12 offset ${offset}`;
+    order by r.title asc,r.id asc limit ${limit} offset ${offset}`;
   return rows.map(map);
 }
 

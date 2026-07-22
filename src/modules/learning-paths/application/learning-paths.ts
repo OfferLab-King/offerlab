@@ -17,6 +17,8 @@ export async function readLearningPath(ownerId: string, slug: string) {
   if (path) await captureAnalyticsEvent("learning_path_opened");
   return path;
 }
+export const readLearningPathContext = (ownerId: string, slug: string) =>
+  withApplicationUser(ownerId, (db) => findMemberPath(db, ownerId, slug));
 export const readPathsForResource = (ownerId: string, resourceId: string) =>
   withApplicationUser(ownerId, (db) => pathsForResource(db, resourceId));
 export { continueItem };

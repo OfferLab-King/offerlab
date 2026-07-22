@@ -6,8 +6,12 @@ import { readMemberResource } from "../../../../modules/preparation-resources/ap
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { ResourceStateControls } from "./resource-state-controls";
 import Link from "next/link";
-import { readPathsForResource } from "../../../../modules/learning-paths/application/learning-paths";
+import {
+  readLearningPathContext,
+  readPathsForResource,
+} from "../../../../modules/learning-paths/application/learning-paths";
 import { LearnNavigation } from "../learn-navigation";
+import { resourcePlanContext } from "../learn-presenters";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -23,17 +27,58 @@ export default async function Page({
   if (!r) notFound();
   const paths = await readPathsForResource(auth.userId, r.id);
   const fromPath = (await searchParams).path;
+  const validPath =
+    fromPath && paths.some((path) => path.slug === fromPath)
+      ? await readLearningPathContext(auth.userId, fromPath)
+      : null;
+  const context = validPath ? resourcePlanContext(validPath, r.id) : null;
+  const backToPlanHref = context ? `/member/learn/paths/${context.path.slug}` : undefined;
+  const completionHref = context?.nextActivity
+    ? `/member/learn/${context.nextActivity.slug}?path=${context.path.slug}`
+    : backToPlanHref
+      ? `${backToPlanHref}?completed=1`
+      : undefined;
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
-      <LearnNavigation active="resources" />
-      {fromPath && paths.some((path) => path.slug === fromPath) && (
-        <p>
-          <Link href={`/member/learn/paths/${fromPath}`}>← Back to Preparation Plan</Link>
-        </p>
+      <LearnNavigation active={context ? "paths" : "resources"} />
+      {context && (
+        <nav aria-label="Current Preparation Plan" className="resource-plan-context">
+          <Link href={backToPlanHref! as never}>{context.path.title}</Link>
+          <span>{context.section.heading}</span>
+          <span>
+            Activity {context.activityNumber} of {context.activityTotal}
+          </span>
+        </nav>
       )}
       <ResourceContent resource={r} />
-      <ResourceStateControls completed={!!r.completedAt} resourceId={r.id} saved={!!r.savedAt} />
+      <ResourceStateControls
+        {...(backToPlanHref ? { backToPlanHref } : {})}
+        completed={!!r.completedAt}
+        {...(completionHref ? { completionHref } : {})}
+        inPlan={Boolean(context)}
+        resourceId={r.id}
+        saved={!!r.savedAt}
+      />
+      {context && (
+        <nav aria-label="Plan activity navigation" className="activity-navigation">
+          {context.previousActivity ? (
+            <Link href={`/member/learn/${context.previousActivity.slug}?path=${context.path.slug}`}>
+              ← Previous activity
+            </Link>
+          ) : (
+            <span />
+          )}
+          <Link href={backToPlanHref! as never}>Back to plan</Link>
+          {context.nextActivity ? (
+            <Link href={`/member/learn/${context.nextActivity.slug}?path=${context.path.slug}`}>
+              Next activity →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
       {paths.length > 0 && (
         <section className="resource-content card">
           <h2>Part of these Preparation Plans</h2>

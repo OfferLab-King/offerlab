@@ -8,7 +8,12 @@ import { requireMember } from "../../../modules/identity-access/application/auth
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
 import { MemberApplicationsHeader } from "../applications/member-applications-header";
 import { LearnNavigation } from "./learn-navigation";
-import { nextPreparationArea, readyAreaCount, selectContinuePreparation } from "./learn-presenters";
+import {
+  FOUNDATION_PATH_SLUG,
+  nextPreparationArea,
+  readyAreaCount,
+  selectContinuePreparation,
+} from "./learn-presenters";
 import { PreparationPlanCard } from "./preparation-plan-card";
 
 export const runtime = "nodejs";
@@ -16,10 +21,9 @@ export const dynamic = "force-dynamic";
 
 function HowPreparationWorks() {
   const steps = [
-    ["Choose a stage", "Select the recruitment stage you are currently facing."],
-    ["Cover every preparation area", "See the complete preparation structure, not isolated tips."],
-    ["Use focused activities", "Work through guides, exercises and checklists."],
-    ["Track what is ready", "Return to see exactly what still needs attention."],
+    ["Choose", "Select a foundation or recruitment stage."],
+    ["Prepare", "Work through focused activities in any order."],
+    ["Continue", "Return to the next area that needs attention."],
   ];
   return (
     <section aria-labelledby="how-preparation-works" className="learn-section">
@@ -46,8 +50,9 @@ export default async function LearnPage() {
   const followedPaths = paths.filter((path) => path.following);
   const allFollowedComplete =
     followedPaths.length > 0 && followedPaths.every((path) => path.progress === 100);
-  const foundational = paths.find((path) => path.slug === "build-your-interview-answer-bank");
-  const stagePaths = paths.filter((path) => path.id !== foundational?.id);
+  const foundational = paths.find((path) => path.slug === FOUNDATION_PATH_SLUG);
+  const stagePaths = paths.filter((path) => path.slug !== FOUNDATION_PATH_SLUG);
+  const alternativeStagePaths = stagePaths.filter((path) => path.id !== continuedPath?.id);
 
   return (
     <main className="applications-shell learn-overview">
@@ -65,39 +70,47 @@ export default async function LearnPage() {
       </section>
 
       {continuedPath && nextResource ? (
-        <section aria-labelledby="continue-preparation" className="learn-section">
-          <p className="eyebrow">Your next step</p>
-          <h2 id="continue-preparation">Continue your preparation</h2>
+        <section
+          aria-labelledby="current-preparation"
+          className="learn-section current-preparation"
+        >
+          <p className="eyebrow">Current preparation</p>
           <article className="card continue-card">
             <div>
-              <h3>{continuedPath.title}</h3>
-              <progress
-                aria-label={`${continuedPath.title}: ${continuedPath.progress}% complete`}
-                max="100"
-                value={continuedPath.progress}
-              />
-              <p>
+              <h2 id="current-preparation">{continuedPath.title}</h2>
+              <div className="current-next">
+                {nextArea && (
+                  <p>
+                    <span>Next area</span>
+                    <strong>{nextArea.heading}</strong>
+                  </p>
+                )}
+                <p>
+                  <span>Next activity</span>
+                  <strong>{nextResource.title}</strong>
+                </p>
+              </div>
+              <p className="path-card-summary">
                 {readyAreaCount(continuedPath)} of {continuedPath.sections.length} preparation areas
                 ready · {continuedPath.completedCount} of {continuedPath.totalCount} resources
                 complete
               </p>
-              {nextArea && (
-                <p>
-                  <strong>Next area:</strong> {nextArea.heading}
-                </p>
+              {continuedPath.progress > 0 && (
+                <progress
+                  aria-label={`${continuedPath.title}: ${continuedPath.progress}% complete`}
+                  max="100"
+                  value={continuedPath.progress}
+                />
               )}
-              <p>
-                <strong>Next resource:</strong> {nextResource.title}
-              </p>
             </div>
             <div className="form-actions">
               <Link
                 className="button-link"
                 href={`/member/learn/${nextResource.slug}?path=${continuedPath.slug}`}
               >
-                Continue Preparation
+                Continue preparation
               </Link>
-              <Link href={`/member/learn/paths/${continuedPath.slug}`}>View Full Plan</Link>
+              <Link href={`/member/learn/paths/${continuedPath.slug}`}>View plan</Link>
             </div>
           </article>
         </section>
@@ -107,30 +120,24 @@ export default async function LearnPage() {
           className="learn-section card completion-card"
         >
           <p className="eyebrow">Your progress</p>
-          <h2 id="preparation-complete">Preparation complete</h2>
+          <h2 id="preparation-complete">Current preparation is ready</h2>
           <p>Review a completed plan or choose another stage to prepare for.</p>
           <div className="form-actions">
             <Link className="button-link" href={`/member/learn/paths/${followedPaths[0]!.slug}`}>
               Review a completed plan
             </Link>
-            <Link href="/member/learn/paths">Explore Other Preparation Plans</Link>
+            <Link href="/member/learn/paths">Explore other Preparation Plans</Link>
           </div>
         </section>
       ) : (
         <section aria-labelledby="start-preparation" className="learn-section">
-          <p className="eyebrow">Start your preparation</p>
+          <p className="eyebrow">Choose your focus</p>
           <h2 id="start-preparation">What are you preparing for?</h2>
           <p>
             Choose the recruitment stage you are currently facing. You will see the full preparation
             structure and what to do next.
           </p>
-          {stagePaths.length ? (
-            <div className="path-grid stage-chooser">
-              {stagePaths.map((path) => (
-                <PreparationPlanCard key={path.id} path={path} />
-              ))}
-            </div>
-          ) : (
+          {!stagePaths.length && (
             <article className="card empty-state">
               <h3>Preparation Plans are not available yet.</h3>
               <p>Browse focused resources while new plans are being prepared.</p>
@@ -139,31 +146,29 @@ export default async function LearnPage() {
         </section>
       )}
 
-      {continuedPath && (
-        <section aria-labelledby="other-plans" className="learn-section">
+      {alternativeStagePaths.length > 0 && (
+        <section aria-labelledby="stage-plans" className="learn-section grouped-plans">
           <div className="section-heading">
-            <h2 id="other-plans">Other Preparation Plans</h2>
+            <div>
+              <p className="eyebrow">Recruitment-stage plans</p>
+              <h2 id="stage-plans">Prepare by recruitment stage</h2>
+            </div>
             <Link href="/member/learn/paths">View all plans</Link>
           </div>
           <div className="path-grid overview-path-grid">
-            {paths
-              .filter((path) => path.id !== continuedPath.id)
-              .slice(0, 3)
-              .map((path) => (
-                <PreparationPlanCard key={path.id} path={path} />
-              ))}
+            {alternativeStagePaths.map((path) => (
+              <PreparationPlanCard key={path.id} path={path} />
+            ))}
           </div>
         </section>
       )}
 
-      <HowPreparationWorks />
-
-      {!continuedPath && foundational && (
-        <section aria-labelledby="core-interview-preparation" className="learn-section">
+      {foundational && foundational.id !== continuedPath?.id && (
+        <section aria-labelledby="interview-foundations" className="learn-section grouped-plans">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Foundational preparation</p>
-              <h2 id="core-interview-preparation">Build core interview preparation</h2>
+              <h2 id="interview-foundations">Build your interview foundations</h2>
             </div>
           </div>
           <div className="path-grid overview-path-grid">
@@ -172,14 +177,15 @@ export default async function LearnPage() {
         </section>
       )}
 
+      <HowPreparationWorks />
+
       <section aria-labelledby="explore-resources" className="card explore-resources">
         <div>
-          <p className="eyebrow">Supporting activities</p>
-          <h2 id="explore-resources">Browse supporting resources</h2>
-          <p>Use focused guides, exercises and checklists alongside your complete plan.</p>
+          <h2 id="explore-resources">Looking for something specific?</h2>
+          <p>Browse focused guides, exercises and checklists.</p>
         </div>
         <Link className="button-link" href="/member/learn/resources">
-          Browse Resources
+          Browse resources
         </Link>
       </section>
     </main>

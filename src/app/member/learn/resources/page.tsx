@@ -5,7 +5,7 @@ import { requireMember } from "../../../../modules/identity-access/application/a
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import {
   parseLibraryFilters,
-  readLibrary,
+  readLibraryPage,
   readLibraryTaxonomy,
 } from "../../../../modules/preparation-resources/application/resources";
 import { resourceTypeLabels } from "../../../../modules/preparation-resources/domain/resource";
@@ -29,10 +29,11 @@ export default async function ResourceLibraryPage({
   for (const [key, value] of Object.entries(raw))
     if (typeof value === "string") params.set(key, value);
   const filters = parseLibraryFilters(params);
-  const [resources, taxonomy] = await Promise.all([
-    readLibrary(auth.userId, filters),
+  const [libraryPage, taxonomy] = await Promise.all([
+    readLibraryPage(auth.userId, filters),
     readLibraryTaxonomy(auth.userId),
   ]);
+  const { hasNextPage, resources } = libraryPage;
   const secondaryFiltersActive = Boolean(
     filters.category ||
     filters.tag ||
@@ -176,13 +177,27 @@ export default async function ResourceLibraryPage({
           {anyFiltersActive && <Link href="/member/learn/resources">Clear filters</Link>}
         </section>
       )}
-      {resources.length === 12 && (
-        <Link
-          href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(filters.page + 1) })}`}
-        >
-          Next page
-        </Link>
-      )}
+      <nav aria-label="Resource pages" className="pagination">
+        {filters.page > 1 ? (
+          <Link
+            href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(filters.page - 1) })}`}
+          >
+            Previous
+          </Link>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        <span aria-current="page">Page {filters.page}</span>
+        {hasNextPage ? (
+          <Link
+            href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(filters.page + 1) })}`}
+          >
+            Next
+          </Link>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+      </nav>
     </main>
   );
 }

@@ -25,6 +25,27 @@ export function planAction(path: Pick<MemberPath, "completedCount" | "progress">
   return path.completedCount > 0 ? ("Continue" as const) : ("Start" as const);
 }
 
+export const FOUNDATION_PATH_SLUG = "build-your-interview-answer-bank";
+
+export function planKind(path: Pick<MemberPath, "slug">): "foundation" | "stage" {
+  return path.slug === FOUNDATION_PATH_SLUG ? "foundation" : "stage";
+}
+
+export function planLabel(path: Pick<MemberPath, "categoryName" | "slug">) {
+  return planKind(path) === "foundation"
+    ? "Interview foundation"
+    : (path.categoryName ?? "Recruitment stage");
+}
+
+export function planStatus(path: Pick<MemberPath, "completedCount" | "progress">) {
+  if (path.progress === 100) return "Ready" as const;
+  return path.completedCount > 0 ? ("In progress" as const) : ("Not started" as const);
+}
+
+export function showPlanProgress(path: Pick<MemberPath, "completedCount" | "progress">) {
+  return planStatus(path) === "In progress";
+}
+
 export type PreparationAreaStatus = "Not started" | "In progress" | "Ready";
 
 export function preparationAreaProgress(section: PathSection) {
@@ -44,6 +65,38 @@ export function nextPreparationArea(path: Pick<MemberPath, "sections">) {
   return (
     path.sections.find((section) => preparationAreaProgress(section).status !== "Ready") ?? null
   );
+}
+
+export function nextPreparationActivity(path: Pick<MemberPath, "sections">) {
+  return (
+    path.sections.flatMap((section) => section.items).find((item) => !item.completedAt) ?? null
+  );
+}
+
+export function activityAfter(path: Pick<MemberPath, "sections">, resourceId: string) {
+  const items = path.sections.flatMap((section) => section.items);
+  const currentIndex = items.findIndex((item) => item.resourceId === resourceId);
+  if (currentIndex < 0) return null;
+  return items.slice(currentIndex + 1).find((item) => !item.completedAt) ?? null;
+}
+
+export function resourcePlanContext(path: MemberPath, resourceId: string) {
+  const pathItems = path.sections.flatMap((candidate) => candidate.items);
+  const pathItemIndex = pathItems.findIndex((item) => item.resourceId === resourceId);
+  for (const [sectionIndex, section] of path.sections.entries()) {
+    const activityIndex = section.items.findIndex((item) => item.resourceId === resourceId);
+    if (activityIndex >= 0)
+      return {
+        activityNumber: activityIndex + 1,
+        activityTotal: section.items.length,
+        nextActivity: activityAfter(path, resourceId),
+        path,
+        previousActivity: pathItemIndex > 0 ? pathItems[pathItemIndex - 1]! : null,
+        section,
+        sectionIndex,
+      } as const;
+  }
+  return null;
 }
 
 export function preparationAreaPreview(path: Pick<MemberPath, "sections">, limit = 4) {

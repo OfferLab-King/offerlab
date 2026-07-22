@@ -6,6 +6,7 @@ import { readLearningPaths } from "../../../../modules/learning-paths/applicatio
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 import { PreparationPlanCard } from "../preparation-plan-card";
+import { planKind } from "../learn-presenters";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -19,6 +20,8 @@ export default async function Page({
   const all = await readLearningPaths(auth.userId);
   const paths = category ? all.filter((path) => path.categoryName === category) : all;
   const categories = [...new Set(all.map((path) => path.categoryName).filter(Boolean))] as string[];
+  const foundations = paths.filter((path) => planKind(path) === "foundation");
+  const stagePaths = paths.filter((path) => planKind(path) === "stage");
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
@@ -64,11 +67,30 @@ export default async function Page({
           <p aria-live="polite" role="status">
             {paths.length} Preparation Plan{paths.length === 1 ? "" : "s"}
           </p>
-          <div className="path-grid">
-            {paths.map((path) => (
-              <PreparationPlanCard key={path.id} path={path} />
-            ))}
-          </div>
+          {foundations.length > 0 && (
+            <section aria-labelledby="catalogue-foundations" className="catalogue-group">
+              <p className="eyebrow">Foundational preparation</p>
+              <h2 id="catalogue-foundations">Interview foundations</h2>
+              <p>Build reusable preparation that supports more than one recruitment stage.</p>
+              <div className="path-grid catalogue-grid">
+                {foundations.map((path) => (
+                  <PreparationPlanCard key={path.id} path={path} />
+                ))}
+              </div>
+            </section>
+          )}
+          {stagePaths.length > 0 && (
+            <section aria-labelledby="catalogue-stages" className="catalogue-group">
+              <p className="eyebrow">Stage-based preparation</p>
+              <h2 id="catalogue-stages">Recruitment stages</h2>
+              <p>Choose the plan for the next stage in your application process.</p>
+              <div className="path-grid catalogue-grid">
+                {stagePaths.map((path) => (
+                  <PreparationPlanCard key={path.id} path={path} />
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </main>

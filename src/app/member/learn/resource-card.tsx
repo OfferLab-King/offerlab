@@ -15,7 +15,9 @@ export function ResourceCard({ resource }: { resource: ResourceRecord }) {
         <span>{resourceTypeLabel(resource.resourceType)}</span>
         <span>{resource.categoryName}</span>
       </div>
-      <h2>{resource.title}</h2>
+      <h2>
+        <Link href={`/member/learn/${resource.slug}`}>{resource.title}</Link>
+      </h2>
       <p>{resource.shortDescription}</p>
       {resource.stages.length > 0 && (
         <p className="resource-stage">{resource.stages.map(recruitmentStageLabel).join(", ")}</p>

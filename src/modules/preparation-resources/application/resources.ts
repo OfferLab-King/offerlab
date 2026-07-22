@@ -5,6 +5,7 @@ import {
   withApplicationUser,
 } from "../../../infrastructure/database/runtime-connections";
 import { normalizeSearch, resourceTypes, SEARCH_QUERY_LIMIT } from "../domain/resource";
+import { LIBRARY_PAGE_SIZE } from "../domain/resource";
 import {
   findPublishedResource,
   listLibraryTaxonomy,
@@ -56,6 +57,15 @@ export function parseLibraryFilters(params: URLSearchParams): LibraryFilters {
 }
 export const readLibrary = (ownerId: string, filters: LibraryFilters) =>
   withApplicationUser(ownerId, (db) => listPublishedResources(db, ownerId, filters));
+export const readLibraryPage = async (ownerId: string, filters: LibraryFilters) => {
+  const resources = await withApplicationUser(ownerId, (db) =>
+    listPublishedResources(db, ownerId, filters, LIBRARY_PAGE_SIZE + 1),
+  );
+  return {
+    hasNextPage: resources.length > LIBRARY_PAGE_SIZE,
+    resources: resources.slice(0, LIBRARY_PAGE_SIZE),
+  } as const;
+};
 export const readMemberResource = (ownerId: string, slug: string) =>
   withApplicationUser(ownerId, (db) => findPublishedResource(db, slug, ownerId));
 export const readLibraryTaxonomy = (ownerId: string) =>

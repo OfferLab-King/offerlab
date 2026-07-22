@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 import type { MemberPath } from "../../../modules/learning-paths/infrastructure/learning-path-repository";
 import {
+  activityAfter,
   estimatedDuration,
   learnDestination,
   nextPreparationArea,
+  planKind,
+  planStatus,
   preparationAreaPreview,
   preparationAreaProgress,
   readyAreaCount,
   resourceAction,
+  resourcePlanContext,
   selectContinuePreparation,
+  showPlanProgress,
 } from "./learn-presenters";
 
 function path(overrides: Partial<MemberPath>): MemberPath {
@@ -43,6 +48,23 @@ describe("Learn presentation", () => {
   it("uses context-sensitive resource actions", () => {
     expect(resourceAction(false)).toBe("Start");
     expect(resourceAction(true)).toBe("Review");
+  });
+
+  it("separates the interview foundation from recruitment-stage plans", () => {
+    expect(planKind(path({ slug: "build-your-interview-answer-bank" }))).toBe("foundation");
+    expect(planKind(path({ slug: "assessment-centre-preparation" }))).toBe("stage");
+  });
+
+  it("presents untouched, active, and ready plan states without empty progress", () => {
+    const untouched = path({ completedCount: 0, progress: 0 });
+    const active = path({ completedCount: 2, progress: 40 });
+    const ready = path({ completedCount: 5, progress: 100 });
+    expect(planStatus(untouched)).toBe("Not started");
+    expect(showPlanProgress(untouched)).toBe(false);
+    expect(planStatus(active)).toBe("In progress");
+    expect(showPlanProgress(active)).toBe(true);
+    expect(planStatus(ready)).toBe("Ready");
+    expect(showPlanProgress(ready)).toBe(false);
   });
 
   it("identifies the active Learn destination", () => {
@@ -104,5 +126,38 @@ describe("Learn presentation", () => {
     });
     expect(estimatedDuration(91)).toBe("About 95 min");
     expect(estimatedDuration(0)).toBe("Flexible timing");
+  });
+
+  it("builds plan context and selects the next ordered incomplete activity", () => {
+    const item = (slug: string, completedAt: Date | null = null) => ({
+      completedAt,
+      contextNote: "",
+      estimatedMinutes: 10,
+      id: crypto.randomUUID(),
+      resourceId: crypto.randomUUID(),
+      resourceType: "guide",
+      slug,
+      title: slug,
+    });
+    const first = item("first");
+    const second = item("second");
+    const third = item("third", new Date());
+    const fourth = item("fourth");
+    const memberPath = path({
+      sections: [
+        { id: "area-one", heading: "First area", description: "", items: [first, second] },
+        { id: "area-two", heading: "Second area", description: "", items: [third, fourth] },
+      ],
+    });
+    expect(activityAfter(memberPath, first.resourceId)?.slug).toBe("second");
+    expect(activityAfter(memberPath, second.resourceId)?.slug).toBe("fourth");
+    expect(resourcePlanContext(memberPath, second.resourceId)).toMatchObject({
+      activityNumber: 2,
+      activityTotal: 2,
+      previousActivity: { slug: "first" },
+      nextActivity: { slug: "fourth" },
+      section: { heading: "First area" },
+    });
+    expect(resourcePlanContext(memberPath, crypto.randomUUID())).toBeNull();
   });
 });
