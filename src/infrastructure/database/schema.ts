@@ -231,3 +231,62 @@ export const authRateLimits = appSchema.table(
     primaryKey({ columns: [table.action, table.keyHash] }),
   ],
 );
+
+export const learningPaths = appSchema.table("learning_path", {
+  archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  firstPublishedAt: timestamp("first_published_at", { mode: "date", withTimezone: true }),
+  id: uuid("id").defaultRandom().primaryKey(),
+  introduction: text("introduction").default("").notNull(),
+  pathKey: text("path_key").notNull().unique(),
+  primaryCategoryId: uuid("primary_category_id"),
+  publicationState: text("publication_state").default("draft").notNull(),
+  publishedAt: timestamp("published_at", { mode: "date", withTimezone: true }),
+  shortDescription: text("short_description").default("").notNull(),
+  slug: text("slug").notNull().unique(),
+  structureFingerprint: text("structure_fingerprint").default("").notNull(),
+  title: text("title").default("").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export const learningPathSections = appSchema.table("learning_path_section", {
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  learningPathId: uuid("learning_path_id")
+    .notNull()
+    .references(() => learningPaths.id, { onDelete: "cascade" }),
+  heading: text("heading").notNull(),
+  position: integer("position").notNull(),
+  shortDescription: text("short_description").default("").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const learningPathItems = appSchema.table("learning_path_item", {
+  contextNote: text("context_note").default("").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  learningPathId: uuid("learning_path_id")
+    .notNull()
+    .references(() => learningPaths.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+  preparationResourceId: uuid("preparation_resource_id").notNull(),
+  sectionId: uuid("section_id")
+    .notNull()
+    .references(() => learningPathSections.id, { onDelete: "cascade" }),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const memberLearningPathStates = appSchema.table("member_learning_path_state", {
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  learningPathId: uuid("learning_path_id")
+    .notNull()
+    .references(() => learningPaths.id, { onDelete: "restrict" }),
+  ownerUserId: uuid("owner_user_id")
+    .notNull()
+    .references(() => appUsers.id, { onDelete: "restrict" }),
+  startedAt: timestamp("started_at", { mode: "date", withTimezone: true }),
+  stoppedAt: timestamp("stopped_at", { mode: "date", withTimezone: true }),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});

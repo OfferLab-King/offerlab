@@ -4,6 +4,31 @@ import remarkGfm from "remark-gfm";
 import type { ResourceRecord } from "../../modules/preparation-resources/infrastructure/resource-repository";
 import { isSafeMarkdownHref } from "../../modules/preparation-resources/domain/resource";
 
+export function MarkdownContent({ markdown }: { markdown: string }) {
+  return (
+    <div className="markdown">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        skipHtml
+        components={{
+          a: ({ href, ...props }) => {
+            const safe = href && isSafeMarkdownHref(href);
+            if (!safe) return <span>{props.children}</span>;
+            return href.startsWith("/") ? (
+              <Link href={href as never}>{props.children}</Link>
+            ) : (
+              <a {...props} href={href} rel="noopener noreferrer" target="_blank" />
+            );
+          },
+          img: ({ alt }) => <span>{alt ?? "Image omitted"}</span>,
+        }}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 export function ResourceContent({ resource }: { resource: ResourceRecord }) {
   return (
     <article className="resource-content">
@@ -24,26 +49,7 @@ export function ResourceContent({ resource }: { resource: ResourceRecord }) {
           />
         </div>
       )}
-      <div className="markdown">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          skipHtml
-          components={{
-            a: ({ href, ...props }) => {
-              const safe = href && isSafeMarkdownHref(href);
-              if (!safe) return <span>{props.children}</span>;
-              return href.startsWith("/") ? (
-                <Link href={href as never}>{props.children}</Link>
-              ) : (
-                <a {...props} href={href} rel="noopener noreferrer" target="_blank" />
-              );
-            },
-            img: ({ alt }) => <span>{alt ?? "Image omitted"}</span>,
-          }}
-        >
-          {resource.markdownBody}
-        </ReactMarkdown>
-      </div>
+      <MarkdownContent markdown={resource.markdownBody} />
       {resource.links.length > 0 && (
         <section>
           <h2>Links and downloads</h2>

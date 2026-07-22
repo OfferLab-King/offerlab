@@ -12,6 +12,7 @@ import {
   mutateMemberResourceState,
   type LibraryFilters,
 } from "../infrastructure/resource-repository";
+import { detectNewPathCompletions } from "../../learning-paths/application/learning-paths";
 
 const stages = new Set([
   "preparing",
@@ -66,13 +67,22 @@ export async function changeResourceState(
   resourceId: string,
   action: "save" | "unsave" | "complete" | "incomplete",
 ) {
-  const result = await withApplicationUser(ownerId, async (db) => {
+  const mutation = await withApplicationUser(ownerId, async (db) => {
     const found = await db<
       { id: string }[]
     >`select id from app.preparation_resource where id=${resourceId}::uuid and publication_state='published'`;
     if (!found[0]) return { outcome: "not_found" } as const;
-    return mutateMemberResourceState(db, ownerId, resourceId, action);
+    if (action !== "complete")
+      return {
+        newlyCompletedPathCount: 0,
+        result: await mutateMemberResourceState(db, ownerId, resourceId, action),
+      } as const;
+    return detectNewPathCompletions(db, ownerId, resourceId, () =>
+      mutateMemberResourceState(db, ownerId, resourceId, action),
+    );
   });
+  if (!("result" in mutation)) return mutation;
+  const result = mutation.result;
   const analytics = {
     saved: "resource_saved",
     unsaved: "resource_unsaved",
@@ -81,5 +91,8 @@ export async function changeResourceState(
   } as const;
   if (result.outcome in analytics)
     await captureAnalyticsEvent(analytics[result.outcome as keyof typeof analytics]);
+  if (result.outcome === "completed")
+    for (let index = 0; index < mutation.newlyCompletedPathCount; index += 1)
+      await captureAnalyticsEvent("learning_path_completed");
   return result;
 }

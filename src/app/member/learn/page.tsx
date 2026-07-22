@@ -34,6 +34,9 @@ export default async function LearnPage({
           <h1>Learn what to do next</h1>
           <p className="intro">Focused OfferLab guidance for each stage of your applications.</p>
         </div>
+        <Link className="button-link" href="/member/learn/paths">
+          Learning paths
+        </Link>
       </section>
       <form className="library-filters" method="get">
         <label>

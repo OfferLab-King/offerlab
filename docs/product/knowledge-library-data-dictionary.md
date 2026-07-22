@@ -48,4 +48,4 @@ Public, member and administrator pages are dynamic. Member state and previews ar
 
 Unit coverage exercises normalization, strict inputs, rendered Markdown and hostile URL schemes. Production-equivalent PostgreSQL integration coverage exercises draft/publish/no-op/conflict behavior, transactional audit counts, taxonomy archive safety, forced RLS, least-privilege roles and two-owner state isolation. Recommendation regression coverage verifies persisted target availability and resource-state independence. Browser coverage owns completed-member, anonymous-public and administrator journeys at desktop and mobile widths. Starter coaching bodies remain synthetic editorial fixtures and are not founder-approved production copy.
 
-Learning paths, learning-path progress and annotated coaching cases require future models and decisions. They may reference canonical resources but must not overload resource completion.
+Learning paths reference canonical resources and derive progress from this same completion state; see [Learning paths data dictionary](learning-paths-data-dictionary.md). Annotated coaching cases remain deferred.
