@@ -24,6 +24,7 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    ".next-e2e-*/**",
     "coverage/**",
     "playwright-report/**",
     "src/infrastructure/database/generated.types.ts",

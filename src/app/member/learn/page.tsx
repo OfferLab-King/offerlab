@@ -37,8 +37,8 @@ export default async function LearnPage() {
           <p className="eyebrow">Prepare</p>
           <h1>Preparation Hub</h1>
           <p className="intro">
-            Choose what you are preparing for, cover every important area, and return to the exact
-            next step.
+            Open the tool that helps today: build evidence, answer a question, follow a plan or find
+            a focused resource.
           </p>
         </div>
       </section>
@@ -146,14 +146,47 @@ export default async function LearnPage() {
         </Link>
       </section>
 
-      <section aria-labelledby="explore-resources" className="card explore-resources">
-        <div>
-          <h2 id="explore-resources">Looking for something specific?</h2>
-          <p>Browse focused guides, exercises and checklists.</p>
+      <section aria-labelledby="explore-directly" className="learn-section">
+        <p className="eyebrow">Explore directly</p>
+        <h2 id="explore-directly">Find the preparation you need</h2>
+        <div className="direct-tool-grid">
+          <article className="card compact-card direct-tool-card">
+            <h3>Core Interview Questions</h3>
+            <p>Browse curated questions by family, recruitment stage and preparation status.</p>
+            <Link className="button-link" href="/member/learn/answer-bank/questions">
+              Browse questions
+            </Link>
+          </article>
+          <article className="card compact-card direct-tool-card">
+            <h3>Resource Library</h3>
+            <p>Find focused guides, exercises and checklists without following a plan.</p>
+            <Link className="button-link" href="/member/learn/resources">
+              Browse resources
+            </Link>
+          </article>
         </div>
-        <Link className="button-link" href="/member/learn/resources">
-          Browse resources
-        </Link>
+      </section>
+
+      <section aria-labelledby="coming-to-offerlab" className="learn-section upcoming-experiences">
+        <p className="eyebrow">Practise and get feedback</p>
+        <h2 id="coming-to-offerlab">Coming to OfferLab</h2>
+        <div className="upcoming-grid">
+          <article>
+            <span className="availability-label">In development</span>
+            <h3>AI Answer Coach</h3>
+            <p>Evidence-grounded feedback using your linked stories and OfferLab’s rubric.</p>
+          </article>
+          <article>
+            <span className="availability-label">Pilot planned</span>
+            <h3>Group Mock</h3>
+            <p>Structured group-exercise practice with peer or facilitator feedback.</p>
+          </article>
+          <article>
+            <span className="availability-label">Pilot planned</span>
+            <h3>Recruitment intelligence</h3>
+            <p>Moderated, cycle-dated candidate reports by stage, format and assessed skill.</p>
+          </article>
+        </div>
       </section>
     </main>
   );

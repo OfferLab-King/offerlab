@@ -142,6 +142,15 @@ test("administrator publishes a path and member progress follows resource comple
     await page.goto("/member/learn");
     await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "What are you preparing for?" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Find the preparation you need" }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Browse questions" })).toHaveAttribute(
+      "href",
+      "/member/learn/answer-bank/questions",
+    );
+    await expect(page.getByRole("heading", { name: "Coming to OfferLab" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI Answer Coach" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(
