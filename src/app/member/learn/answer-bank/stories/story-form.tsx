@@ -84,21 +84,44 @@ export function StoryForm({ initial }: { initial?: Story }) {
       setPending(false);
     }
   }
-  async function archive() {
+  async function changeArchive() {
     if (!initial) return;
     setPending(true);
     const response = await fetch(`/api/member/answer-bank/stories/${initial.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ archive: true, version: initial.version }),
+      body: JSON.stringify({ archive: !initial.archivedAt, version: initial.version }),
     });
-    if (response.ok) router.push("/member/learn/answer-bank/stories");
+    if (response.ok)
+      router.push(
+        initial.archivedAt
+          ? "/member/learn/answer-bank/stories"
+          : "/member/learn/answer-bank/stories?view=archived",
+      );
     else {
-      setMessage("We could not archive this story. Reload and try again.");
+      setMessage(
+        `We could not ${initial.archivedAt ? "restore" : "archive"} this story. Reload and try again.`,
+      );
       summary.current?.focus();
     }
     setPending(false);
   }
+  if (initial?.archivedAt)
+    return (
+      <section className="card archived-item" aria-labelledby="archived-story-title">
+        <span className="status-badge">Archived</span>
+        <h2 id="archived-story-title">This story is archived</h2>
+        <p>Restore it before using it as active interview preparation.</p>
+        {message && (
+          <p className="error-summary" role="alert">
+            {message}
+          </p>
+        )}
+        <button disabled={pending} type="button" onClick={() => void changeArchive()}>
+          Restore story
+        </button>
+      </section>
+    );
   const v = initial ?? empty;
   return (
     <form
@@ -203,7 +226,7 @@ export function StoryForm({ initial }: { initial?: Story }) {
               className="button-danger"
               disabled={pending}
               type="button"
-              onClick={() => void archive()}
+              onClick={() => void changeArchive()}
             >
               Archive story
             </button>

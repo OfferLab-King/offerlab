@@ -1,7 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { questionFamilies } from "../../../../../modules/answer-bank/domain/answer-bank";
+import {
+  moveOrderedItem,
+  questionFamilies,
+} from "../../../../../modules/answer-bank/domain/answer-bank";
 import { recruitmentStages } from "../../../../../modules/applications/domain/application";
 import type {
   Answer,
@@ -26,6 +29,7 @@ export function AnswerForm({
     summary = useRef<HTMLDivElement>(null);
   const selected = questions.find((q) => q.id === (initial?.questionId ?? selectedQuestion));
   const [custom, setCustom] = useState(Boolean(initial?.customQuestion));
+  const [storyIds, setStoryIds] = useState<readonly string[]>(initial?.storyIds ?? []);
   const [errors, setErrors] = useState<Record<string, string[]>>({}),
     [message, setMessage] = useState(""),
     [pending, setPending] = useState(false);
@@ -43,7 +47,7 @@ export function AnswerForm({
         draftAnswer: d.get("draftAnswer"),
         applicationId: d.get("applicationId"),
         recruitmentStage: d.get("recruitmentStage"),
-        storyIds: d.getAll("storyIds"),
+        storyIds,
         ready,
         ...(initial ? { version: initial.version } : {}),
       };
@@ -78,21 +82,44 @@ export function AnswerForm({
       setPending(false);
     }
   }
-  async function archive() {
+  async function changeArchive() {
     if (!initial) return;
     setPending(true);
     const response = await fetch(`/api/member/answer-bank/answers/${initial.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ archive: true, version: initial.version }),
+      body: JSON.stringify({ archive: !initial.archivedAt, version: initial.version }),
     });
-    if (response.ok) router.push("/member/learn/answer-bank/answers");
+    if (response.ok)
+      router.push(
+        initial.archivedAt
+          ? "/member/learn/answer-bank/answers"
+          : "/member/learn/answer-bank/answers?view=archived",
+      );
     else {
-      setMessage("We could not archive this answer. Reload and try again.");
+      setMessage(
+        `We could not ${initial.archivedAt ? "restore" : "archive"} this answer. Reload and try again.`,
+      );
       summary.current?.focus();
     }
     setPending(false);
   }
+  if (initial?.archivedAt)
+    return (
+      <section className="card archived-item" aria-labelledby="archived-answer-title">
+        <span className="status-badge">Archived</span>
+        <h2 id="archived-answer-title">This answer is archived</h2>
+        <p>Restore it before using it as active interview preparation.</p>
+        {message && (
+          <p className="error-summary" role="alert">
+            {message}
+          </p>
+        )}
+        <button disabled={pending} type="button" onClick={() => void changeArchive()}>
+          Restore answer
+        </button>
+      </section>
+    );
   return (
     <form
       className="card guided-form"
@@ -233,13 +260,54 @@ export function AnswerForm({
                   type="checkbox"
                   name="storyIds"
                   value={s.id}
-                  defaultChecked={initial?.storyIds.includes(s.id)}
+                  checked={storyIds.includes(s.id)}
+                  onChange={(event) =>
+                    setStoryIds((current) =>
+                      event.target.checked
+                        ? [...current, s.id]
+                        : current.filter((id) => id !== s.id),
+                    )
+                  }
                 />
                 {s.title} — {s.ready ? "Ready" : "Draft"}
               </label>
             ))}
           </div>
         </fieldset>
+        {storyIds.length > 0 && (
+          <ol className="linked-story-order" aria-label="Linked story order">
+            {storyIds.map((id, index) => {
+              const linked = stories.find((story) => story.id === id);
+              return (
+                <li key={id}>
+                  <span>{linked?.title ?? "Archived story"}</span>
+                  <div className="order-controls">
+                    <button
+                      aria-label={`Move ${linked?.title ?? "archived story"} up`}
+                      disabled={index === 0}
+                      onClick={() =>
+                        setStoryIds((current) => moveOrderedItem(current, index, "up"))
+                      }
+                      type="button"
+                    >
+                      Move up
+                    </button>
+                    <button
+                      aria-label={`Move ${linked?.title ?? "archived story"} down`}
+                      disabled={index === storyIds.length - 1}
+                      onClick={() =>
+                        setStoryIds((current) => moveOrderedItem(current, index, "down"))
+                      }
+                      type="button"
+                    >
+                      Move down
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </section>
       <section>
         <h2>Readiness</h2>
@@ -258,7 +326,7 @@ export function AnswerForm({
               className="button-danger"
               disabled={pending}
               type="button"
-              onClick={() => void archive()}
+              onClick={() => void changeArchive()}
             >
               Archive answer
             </button>

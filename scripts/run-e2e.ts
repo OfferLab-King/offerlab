@@ -12,8 +12,12 @@ function runRequired(command: string, arguments_: readonly string[], env = proce
   if (status !== 0) process.exit(status);
 }
 
+const skipReset = process.argv.includes("--skip-reset");
+const playwrightArguments = process.argv
+  .slice(2)
+  .filter((argument) => argument !== "--skip-reset" && argument !== "--");
 runRequired("pnpm", ["db:start"]);
-runRequired("pnpm", ["db:reset"]);
+if (!skipReset) runRequired("pnpm", ["db:reset"]);
 
 const status = spawnSync("pnpm", ["exec", "supabase", "status", "-o", "json"], {
   encoding: "utf8",
@@ -86,7 +90,7 @@ const environment = {
 
 let testStatus = 1;
 try {
-  testStatus = run("pnpm", ["exec", "playwright", "test", ...process.argv.slice(2)], environment);
+  testStatus = run("pnpm", ["exec", "playwright", "test", ...playwrightArguments], environment);
 } finally {
   rmSync(e2eDistDirectory, { force: true, recursive: true });
   for (const file of generatedConfigurationFiles) writeFileSync(file.path, file.contents);

@@ -171,6 +171,32 @@ export type CoverageInput = Readonly<{
   personalIntroduction: boolean;
   covered: readonly CompetencyKey[];
 }>;
+export type QuestionFilterable = Readonly<{
+  family: QuestionFamily;
+  status: "Not started" | "Draft" | "Ready";
+  stages: readonly string[];
+}>;
+export function questionMatchesFilters(
+  question: QuestionFilterable,
+  filters: Readonly<{ family?: string; stage?: string; status?: string }>,
+): boolean {
+  return (
+    (!filters.family || question.family === filters.family) &&
+    (!filters.status || question.status === filters.status) &&
+    (!filters.stage || question.stages.length === 0 || question.stages.includes(filters.stage))
+  );
+}
+export function moveOrderedItem(
+  items: readonly string[],
+  index: number,
+  direction: "down" | "up",
+): readonly string[] {
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || index >= items.length || target < 0 || target >= items.length) return items;
+  const next = [...items];
+  [next[index], next[target]] = [next[target]!, next[index]!];
+  return next;
+}
 export function nextAction(x: CoverageInput): string {
   if (!x.personalIntroduction) return "Create your personal introduction answer.";
   if (x.readyStories === 0) return "Create and mark your first evidence story Ready.";

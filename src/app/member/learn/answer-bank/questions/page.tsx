@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { requireMember } from "../../../../../modules/identity-access/application/authorization";
 import { readQuestions } from "../../../../../modules/answer-bank/application/answer-bank";
-import { questionFamilies } from "../../../../../modules/answer-bank/domain/answer-bank";
+import {
+  questionFamilies,
+  questionMatchesFilters,
+} from "../../../../../modules/answer-bank/domain/answer-bank";
+import { recruitmentStages } from "../../../../../modules/applications/domain/application";
 import { AnswerBankShell } from "../shell";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ family?: string; status?: string }>;
+  searchParams: Promise<{ family?: string; stage?: string; status?: string }>;
 }) {
   const { userId } = await requireMember(),
     q = await readQuestions(userId),
     f = await searchParams;
-  const shown = q.filter(
-    (x) => (!f.family || x.family === f.family) && (!f.status || x.status === f.status),
-  );
+  const shown = q.filter((question) => questionMatchesFilters(question, f));
   return (
     <AnswerBankShell active="questions">
       <header className="applications-heading">
@@ -44,15 +46,41 @@ export default async function Page({
           <option>Draft</option>
           <option>Ready</option>
         </select>
+        <label htmlFor="stage">Recruitment stage</label>
+        <select id="stage" name="stage" defaultValue={f.stage ?? ""}>
+          <option value="">All stages</option>
+          {Object.entries(recruitmentStages).map(([key, label]) => (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          ))}
+        </select>
         <button type="submit">Filter</button>
+        {(f.family || f.status || f.stage) && (
+          <Link href="/member/learn/answer-bank/questions">Clear filters</Link>
+        )}
       </form>
+      {f.stage && (
+        <p className="hint">
+          Includes questions for{" "}
+          {recruitmentStages[f.stage as keyof typeof recruitmentStages] ?? "the selected stage"} and
+          questions that apply generally.
+        </p>
+      )}
       <section className="item-list">
         {shown.map((x) => (
           <article className="card compact-card" key={x.id}>
             <span className="status-badge">{x.status}</span>
             <h2>{x.prompt}</h2>
             <p>{questionFamilies[x.family]}</p>
-            {x.stages.length > 0 && <p>Relevant stages: {x.stages.join(", ")}</p>}
+            <p>
+              {x.stages.length > 0
+                ? `Relevant stages: ${x.stages
+                    .map((stage) => recruitmentStages[stage as keyof typeof recruitmentStages])
+                    .filter(Boolean)
+                    .join(", ")}`
+                : "Generally applicable"}
+            </p>
             <Link href={`/member/learn/answer-bank/answers/new?question=${x.id}`}>
               {x.status === "Not started"
                 ? "Draft answer"
@@ -62,6 +90,13 @@ export default async function Page({
             </Link>
           </article>
         ))}
+        {!shown.length && (
+          <article className="card empty-state">
+            <h2>No questions match these filters</h2>
+            <p>Clear the filters or choose another stage, family or status.</p>
+            <Link href="/member/learn/answer-bank/questions">Clear filters</Link>
+          </article>
+        )}
       </section>
     </AnswerBankShell>
   );

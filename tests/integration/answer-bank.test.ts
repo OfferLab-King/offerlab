@@ -8,6 +8,8 @@ import {
   findAnswer,
   findStory,
   listQuestions,
+  listAnswers,
+  listStories,
   updateAnswer,
   updateStory,
 } from "../../src/modules/answer-bank/infrastructure/answer-bank-repository";
@@ -72,9 +74,12 @@ describe("private Answer and Story Bank", () => {
     expect(await as(one, (db) => archiveStory(db, one, made.id, 3, true))).toMatchObject({
       item: { version: 4 },
     });
+    expect(await as(one, (db) => listStories(db, one, false))).toEqual([]);
+    expect(await as(one, (db) => listStories(db, one, true))).toHaveLength(1);
     expect(await as(one, (db) => archiveStory(db, one, made.id, 4, false))).toMatchObject({
       item: { version: 5 },
     });
+    expect(await as(one, (db) => listStories(db, one, false))).toHaveLength(1);
     const audits = await migration<
       { metadata: object }[]
     >`select metadata from app.audit_event where entity_type='member_story'`;
@@ -105,6 +110,20 @@ describe("private Answer and Story Bank", () => {
       updateAnswer(db, one, answer.id, 2, { ...answer, storyIds: [second.id, first.id] }),
     );
     expect(reordered).toMatchObject({ item: { version: 3, storyIds: [second.id, first.id] } });
+    const reloaded = await as(one, (db) => findAnswer(db, one, answer.id));
+    expect(reloaded?.storyIds).toEqual([second.id, first.id]);
+    const unchanged = await as(one, (db) =>
+      updateAnswer(db, one, answer.id, 3, { ...answer, storyIds: [second.id, first.id] }),
+    );
+    expect(unchanged).toMatchObject({
+      outcome: "unchanged",
+      item: { version: 3, updatedAt: reloaded?.updatedAt },
+    });
+    await expect(
+      as(one, (db) =>
+        updateAnswer(db, one, answer.id, 2, { ...answer, storyIds: [first.id, second.id] }),
+      ),
+    ).resolves.toEqual({ outcome: "conflict" });
     expect(await as(two, (db) => findAnswer(db, two, answer.id))).toBeNull();
     const foreignApp = (
       await migration<
@@ -126,6 +145,12 @@ describe("private Answer and Story Bank", () => {
     expect(await as(one, (db) => archiveAnswer(db, one, answer.id, 3, true))).toMatchObject({
       item: { version: 4 },
     });
+    expect(await as(one, (db) => listAnswers(db, one, false))).toEqual([]);
+    expect(await as(one, (db) => listAnswers(db, one, true))).toHaveLength(1);
+    expect(await as(one, (db) => archiveAnswer(db, one, answer.id, 4, false))).toMatchObject({
+      item: { version: 5, archivedAt: null },
+    });
+    expect(await as(one, (db) => listAnswers(db, one, false))).toHaveLength(1);
   });
   it("forces RLS and keeps identity-sync credentials away from private tables", async () => {
     const rows = await migration<

@@ -213,10 +213,14 @@ export async function findAnswer(db: TransactionSql, owner: string, id: string) 
   return r[0] ? answer(r[0]) : null;
 }
 async function setStories(db: TransactionSql, owner: string, id: string, ids: readonly string[]) {
+  const existingRows = await db<
+    { story_id: string }[]
+  >`select story_id from app.member_answer_story where owner_user_id=${owner}::uuid and answer_id=${id}::uuid`;
+  const existingIds = existingRows.map((row) => row.story_id);
   await db`delete from app.member_answer_story where owner_user_id=${owner}::uuid and answer_id=${id}::uuid`;
   for (let i = 0; i < ids.length; i++) {
     const storyId = ids[i]!;
-    await db`insert into app.member_answer_story(owner_user_id,answer_id,story_id,position) select ${owner}::uuid,${id}::uuid,${storyId}::uuid,${i + 1} where exists(select 1 from app.member_story where id=${storyId}::uuid and owner_user_id=${owner}::uuid and archived_at is null)`;
+    await db`insert into app.member_answer_story(owner_user_id,answer_id,story_id,position) select ${owner}::uuid,${id}::uuid,${storyId}::uuid,${i + 1} where exists(select 1 from app.member_story where id=${storyId}::uuid and owner_user_id=${owner}::uuid and (archived_at is null or id=any(${existingIds}::uuid[])))`;
   }
   const count = await db<
     { n: number }[]

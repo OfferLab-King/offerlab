@@ -6,9 +6,13 @@ import {
 } from "../../../../../modules/answer-bank/application/answer-bank";
 import { questionFamilies } from "../../../../../modules/answer-bank/domain/answer-bank";
 import { AnswerBankShell } from "../shell";
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const { userId } = await requireMember();
-  const [answers, stories] = await Promise.all([readAnswers(userId), readStories(userId)]);
+  const archived = (await searchParams).view === "archived";
+  const [answers, stories] = await Promise.all([
+    readAnswers(userId, archived),
+    readStories(userId),
+  ]);
   return (
     <AnswerBankShell active="answers">
       <header className="applications-heading">
@@ -18,6 +22,15 @@ export default async function Page() {
         </div>
         <Link className="button-link" href="/member/learn/answer-bank/answers/new">
           Draft an answer
+        </Link>
+        <Link
+          href={
+            archived
+              ? "/member/learn/answer-bank/answers"
+              : "/member/learn/answer-bank/answers?view=archived"
+          }
+        >
+          {archived ? "View active answers" : "View archived answers"}
         </Link>
       </header>
       {!answers.length ? (
@@ -32,7 +45,9 @@ export default async function Page() {
         <section className="item-list">
           {answers.map((a) => (
             <article className="card compact-card" key={a.id}>
-              <span className="status-badge">{a.ready ? "Ready" : "Draft"}</span>
+              <span className="status-badge">
+                {archived ? "Archived" : a.ready ? "Ready" : "Draft"}
+              </span>
               <h2>{a.question}</h2>
               <p>{questionFamilies[a.questionFamily]}</p>
               {a.applicationLabel && <p>{a.applicationLabel}</p>}
@@ -42,7 +57,7 @@ export default async function Page() {
                   .join(", ") || "No linked stories"}
               </p>
               <Link href={`/member/learn/answer-bank/answers/${a.id}`}>
-                {a.ready ? "Review" : "Continue"}
+                {archived ? "View and restore" : a.ready ? "Review" : "Continue"}
               </Link>
             </article>
           ))}

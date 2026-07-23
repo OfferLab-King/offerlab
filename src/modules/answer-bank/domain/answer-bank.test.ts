@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { nextAction, parseAnswer, parseStory } from "./answer-bank";
+import {
+  moveOrderedItem,
+  nextAction,
+  parseAnswer,
+  parseStory,
+  questionMatchesFilters,
+} from "./answer-bank";
 describe("answer bank rules", () => {
   it("validates Ready stories", () =>
     expect(
@@ -59,4 +65,33 @@ describe("answer bank rules", () => {
     expect(
       nextAction({ personalIntroduction: false, readyStories: 0, readyAnswers: 0, covered: [] }),
     ).toContain("personal introduction"));
+  it("moves linked stories and preserves boundary no-ops", () => {
+    const ids = ["one", "two", "three"];
+    expect(moveOrderedItem(ids, 1, "up")).toEqual(["two", "one", "three"]);
+    expect(moveOrderedItem(ids, 1, "down")).toEqual(["one", "three", "two"]);
+    expect(moveOrderedItem(ids, 0, "up")).toBe(ids);
+    expect(moveOrderedItem(ids, 2, "down")).toBe(ids);
+  });
+  it("combines filters while retaining generally applicable questions", () => {
+    const general = {
+      family: "personal_introduction" as const,
+      status: "Not started" as const,
+      stages: [],
+    };
+    const staged = {
+      family: "competency_and_behavioural" as const,
+      status: "Ready" as const,
+      stages: ["interview"],
+    };
+    expect(questionMatchesFilters(general, {})).toBe(true);
+    expect(questionMatchesFilters(general, { stage: "interview" })).toBe(true);
+    expect(
+      questionMatchesFilters(staged, {
+        family: "competency_and_behavioural",
+        stage: "interview",
+        status: "Ready",
+      }),
+    ).toBe(true);
+    expect(questionMatchesFilters(staged, { stage: "video_interview" })).toBe(false);
+  });
 });

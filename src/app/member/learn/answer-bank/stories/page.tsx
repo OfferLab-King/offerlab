@@ -6,9 +6,10 @@ import {
   experienceTypes,
 } from "../../../../../modules/answer-bank/domain/answer-bank";
 import { AnswerBankShell } from "../shell";
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const { userId } = await requireMember();
-  const stories = await readStories(userId);
+  const archived = (await searchParams).view === "archived";
+  const stories = await readStories(userId, archived);
   return (
     <AnswerBankShell active="stories">
       <header className="applications-heading">
@@ -19,6 +20,15 @@ export default async function Page() {
         </div>
         <Link className="button-link" href="/member/learn/answer-bank/stories/new">
           Add a story
+        </Link>
+        <Link
+          href={
+            archived
+              ? "/member/learn/answer-bank/stories"
+              : "/member/learn/answer-bank/stories?view=archived"
+          }
+        >
+          {archived ? "View active stories" : "View archived stories"}
         </Link>
       </header>
       {!stories.length ? (
@@ -36,7 +46,9 @@ export default async function Page() {
         <section className="item-list">
           {stories.map((s) => (
             <article className="card compact-card" key={s.id}>
-              <span className="status-badge">{s.ready ? "Ready" : "Draft"}</span>
+              <span className="status-badge">
+                {archived ? "Archived" : s.ready ? "Ready" : "Draft"}
+              </span>
               <h2>{s.title}</h2>
               <p>{experienceTypes[s.experienceType]}</p>
               <p>
@@ -46,7 +58,7 @@ export default async function Page() {
                 {s.answerCount} {s.answerCount === 1 ? "answer uses" : "answers use"} this story
               </p>
               <Link href={`/member/learn/answer-bank/stories/${s.id}`}>
-                {s.ready ? "Review" : "Edit"}
+                {archived ? "View and restore" : s.ready ? "Review" : "Edit"}
               </Link>
             </article>
           ))}

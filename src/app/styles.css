@@ -173,6 +173,33 @@ button:disabled {
   background: #8b2424;
 }
 
+.linked-story-order {
+  display: grid;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+}
+.linked-story-order li {
+  align-items: center;
+  border-top: 1px solid #dce4dd;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+}
+.order-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.order-controls button {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+}
+.archived-item {
+  margin-top: 1.5rem;
+}
+
 .guided-form {
   gap: 2rem;
 }
