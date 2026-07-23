@@ -20,6 +20,8 @@ The remainder of the Increment 4 brief applies where it does not conflict with t
 
 The recommendations module derives a small set of practical next actions from persisted, owner-scoped application state. The evaluation is pure for a given input and clock, contains no generative-AI call, does not scrape or enrich employer data, and does not use probabilistic scoring. Route handlers, server actions, and React components call the recommendations-module application API; they do not contain matching rules or query another module's internal persistence implementation.
 
+Recommendations are optional, concise decision support. They remain secondary to direct workspace navigation, are easy to dismiss or ignore, and do not require every page to be organised around a next recommended action.
+
 The application record is authoritative. Recommendation content is derived on demand from a code-owned catalogue. Only the member's interaction state is persisted.
 
 ## Rule inputs

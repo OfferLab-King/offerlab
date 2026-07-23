@@ -4,6 +4,10 @@
 **Date:** 2026-07-19  
 **Authority:** These decisions clarify the draft product documents and govern Vertical Slice 01 implementation.
 
+## Product experience
+
+`docs/product/experience-principles.md` is the current authoritative UX decision. OfferLab is a preparation workspace, not a course or wizard. Default to direct, compact interfaces and proportionate contextual guidance. Earlier draft requirements for guided journeys, fixed pathways, central next-action panels, progress displays or completion targets are not active unless a later scoped decision justifies them.
+
 ## Architecture
 
 Use a single Next.js App Router modular monolith with React, strict TypeScript, Node database operations, Supabase PostgreSQL/Auth, internal OfferLab UUIDs, Drizzle, explicit SQL migrations, mandatory RLS, Vercel London compute, Vitest, real PostgreSQL integration tests, and Playwright. Do not introduce generative AI.
@@ -51,6 +55,8 @@ Specificity outranks priority. Priority applies only within equal specificity. O
 6. Stable key.
 
 Group by application, deduplicate within an application, permit the same resource across different applications, return at most five per application and ten across the dashboard, exclude inactive rules/resources, and provide deterministic explanations.
+
+Recommendations remain optional and secondary to direct navigation. Their availability does not require a next-action-led page layout.
 
 ## Dates
 

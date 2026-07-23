@@ -1,5 +1,7 @@
 # OfferLab Vertical Slice 01
 
+> **Experience implementation:** Apply `experience-principles.md`. This scope does not require wizard-like sequencing, a next-action-led dashboard or progress metrics beyond those that support a concrete member decision.
+
 **Document version:** 0.1  
 **Status:** Ready for architecture review  
 **Slice name:** Stage-Based Application Guidance  

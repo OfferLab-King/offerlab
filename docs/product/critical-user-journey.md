@@ -1,6 +1,7 @@
 # OfferLab Critical User Journey
 
 **Document version:** 0.1  
+**Experience status:** Capability context only. `experience-principles.md` supersedes any implication that this sequence is mandatory or should dictate a wizard-like interface. Members may enter and use workspace areas directly.
 **Status:** Draft for architecture review  
 **Primary owner:** Founder / Product  
 **Related source of truth:** `mvp-brief.md`
@@ -323,13 +324,13 @@ The first active application is saved and appears on the dashboard.
 
 ---
 
-## Stage 8: Stage-based dashboard guidance
+## Stage 8: Optional stage-based recommendations
 
 ### User question
 
-> What should I do next?
+> Is there anything relevant to this application stage?
 
-### Dashboard sections
+### Possible supporting sections
 
 1. Active applications
 2. Upcoming deadlines
@@ -364,7 +365,7 @@ Recommend:
 
 ### Success condition
 
-The user can identify at least one relevant next action without searching manually.
+Relevant suggestions are concise and easy to ignore; applications, resources and preparation tools remain directly accessible without following them.
 
 ---
 

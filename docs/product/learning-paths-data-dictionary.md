@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Learning paths add optional guided preparation alongside free Knowledge Library exploration. Members may still search, filter, save, open and complete any accessible canonical `preparation_resource` in any order. Paths reference those records; they never copy resource titles, bodies, videos or completion state.
+Preparation Plans are optional structured checklists for members who want broader stage-specific preparation, alongside direct Knowledge Library exploration. Members may search, filter, save, open and complete any accessible canonical `preparation_resource` in any order. Plans reference those records; they never copy resource titles, bodies, videos or completion state, and they are not required navigation for Applications, Answer Bank or Resources.
 
 ## Model and lifecycle
 
@@ -12,7 +12,7 @@ Drafts may be incomplete. Publication requires complete metadata, non-empty sect
 
 ## Progress and continuation
 
-Progress is derived at read time as completed accessible resources divided by total accessible resources. The canonical `member_resource_state.completed_at` therefore counts everywhere a resource appears; saves do not count. No percentage or completed count is persisted. Continue learning selects the first incomplete resource in administrator order. All items remain unlocked, and a newly published item automatically changes current progress.
+Progress is derived at read time as completed accessible resources divided by total accessible resources. The canonical `member_resource_state.completed_at` therefore counts everywhere a resource appears; saves do not count. No percentage or completed count is persisted. Show the derived measure only where it supports a practical decision. Any continuation link is optional, specific and does not lock or prescribe order; all items remain unlocked.
 
 ## Access, privacy and telemetry
 

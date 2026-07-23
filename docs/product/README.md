@@ -1,24 +1,27 @@
 # OfferLab Product Documents
 
-> Approved clarifications for implementation are recorded in `../architecture/founder-decisions.md` and take precedence where these draft documents are ambiguous.
+> Approved clarifications are recorded in `../architecture/founder-decisions.md`. Current product and UX defaults are in `experience-principles.md`; they supersede guided-journey defaults in the earlier drafts below.
 
-This bundle contains the three product documents recommended before asking Codex to propose the technical architecture.
+This bundle contains the governing experience principles and earlier product documents retained for scope and capability context.
 
 ## Files
 
-1. `critical-user-journey.md`  
+1. `experience-principles.md`
+   Defines the current authoritative workspace-first product and UX defaults.
+
+2. `critical-user-journey.md`
    Defines the primary paid-member journey from discovery through preparation and contribution.
 
-2. `screen-map.md`  
+3. `screen-map.md`
    Defines the functional screen inventory for the OfferLab MVP.
 
-3. `vertical-slice-01.md`  
+4. `vertical-slice-01.md`
    Defines the first end-to-end engineering slice: onboarding, application tracking and rule-based recommendations.
 
-4. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
+5. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
    Record the implemented Increment 2 and Increment 3 data contracts and privacy boundaries.
 
-5. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
+6. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
    Record the deterministic recommendation and canonical preparation-resource contracts.
 
 ## Suggested repository location
@@ -33,6 +36,4 @@ offerlab/
         └── vertical-slice-01.md
 ```
 
-## Recommended next action
-
-Place these files beside the existing MVP brief, review any open decisions, and then give Codex the architecture-analysis prompt. Codex should not scaffold the repository until you have reviewed its architecture recommendation.
+Future briefs should begin with the simplest direct workflow and add guidance or aggregate dashboards only after a demonstrated need.
