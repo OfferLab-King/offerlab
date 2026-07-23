@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   date,
   foreignKey,
@@ -289,4 +290,69 @@ export const memberLearningPathStates = appSchema.table("member_learning_path_st
   startedAt: timestamp("started_at", { mode: "date", withTimezone: true }),
   stoppedAt: timestamp("stopped_at", { mode: "date", withTimezone: true }),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const competencies = appSchema.table("competency", {
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  label: text("label").notNull(),
+  position: integer("position").notNull().unique(),
+  stableKey: text("stable_key").notNull().unique(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const memberStories = appSchema.table("member_story", {
+  actions: text("actions").default("").notNull(),
+  archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  experienceType: text("experience_type").notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerUserId: uuid("owner_user_id")
+    .notNull()
+    .references(() => appUsers.id, { onDelete: "restrict" }),
+  readyAt: timestamp("ready_at", { mode: "date", withTimezone: true }),
+  reasoning: text("reasoning").default("").notNull(),
+  reflection: text("reflection").default("").notNull(),
+  relationRevision: integer("relation_revision").default(0).notNull(),
+  result: text("result").default("").notNull(),
+  situation: text("situation").default("").notNull(),
+  summary: text("summary"),
+  task: text("task").default("").notNull(),
+  title: text("title").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export const interviewQuestions = appSchema.table("interview_question", {
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  guidance: text("guidance").default("").notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  position: integer("position").notNull().unique(),
+  prompt: text("prompt").notNull(),
+  questionFamily: text("question_family").notNull(),
+  stableKey: text("stable_key").notNull().unique(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const memberAnswers = appSchema.table("member_answer", {
+  applicationId: uuid("application_id"),
+  archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  customQuestion: text("custom_question"),
+  draftAnswer: text("draft_answer").default("").notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  keyPoints: text("key_points").default("").notNull(),
+  ownerUserId: uuid("owner_user_id")
+    .notNull()
+    .references(() => appUsers.id, { onDelete: "restrict" }),
+  questionFamily: text("question_family").notNull(),
+  questionId: uuid("question_id").references(() => interviewQuestions.id, { onDelete: "restrict" }),
+  readyAt: timestamp("ready_at", { mode: "date", withTimezone: true }),
+  recruitmentStage: text("recruitment_stage"),
+  relationRevision: integer("relation_revision").default(0).notNull(),
+  title: text("title").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
 });

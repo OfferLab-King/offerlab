@@ -9,6 +9,8 @@ import { requireMember } from "../../../../modules/identity-access/application/a
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import { readApplicationRecommendations } from "../../../../modules/recommendations/application/recommendations";
 import { RecommendationList } from "../../recommendation-list";
+import { readAnswers } from "../../../../modules/answer-bank/application/answer-bank";
+import Link from "next/link";
 import { ApplicationForm } from "../application-form";
 import { MemberApplicationsHeader } from "../member-applications-header";
 
@@ -25,10 +27,14 @@ export default async function ApplicationDetailPage({ params }: Props) {
   if (!isApplicationId(applicationId)) notFound();
   const application = await readApplication(authorization.userId, applicationId);
   if (!application) notFound();
-  const recommendations = await readApplicationRecommendations(
-    authorization.userId,
-    recommendationApplicationContext(application),
-  );
+  const [recommendations, answers] = await Promise.all([
+    readApplicationRecommendations(
+      authorization.userId,
+      recommendationApplicationContext(application),
+    ),
+    readAnswers(authorization.userId),
+  ]);
+  const relatedAnswers = answers.filter((answer) => answer.applicationId === application.id);
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
@@ -60,6 +66,23 @@ export default async function ApplicationDetailPage({ params }: Props) {
           />
         )}
       </section>
+      {!application.archivedAt && (
+        <section aria-labelledby="interview-preparation-title" className="card hub-panel">
+          <div>
+            <p className="eyebrow">Interview preparation</p>
+            <h2 id="interview-preparation-title">Answer Bank</h2>
+            <p>
+              {relatedAnswers.length} related {relatedAnswers.length === 1 ? "answer" : "answers"}
+            </p>
+            {!relatedAnswers.some((answer) => answer.questionFamily === "motivation_and_fit") && (
+              <p>No motivation and fit answer is linked to this application yet.</p>
+            )}
+          </div>
+          <Link className="button-link" href="/member/learn/answer-bank/answers/new">
+            Open Answer Bank
+          </Link>
+        </section>
+      )}
       <section className="card application-form-card">
         <p className="eyebrow">
           {application.archivedAt ? "Archived application" : "Application details"}

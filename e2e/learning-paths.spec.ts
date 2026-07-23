@@ -71,11 +71,13 @@ test("administrator publishes a path and member progress follows resource comple
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Administrator CMS · published", { exact: true })).toBeVisible();
     await page.goto("/member/learn");
-    await expect(page.getByRole("heading", { name: "Prepare for every stage" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "What are you preparing for?" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.locator("article.path-card").first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Build reusable interview preparation" }),
+    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -83,7 +85,7 @@ test("administrator publishes a path and member progress follows resource comple
     ).toBe(false);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page
-      .getByRole("navigation", { name: "Learn" })
+      .getByRole("navigation", { name: "Prepare" })
       .getByRole("link", { name: "Preparation Plans", exact: true })
       .click();
     await expect(page.getByRole("heading", { name: "Preparation Plans" })).toBeVisible();
