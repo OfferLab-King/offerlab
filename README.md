@@ -94,4 +94,4 @@ Legacy invitation schema is retained but inactive; registration does not read or
 - **Staging:** separate Vercel and Supabase projects in London; synthetic data only.
 - **Production:** Vercel Node compute and Supabase Pro in London; no staging or local credentials.
 
-See `docs/architecture/founder-decisions.md`, `docs/product/experience-principles.md`, `docs/architecture/overview.md`, and `docs/operations/` before implementing product behavior.
+See `docs/architecture/founder-decisions.md`, `docs/product/product-strategy-and-roadmap.md`, `docs/product/experience-principles.md`, `docs/architecture/overview.md`, and `docs/operations/` before implementing product behavior.

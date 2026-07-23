@@ -5,6 +5,8 @@
 **Primary owner:** Founder / Product
 
 > **Current experience direction:** This draft predates `experience-principles.md`. Its scope and research context remain useful, but guided journeys, fixed pathways, central next-action UX and progress-led defaults are superseded by the approved workspace-first principles.
+>
+> **Current product priority:** `product-strategy-and-roadmap.md` supersedes this draft's MVP ordering. In particular, distinctive coaching cases, curated questions, current recruitment intelligence, manually operated Group Mock and bounded premium feedback should be validated without first building the entire course, community or marketplace vision.
 
 ---
 

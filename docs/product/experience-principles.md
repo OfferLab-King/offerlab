@@ -4,6 +4,8 @@
 **Date:** 2026-07-23
 **Authority:** Governs product, design and implementation decisions. It supersedes guided-journey defaults in earlier draft product documents.
 
+This document governs interaction design. `product-strategy-and-roadmap.md` governs what OfferLab should make prominent and build next. A workspace-first interface must still demonstrate OfferLab's distinctive coaching cases, current intelligence, practice and feedback services.
+
 ## Foundational principle
 
 OfferLab is a preparation workspace, not a course or wizard.

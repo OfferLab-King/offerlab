@@ -9,11 +9,12 @@ OfferLab is a responsive preparation workspace for UK graduate applicants. It pr
 Read these before changing behavior:
 
 1. `docs/architecture/founder-decisions.md` — approved clarifications; highest product authority for implementation.
-2. `docs/product/experience-principles.md` — binding product and UX defaults.
-3. `docs/product/vertical-slice-01.md` — binding first implementation scope.
-4. `docs/product/mvp-brief.md` — broader product direction, subject to the current experience principles.
-5. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
-6. `docs/architecture/decisions/` — accepted technical decisions.
+2. `docs/product/product-strategy-and-roadmap.md` — binding product positioning and priority.
+3. `docs/product/experience-principles.md` — binding product and UX defaults.
+4. `docs/product/vertical-slice-01.md` — binding first implementation scope.
+5. `docs/product/mvp-brief.md` — broader product direction, subject to the current strategy and experience principles.
+6. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
+7. `docs/architecture/decisions/` — accepted technical decisions.
 
 If sources conflict, do not guess. Apply the precedence above, document the conflict, and ask the founder when it materially affects behavior, privacy, security, schema, or scope.
 
@@ -105,6 +106,7 @@ The seed creates two deterministic, non-login identities for database isolation 
 - Record significant architectural changes as an ADR before relying on them.
 - Preserve stable internal keys; display labels are not identifiers.
 - Default to direct, compact interfaces. Do not add staged journeys, dashboards, targets, metrics or instructional panels without a demonstrated decision or safety need.
+- Do not mistake simplicity for generic positioning. Make the approved distinctive value visible, but validate manually operated services before building matching, marketplace or network infrastructure.
 
 ## Definition of done
 

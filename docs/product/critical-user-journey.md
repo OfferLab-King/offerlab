@@ -2,6 +2,7 @@
 
 **Document version:** 0.1  
 **Experience status:** Capability context only. `experience-principles.md` supersedes any implication that this sequence is mandatory or should dictate a wizard-like interface. Members may enter and use workspace areas directly.
+**Priority status:** `product-strategy-and-roadmap.md` governs current sequencing and validation priorities.
 **Status:** Draft for architecture review  
 **Primary owner:** Founder / Product  
 **Related source of truth:** `mvp-brief.md`
