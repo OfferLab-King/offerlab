@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   parseLibraryFilters,
   readLibrary,
+  readLibraryPage,
 } from "../../src/modules/preparation-resources/application/resources";
 import {
   LIBRARY_PAGE_SIZE,
@@ -179,6 +180,21 @@ describe("knowledge library search, filter, pagination, and availability matrix"
     await expect(
       readLibrary(ownerId, filters("category=acceptance-matrix-category&page=-1")),
     ).resolves.toEqual(first);
+  });
+
+  it("reports only valid next-page navigation", async () => {
+    const first = await readLibraryPage(
+      ownerId,
+      filters("category=acceptance-matrix-category&page=1"),
+    );
+    const final = await readLibraryPage(
+      ownerId,
+      filters("category=acceptance-matrix-category&page=3"),
+    );
+    expect(first).toMatchObject({ hasNextPage: true });
+    expect(first.resources).toHaveLength(LIBRARY_PAGE_SIZE);
+    expect(final).toMatchObject({ hasNextPage: false });
+    expect(final.resources).toHaveLength(2);
   });
 
   it("excludes draft, archived, and resources whose primary category is archived", async () => {

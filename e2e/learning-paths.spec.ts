@@ -38,17 +38,27 @@ test("administrator publishes a path and member progress follows resource comple
         { id: string }[]
       >`insert into app.learning_path(path_key,slug,title,short_description,introduction) values(${`browser_path_${suffix.replaceAll("-", "_")}`},${slug},${title},'A focused browser-tested guided path.','') returning id`
     )[0]!.id;
-    const sectionId = (
+    const firstSectionId = (
       await db<
         { id: string }[]
-      >`insert into app.learning_path_section(learning_path_id,heading,position) values(${pathId}::uuid,'Prepare',1) returning id`
+      >`insert into app.learning_path_section(learning_path_id,heading,short_description,position) values(${pathId}::uuid,'Understand the process','Start with the planning essentials.',1) returning id`
     )[0]!.id;
-    const resourceId = (
+    const secondSectionId = (
       await db<
         { id: string }[]
-      >`select id from app.preparation_resource where resource_key='application_planning_checklist'`
+      >`insert into app.learning_path_section(learning_path_id,heading,short_description,position) values(${pathId}::uuid,'Practise the activity','Apply the guidance in a focused exercise.',2) returning id`
     )[0]!.id;
-    await db`insert into app.learning_path_item(learning_path_id,section_id,preparation_resource_id,position) values(${pathId}::uuid,${sectionId}::uuid,${resourceId}::uuid,1)`;
+    const resources = await db<
+      { id: string; resource_key: string }[]
+    >`select id,resource_key from app.preparation_resource where resource_key in ('application_planning_checklist','online_test_preparation')`;
+    const firstResourceId = resources.find(
+      (resource) => resource.resource_key === "application_planning_checklist",
+    )!.id;
+    const secondResourceId = resources.find(
+      (resource) => resource.resource_key === "online_test_preparation",
+    )!.id;
+    await db`insert into app.learning_path_item(learning_path_id,section_id,preparation_resource_id,position) values(${pathId}::uuid,${firstSectionId}::uuid,${firstResourceId}::uuid,1)`;
+    await db`insert into app.learning_path_item(learning_path_id,section_id,preparation_resource_id,position) values(${pathId}::uuid,${secondSectionId}::uuid,${secondResourceId}::uuid,1)`;
     await page.goto("/sign-in");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
@@ -60,15 +70,71 @@ test("administrator publishes a path and member progress follows resource comple
     await expect(page.getByRole("heading", { name: "Edit learning path" })).toBeVisible();
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Administrator CMS · published", { exact: true })).toBeVisible();
-    await page.goto("/member/learn/paths");
-    await page.getByRole("link", { name: "Continue learning" }).click();
+    await page.goto("/member/learn");
+    await expect(page.getByRole("heading", { name: "Prepare for every stage" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What are you preparing for?" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("article.path-card").first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page
+      .getByRole("navigation", { name: "Learn" })
+      .getByRole("link", { name: "Preparation Plans", exact: true })
+      .click();
+    await expect(page.getByRole("heading", { name: "Preparation Plans" })).toBeVisible();
+    await page
+      .locator("article.path-card")
+      .filter({ hasText: title })
+      .getByRole("link", { name: "View plan" })
+      .click();
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
-    await page.getByRole("button", { name: "Start this path" }).click();
-    await page.getByRole("link", { name: "Continue learning" }).click();
-    await page.getByRole("button", { name: "Mark complete" }).click();
-    await expect(page.getByText("Resource updated.")).toBeVisible();
+    await expect(page.locator("details.plan-area-disclosure").first()).toHaveAttribute("open", "");
+    await expect(page.locator("details.plan-area-disclosure").nth(1)).not.toHaveAttribute(
+      "open",
+      "",
+    );
+    await page
+      .locator("details.plan-area-disclosure")
+      .nth(1)
+      .getByText("Practise the activity")
+      .click();
+    await expect(page.locator("details.plan-area-disclosure").nth(1)).toHaveAttribute("open", "");
+    await page.getByRole("button", { name: "Start this plan" }).click();
+    await expect(page.getByRole("button", { name: "Stop following" })).toBeVisible();
+    await page.goto("/member/learn");
+    await expect(page.getByText("Current preparation", { exact: true })).toBeVisible();
+    await expect(page.locator("article.continue-card").getByText(title)).toBeVisible();
+    await page.getByRole("link", { name: "Continue preparation" }).click();
+    await expect(page.getByRole("navigation", { name: "Current Preparation Plan" })).toContainText(
+      title,
+    );
+    await expect(page.getByText("Understand the process", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Mark complete and continue" }).click();
+    await page.waitForURL(/\/member\/learn\/online-test-preparation\?path=/);
+    await expect(page.getByText("Practise the activity", { exact: true })).toBeVisible();
     await page.goto(`/member/learn/paths/${slug}`);
-    await expect(page.getByText("1 of 1 complete · 100%")).toBeVisible();
+    await expect(page.getByText(/1 of 2 preparation areas ready/)).toBeVisible();
+    await expect(page.getByText(/1 of 2 activities complete/)).toBeVisible();
+    await page.getByRole("link", { name: "Resources", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Resource Library" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Apply filters", exact: true })).toHaveCount(1);
+    await page.getByLabel("Search resources").fill("application planning");
+    await page.getByRole("button", { name: "Apply filters", exact: true }).click();
+    await page
+      .locator("article.resource-card")
+      .filter({ hasText: "Application planning checklist" })
+      .getByRole("link", { name: "Review" })
+      .click();
+    await expect(page.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/member/learn/paths/${slug}`);
+    await expect(page.getByText("Plan overview", { exact: true })).toBeVisible();
+    await expect(page.locator(".plan-area-disclosure").first()).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );

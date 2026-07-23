@@ -2,11 +2,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 export function ResourceStateControls({
+  backToPlanHref,
   completed,
+  completionHref,
+  inPlan,
   resourceId,
   saved,
 }: {
+  backToPlanHref?: string;
   completed: boolean;
+  completionHref?: string;
+  inPlan: boolean;
   resourceId: string;
   saved: boolean;
 }) {
@@ -29,21 +35,34 @@ export function ResourceStateControls({
         : "We could not update this resource.",
     );
     setBusy(false);
-    if (response.ok) router.refresh();
+    if (response.ok && action === "complete" && completionHref)
+      router.push(completionHref as never);
+    else if (response.ok) router.refresh();
   }
   return (
-    <section className="card resource-actions" aria-label="Resource actions">
-      <button disabled={busy} onClick={() => void act(saved ? "unsave" : "save")}>
-        {saved ? "Unsave" : "Save resource"}
-      </button>
+    <section
+      className={`resource-actions${inPlan ? " resource-actions-plan" : ""}`}
+      aria-label="Resource actions"
+    >
+      {inPlan && backToPlanHref && <a href={backToPlanHref}>Back to plan</a>}
       <button
         className="button-secondary"
         disabled={busy}
+        onClick={() => void act(saved ? "unsave" : "save")}
+      >
+        {saved ? "Unsave" : "Save resource"}
+      </button>
+      <button
+        className={completed ? "button-secondary" : undefined}
+        disabled={busy}
         onClick={() => void act(completed ? "incomplete" : "complete")}
       >
-        {completed ? "Mark incomplete" : "Mark complete"}
+        {completed ? "Mark incomplete" : inPlan ? "Mark complete and continue" : "Mark complete"}
       </button>
-      <p aria-live="polite">{message}</p>
+      {completed && <strong className="resource-completed">✓ Completed</strong>}
+      <p aria-live="polite" className="resource-action-message">
+        {message}
+      </p>
     </section>
   );
 }

@@ -140,7 +140,7 @@ test("real-auth member library access, ownership, parsing, and raw-response matr
       `q=${sentinel.repeat(4)}`,
       `q=${sentinel}&category=interviews&stage=video_interview`,
     ]) {
-      const searchResponse = await page.request.get(`/member/learn?${query}`);
+      const searchResponse = await page.request.get(`/member/learn/resources?${query}`);
       expect(searchResponse.status()).toBe(200);
       expect(await searchResponse.text()).not.toContain("server exception");
     }

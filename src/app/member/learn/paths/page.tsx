@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
-import {
-  continueItem,
-  readLearningPaths,
-} from "../../../../modules/learning-paths/application/learning-paths";
+import { readLearningPaths } from "../../../../modules/learning-paths/application/learning-paths";
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
+import { LearnNavigation } from "../learn-navigation";
+import { PreparationPlanCard } from "../preparation-plan-card";
+import { planKind } from "../learn-presenters";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -20,16 +20,22 @@ export default async function Page({
   const all = await readLearningPaths(auth.userId);
   const paths = category ? all.filter((path) => path.categoryName === category) : all;
   const categories = [...new Set(all.map((path) => path.categoryName).filter(Boolean))] as string[];
+  const foundations = paths.filter((path) => planKind(path) === "foundation");
+  const stagePaths = paths.filter((path) => planKind(path) === "stage");
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
+      <LearnNavigation active="paths" />
       <section className="applications-heading">
         <div>
           <p className="eyebrow">Guided preparation</p>
-          <h1>Learning paths</h1>
-          <p className="intro">Follow a recommended sequence, or open any resource in any order.</p>
+          <h1>Preparation Plans</h1>
+          <p className="intro">
+            Choose a complete preparation structure for the stage you are facing. The order is
+            recommended, not locked.
+          </p>
         </div>
-        <Link href="/member/learn">Explore all resources</Link>
+        <Link href="/member/learn/resources">Browse Resources</Link>
       </section>
       {categories.length > 1 && (
         <form className="path-filter">
@@ -45,54 +51,47 @@ export default async function Page({
           <button type="submit">Filter</button>
         </form>
       )}
-      <p aria-live="polite" role="status">
-        {paths.length} learning path{paths.length === 1 ? "" : "s"}
-      </p>
-      {paths.length ? (
-        <div className="path-grid">
-          {paths.map((path) => {
-            const next = continueItem(path);
-            const status =
-              path.progress === 100
-                ? "Complete"
-                : path.completedCount
-                  ? "In progress"
-                  : "Not started";
-            return (
-              <article className="card path-card" key={path.id}>
-                <p className="eyebrow">{path.categoryName ?? "Learning path"}</p>
-                <h2>{path.title}</h2>
-                <p>{path.shortDescription}</p>
-                <p>
-                  {path.totalCount} resources · {path.estimatedMinutes || "Flexible"}{" "}
-                  {path.estimatedMinutes ? "minutes" : "timing"}
-                </p>
-                <progress
-                  aria-label={`${path.title}: ${path.progress}% complete`}
-                  max="100"
-                  value={path.progress}
-                />
-                <p>
-                  {path.completedCount} of {path.totalCount} complete · {status}
-                </p>
-                <Link
-                  className="button-link"
-                  href={
-                    next ? `/member/learn/paths/${path.slug}` : `/member/learn/paths/${path.slug}`
-                  }
-                >
-                  {next ? "Continue learning" : "Revisit path"}
-                </Link>
-              </article>
-            );
-          })}
-        </div>
-      ) : (
+      {all.length === 0 ? (
         <section className="card empty-state">
-          <h2>No learning paths found</h2>
-          <p>Try another category, or continue exploring the Knowledge Library.</p>
+          <h2>Preparation Plans are not available yet.</h2>
+          <p>Browse focused resources while new plans are being prepared.</p>
+          <Link href="/member/learn/resources">Browse Resources</Link>
+        </section>
+      ) : paths.length === 0 ? (
+        <section className="card empty-state">
+          <h2>No Preparation Plans match this filter.</h2>
           <Link href="/member/learn/paths">Clear filter</Link>
         </section>
+      ) : (
+        <>
+          <p aria-live="polite" role="status">
+            {paths.length} Preparation Plan{paths.length === 1 ? "" : "s"}
+          </p>
+          {foundations.length > 0 && (
+            <section aria-labelledby="catalogue-foundations" className="catalogue-group">
+              <p className="eyebrow">Foundational preparation</p>
+              <h2 id="catalogue-foundations">Interview foundations</h2>
+              <p>Build reusable preparation that supports more than one recruitment stage.</p>
+              <div className="path-grid catalogue-grid">
+                {foundations.map((path) => (
+                  <PreparationPlanCard key={path.id} path={path} />
+                ))}
+              </div>
+            </section>
+          )}
+          {stagePaths.length > 0 && (
+            <section aria-labelledby="catalogue-stages" className="catalogue-group">
+              <p className="eyebrow">Stage-based preparation</p>
+              <h2 id="catalogue-stages">Recruitment stages</h2>
+              <p>Choose the plan for the next stage in your application process.</p>
+              <div className="path-grid catalogue-grid">
+                {stagePaths.map((path) => (
+                  <PreparationPlanCard key={path.id} path={path} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
     </main>
   );

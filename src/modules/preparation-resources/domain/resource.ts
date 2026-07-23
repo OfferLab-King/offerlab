@@ -8,6 +8,14 @@ export const resourceTypes = [
   "exercise",
   "article",
 ] as const;
+export const resourceTypeLabels = {
+  guide: "Guide",
+  checklist: "Checklist",
+  template: "Template",
+  video: "Video",
+  exercise: "Exercise",
+  article: "Article",
+} as const satisfies Record<(typeof resourceTypes)[number], string>;
 export const accessLevels = ["public", "member"] as const;
 export const publicationStates = ["draft", "published", "archived"] as const;
 export const controlledLinkTypes = ["download", "external", "template_copy"] as const;

@@ -1,155 +1,193 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  continueItem,
+  readLearningPaths,
+} from "../../../modules/learning-paths/application/learning-paths";
 import { requireMember } from "../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
-import {
-  parseLibraryFilters,
-  readLibrary,
-  readLibraryTaxonomy,
-} from "../../../modules/preparation-resources/application/resources";
 import { MemberApplicationsHeader } from "../applications/member-applications-header";
+import { LearnNavigation } from "./learn-navigation";
+import {
+  FOUNDATION_PATH_SLUG,
+  nextPreparationArea,
+  readyAreaCount,
+  selectContinuePreparation,
+} from "./learn-presenters";
+import { PreparationPlanCard } from "./preparation-plan-card";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export default async function LearnPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+
+function HowPreparationWorks() {
+  const steps = [
+    ["Choose", "Select a foundation or recruitment stage."],
+    ["Prepare", "Work through focused activities in any order."],
+    ["Continue", "Return to the next area that needs attention."],
+  ];
+  return (
+    <section aria-labelledby="how-preparation-works" className="learn-section">
+      <h2 id="how-preparation-works">How preparation works</h2>
+      <ol className="preparation-steps">
+        {steps.map(([title, description]) => (
+          <li key={title}>
+            <strong>{title}</strong>
+            <span>{description}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+export default async function LearnPage() {
   const auth = await requireMember();
   if (!(await readOnboardingProfile(auth.userId))?.completedAt) redirect("/member/onboarding");
-  const raw = await searchParams;
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(raw)) if (typeof v === "string") params.set(k, v);
-  const filters = parseLibraryFilters(params);
-  const [resources, taxonomy] = await Promise.all([
-    readLibrary(auth.userId, filters),
-    readLibraryTaxonomy(auth.userId),
-  ]);
+  const paths = await readLearningPaths(auth.userId);
+  const continuedPath = selectContinuePreparation(paths);
+  const nextResource = continuedPath ? continueItem(continuedPath) : null;
+  const nextArea = continuedPath ? nextPreparationArea(continuedPath) : null;
+  const followedPaths = paths.filter((path) => path.following);
+  const allFollowedComplete =
+    followedPaths.length > 0 && followedPaths.every((path) => path.progress === 100);
+  const foundational = paths.find((path) => path.slug === FOUNDATION_PATH_SLUG);
+  const stagePaths = paths.filter((path) => path.slug !== FOUNDATION_PATH_SLUG);
+  const alternativeStagePaths = stagePaths.filter((path) => path.id !== continuedPath?.id);
+
   return (
-    <main className="applications-shell">
+    <main className="applications-shell learn-overview">
       <MemberApplicationsHeader />
+      <LearnNavigation active="overview" />
       <section className="applications-heading">
         <div>
-          <p className="eyebrow">Knowledge library</p>
-          <h1>Learn what to do next</h1>
-          <p className="intro">Focused OfferLab guidance for each stage of your applications.</p>
+          <p className="eyebrow">Learn</p>
+          <h1>Prepare for every stage</h1>
+          <p className="intro">
+            Choose what you are preparing for, cover every important area, and return to the exact
+            next step.
+          </p>
         </div>
-        <Link className="button-link" href="/member/learn/paths">
-          Learning paths
-        </Link>
       </section>
-      <form className="library-filters" method="get">
-        <label>
-          Search resources
-          <input defaultValue={filters.query} maxLength={120} name="q" type="search" />
-        </label>
-        <label>
-          Category
-          <select defaultValue={filters.category ?? ""} name="category">
-            <option value="">All categories</option>
-            {taxonomy.categories.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Tag
-          <select defaultValue={filters.tag ?? ""} name="tag">
-            <option value="">All tags</option>
-            {taxonomy.tags.map((item) => (
-              <option key={item.slug} value={item.slug}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Content type
-          <select defaultValue={filters.type ?? ""} name="type">
-            <option value="">All types</option>
-            {["guide", "checklist", "template", "video", "exercise", "article"].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Opportunity type
-          <select defaultValue={filters.opportunityType ?? ""} name="opportunityType">
-            <option value="">All opportunities</option>
-            {["graduate_scheme", "internship", "placement", "entry_level_role"].map((value) => (
-              <option key={value}>{value}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Recruitment stage
-          <select defaultValue={filters.stage ?? ""} name="stage">
-            <option value="">All stages</option>
-            {[
-              "preparing",
-              "applied",
-              "online_assessment",
-              "video_interview",
-              "interview",
-              "assessment_centre",
-              "offer",
-            ].map((v) => (
-              <option key={v}>{v.replaceAll("_", " ")}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <input defaultChecked={filters.saved} name="saved" type="checkbox" value="1" /> Saved only
-        </label>
-        <label>
-          Completion
-          <select defaultValue={filters.completed ?? ""} name="completed">
-            <option value="">Any</option>
-            <option value="complete">Completed</option>
-            <option value="incomplete">Incomplete</option>
-          </select>
-        </label>
-        <button type="submit">Apply filters</button>
-        <Link href="/member/learn">Clear filters</Link>
-      </form>
-      <p aria-live="polite" role="status">
-        {resources.length} resource{resources.length === 1 ? "" : "s"} shown
-      </p>
-      {resources.length ? (
-        <div className="resource-grid">
-          {resources.map((r) => (
-            <article className="card resource-card" key={r.id}>
-              <p className="eyebrow">
-                {r.resourceType} · {r.categoryName}
+
+      {continuedPath && nextResource ? (
+        <section
+          aria-labelledby="current-preparation"
+          className="learn-section current-preparation"
+        >
+          <p className="eyebrow">Current preparation</p>
+          <article className="card continue-card">
+            <div>
+              <h2 id="current-preparation">{continuedPath.title}</h2>
+              <div className="current-next">
+                {nextArea && (
+                  <p>
+                    <span>Next area</span>
+                    <strong>{nextArea.heading}</strong>
+                  </p>
+                )}
+                <p>
+                  <span>Next activity</span>
+                  <strong>{nextResource.title}</strong>
+                </p>
+              </div>
+              <p className="path-card-summary">
+                {readyAreaCount(continuedPath)} of {continuedPath.sections.length} preparation areas
+                ready · {continuedPath.completedCount} of {continuedPath.totalCount} resources
+                complete
               </p>
-              <h2>{r.title}</h2>
-              <p>{r.shortDescription}</p>
-              <p>{r.stages.join(", ")}</p>
-              <p>
-                {r.savedAt ? "Saved" : "Not saved"} · {r.completedAt ? "Completed" : "Incomplete"}
-              </p>
-              <Link className="button-link" href={`/member/learn/${r.slug}`}>
-                Open resource
+              {continuedPath.progress > 0 && (
+                <progress
+                  aria-label={`${continuedPath.title}: ${continuedPath.progress}% complete`}
+                  max="100"
+                  value={continuedPath.progress}
+                />
+              )}
+            </div>
+            <div className="form-actions">
+              <Link
+                className="button-link"
+                href={`/member/learn/${nextResource.slug}?path=${continuedPath.slug}`}
+              >
+                Continue preparation
               </Link>
-            </article>
-          ))}
-        </div>
+              <Link href={`/member/learn/paths/${continuedPath.slug}`}>View plan</Link>
+            </div>
+          </article>
+        </section>
+      ) : allFollowedComplete ? (
+        <section
+          aria-labelledby="preparation-complete"
+          className="learn-section card completion-card"
+        >
+          <p className="eyebrow">Your progress</p>
+          <h2 id="preparation-complete">Current preparation is ready</h2>
+          <p>Review a completed plan or choose another stage to prepare for.</p>
+          <div className="form-actions">
+            <Link className="button-link" href={`/member/learn/paths/${followedPaths[0]!.slug}`}>
+              Review a completed plan
+            </Link>
+            <Link href="/member/learn/paths">Explore other Preparation Plans</Link>
+          </div>
+        </section>
       ) : (
-        <section className="card empty-state">
-          <h2>No resources found</h2>
-          <p>Try removing one or more filters.</p>
-          <Link href="/member/learn">Clear filters</Link>
+        <section aria-labelledby="start-preparation" className="learn-section">
+          <p className="eyebrow">Choose your focus</p>
+          <h2 id="start-preparation">What are you preparing for?</h2>
+          <p>
+            Choose the recruitment stage you are currently facing. You will see the full preparation
+            structure and what to do next.
+          </p>
+          {!stagePaths.length && (
+            <article className="card empty-state">
+              <h3>Preparation Plans are not available yet.</h3>
+              <p>Browse focused resources while new plans are being prepared.</p>
+            </article>
+          )}
         </section>
       )}
-      {resources.length === 12 && (
-        <Link
-          href={`?${new URLSearchParams({ ...Object.fromEntries(params), page: String(filters.page + 1) })}`}
-        >
-          Next page
-        </Link>
+
+      {alternativeStagePaths.length > 0 && (
+        <section aria-labelledby="stage-plans" className="learn-section grouped-plans">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Recruitment-stage plans</p>
+              <h2 id="stage-plans">Prepare by recruitment stage</h2>
+            </div>
+            <Link href="/member/learn/paths">View all plans</Link>
+          </div>
+          <div className="path-grid overview-path-grid">
+            {alternativeStagePaths.map((path) => (
+              <PreparationPlanCard key={path.id} path={path} />
+            ))}
+          </div>
+        </section>
       )}
+
+      {foundational && foundational.id !== continuedPath?.id && (
+        <section aria-labelledby="interview-foundations" className="learn-section grouped-plans">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Foundational preparation</p>
+              <h2 id="interview-foundations">Build your interview foundations</h2>
+            </div>
+          </div>
+          <div className="path-grid overview-path-grid">
+            <PreparationPlanCard path={foundational} />
+          </div>
+        </section>
+      )}
+
+      <HowPreparationWorks />
+
+      <section aria-labelledby="explore-resources" className="card explore-resources">
+        <div>
+          <h2 id="explore-resources">Looking for something specific?</h2>
+          <p>Browse focused guides, exercises and checklists.</p>
+        </div>
+        <Link className="button-link" href="/member/learn/resources">
+          Browse resources
+        </Link>
+      </section>
     </main>
   );
 }
