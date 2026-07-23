@@ -69,10 +69,7 @@ async function authorizationForIdentity(authUserId: string): Promise<Authorizati
     await captureAnalyticsEvent("identity_linked");
     return linked;
   } catch (linkError) {
-    if (
-      linkError instanceof IdentityAccessError &&
-      (linkError.code === "invalid_invitation" || linkError.code === "duplicate_identity")
-    ) {
+    if (linkError instanceof IdentityAccessError && linkError.code === "duplicate_identity") {
       return null;
     }
     throw linkError;

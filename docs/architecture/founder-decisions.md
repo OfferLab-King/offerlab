@@ -33,9 +33,9 @@ Applications are archive-only in Vertical Slice 01.
 
 Display labels are never identifiers.
 
-## Authentication and beta
+## Authentication and member access
 
-Include verification and password reset. The slice is invite-only. Registration alone does not grant access; an explicit invitation or allow-list plus verified email does. Stripe remains excluded.
+Include open member registration, email verification when enabled by Supabase, and password reset. A verified registration creates one internal member identity with active member access. Registration never grants administrator privileges. Stripe remains excluded.
 
 The initial administrator is promoted by explicit command from an existing verified internal user. The command must fail safely, use no user-editable authorization metadata, refuse silent additional administrators, and create a durable audit event.
 

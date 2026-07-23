@@ -34,9 +34,6 @@ function translateIdentityError(error: unknown): never {
   if (message.includes("offerlab_duplicate_identity")) {
     throw new IdentityAccessError("duplicate_identity", "Identity is already linked.");
   }
-  if (message.includes("offerlab_invalid_invitation")) {
-    throw new IdentityAccessError("invalid_invitation", "Invitation is invalid or unavailable.");
-  }
   throw error;
 }
 
@@ -50,7 +47,7 @@ export async function linkVerifiedIdentity(
       (transaction) =>
         transaction<
           AuthorizationRow[]
-        >`select * from app.link_verified_identity(${authUserId}::uuid)`,
+        >`select * from app.link_open_member_identity(${authUserId}::uuid)`,
     );
     const row = rows[0];
     if (!row) throw new Error("Identity linkage returned no authorization state.");

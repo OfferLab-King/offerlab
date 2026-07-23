@@ -1,8 +1,7 @@
 import { createHmac, createPrivateKey, randomUUID, sign } from "node:crypto";
 import type { JsonWebKey as NodeJsonWebKey } from "node:crypto";
 
-import { createClient } from "@supabase/supabase-js";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import postgres, { type Sql } from "postgres";
 
 import { createInvitation } from "../src/modules/identity-access/infrastructure/invitations";
@@ -35,6 +34,17 @@ async function cleanUpEndpointMembers(database: Sql, emails: readonly string[]) 
     await database`delete from app."user" where id = any(${userIds}::uuid[])`;
   }
   await database`delete from auth.users where email = any(${emails}::text[])`;
+}
+
+async function signOutAndVerify(page: Page) {
+  await Promise.all([
+    page.waitForURL(/\/sign-in\?signed-out=1$/),
+    page.getByRole("button", { name: "Sign out" }).click(),
+  ]);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await page.goto("/member");
+  await page.waitForURL(/\/sign-in(?:\?|$)/);
+  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 }
 
 function encodeSessionCookie(session: Record<string, unknown>): string {
@@ -140,7 +150,7 @@ async function latestEmailLink(email: string, subjectIncludes: string): Promise<
   return link;
 }
 
-test("invite-only authentication and recovery journey", async ({ page }, testInfo) => {
+test("open registration authentication and recovery journey", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const suffix = `${testInfo.project.name.replaceAll(/\W/g, "-")}-${Date.now()}`;
   const email = `invited-${suffix}@example.com`;
@@ -155,13 +165,8 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 
-    const invitation = await createInvitation(database, {
-      email,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-    });
-
-    await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.goto("/register");
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     const [registrationResponse] = await Promise.all([
       page.waitForResponse((response) => response.url().endsWith("/api/auth/register")),
@@ -387,14 +392,13 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     `;
     await database`update app."user" set role = 'member' where id = ${internalUserId}::uuid`;
     await page.goto("/member");
-    await page.getByRole("button", { name: "Sign out" }).click();
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await signOutAndVerify(page);
 
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOutAndVerify(page);
 
     await page.getByRole("link", { name: "Forgot your password?" }).click();
     await page.getByLabel("Email").fill(email);
@@ -429,33 +433,27 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.getByLabel("Password").fill(newPassword);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOutAndVerify(page);
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-    if (!supabaseUrl || !publishableKey)
-      throw new Error("Local Supabase E2E configuration missing.");
-    const publicClient = createClient(supabaseUrl, publishableKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
     const uninvitedEmail = `uninvited-${suffix}@example.com`;
-    const { error: createError } = await publicClient.auth.signUp({
-      email: uninvitedEmail,
-      password,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/member`,
-      },
-    });
-    expect(createError).toBeNull();
+    await page.goto("/register");
+    await page.getByLabel("Email").fill(uninvitedEmail);
+    await page.getByLabel("Create password").fill(password);
+    const [openRegistrationResponse] = await Promise.all([
+      page.waitForResponse((response) => response.url().endsWith("/api/auth/register")),
+      page.getByRole("button", { name: "Create account" }).click(),
+    ]);
+    expect(openRegistrationResponse.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
     await page.goto(await latestEmailLink(uninvitedEmail, "confirm"));
-    await expect(page.getByText(/unable to verify that link/i)).toBeVisible();
+    await expect(page.getByText(/email is verified/i)).toBeVisible();
     await page.getByLabel("Email").fill(uninvitedEmail);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Beta access unavailable" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tell us where you’re heading" })).toBeVisible();
     await page.goto("/admin");
-    await expect(page.getByRole("heading", { name: "Beta access unavailable" })).toBeVisible();
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
+    await signOutAndVerify(page);
 
     const unverifiedEmail = `unverified-${suffix}@example.com`;
     const unverifiedInvitation = await createInvitation(database, {
@@ -463,7 +461,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(unverifiedInvitation.token)}`);
-    await page.getByLabel("Invited email").fill(unverifiedEmail);
+    await page.getByLabel("Email").fill(unverifiedEmail);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
@@ -500,7 +498,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await page.goto(await latestEmailLink(email, "confirm"));
@@ -559,7 +557,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
     ]);
 
     await page.goto("/member");
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOutAndVerify(page);
     const secondEmail = `second-${suffix}@example.com`;
     await registerAndSignIn(secondEmail);
     const crossUserAttempt = await page.evaluate(async (firstOwnerId) => {
@@ -618,7 +616,7 @@ test("direct application and recommendation endpoints enforce real authenticatio
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await page.goto(await latestEmailLink(email, "confirm"));
@@ -902,7 +900,7 @@ test("direct application and recommendation endpoints enforce real authenticatio
     );
     if (!authCookie) throw new Error("Endpoint owner session cookie was not found.");
     await page.goto("/member");
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await signOutAndVerify(page);
 
     await registerAndSignIn(secondEmail);
     expect(await jsonRequest("/api/member/onboarding", "PUT", onboarding)).toMatchObject({
@@ -995,12 +993,21 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
   page,
   request,
 }, testInfo) => {
-  const registerResponse = await page.goto("/register#invitation=not-a-real-secret");
+  const retrySuffix = `${testInfo.project.name}-${testInfo.retry}-${Date.now()}`;
+  const registerResponse = await page.goto(
+    "/register?error=registration-check&invitation=obsolete-query#section=details&invitation=obsolete-fragment",
+  );
   expect(registerResponse?.headers()["cache-control"]).not.toContain("public");
   expect(registerResponse?.headers()["vercel-cdn-cache-control"]).toContain("no-store");
   expect(registerResponse?.headers()["referrer-policy"]).toBe("no-referrer");
   expect(registerResponse?.headers()["content-security-policy"]).toContain("default-src 'self'");
-  await expect.poll(() => page.url()).not.toContain("invitation=");
+  await page.waitForURL((url) => {
+    const fragment = new URLSearchParams(url.hash.slice(1));
+    return !url.searchParams.has("invitation") && !fragment.has("invitation");
+  });
+  const cleanedRegistrationUrl = new URL(page.url());
+  expect(cleanedRegistrationUrl.searchParams.get("error")).toBe("registration-check");
+  expect(new URLSearchParams(cleanedRegistrationUrl.hash.slice(1)).get("section")).toBe("details");
 
   const callbackResponse = await request.get(
     "/auth/callback?token_hash=non-sensitive-test-value&type=recovery&next=/reset-password/update",
@@ -1028,10 +1035,10 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
   let retryAfter = 0;
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const response = await request.post("/api/auth/recovery", {
-      data: { email: "unknown-rate-limit@example.com" },
+      data: { email: `unknown-rate-limit-${retrySuffix}@example.com` },
       headers: {
         origin: appUrl,
-        "x-vercel-forwarded-for": "192.0.2.44",
+        "x-vercel-forwarded-for": `192.0.2.${44 + testInfo.retry}`,
       },
     });
     bodies.push(await response.json());
@@ -1045,43 +1052,46 @@ test("auth surfaces enforce private headers, generic limits and no secondary res
   expect(retryAfter).toBeGreaterThan(0);
 
   const database = postgres(databaseUrl, { max: 1, prepare: false });
+  const expiredEmail = `expired-resend-${retrySuffix}@example.com`;
+  const revokedEmail = `revoked-resend-${retrySuffix}@example.com`;
   try {
     await database`
       insert into app.invitation (email, token_hash, created_at, expires_at)
       values (
-        'expired-resend@example.com',
-        ${createHmac("sha256", "e2e-expired-invitation").update(testInfo.project.name).digest("hex")},
+        ${expiredEmail},
+        ${createHmac("sha256", "e2e-expired-invitation").update(retrySuffix).digest("hex")},
         now() - interval '2 hours',
         now() - interval '1 hour'
       )
     `;
     const revoked = await createInvitation(database, {
-      email: "revoked-resend@example.com",
+      email: revokedEmail,
       expiresAt: new Date(Date.now() + 60_000),
     });
     await database`update app.invitation set revoked_at = now() where id = ${revoked.id}::uuid`;
+    const resendBodies: unknown[] = [];
+    for (const [index, email] of [
+      `unknown-resend-${retrySuffix}@example.com`,
+      expiredEmail,
+      revokedEmail,
+    ].entries()) {
+      const response = await request.post("/api/auth/resend", {
+        data: { email },
+        headers: {
+          origin: appUrl,
+          "x-vercel-forwarded-for": `192.0.${testInfo.retry + 2}.${60 + index}`,
+        },
+      });
+      expect(response.status()).toBe(202);
+      resendBodies.push(await response.json());
+    }
+    expect(
+      resendBodies.every((body) => JSON.stringify(body) === JSON.stringify(resendBodies[0])),
+    ).toBe(true);
   } finally {
+    await database`delete from app.invitation where email in (${expiredEmail},${revokedEmail})`;
     await database.end();
   }
-  const resendBodies: unknown[] = [];
-  for (const [index, email] of [
-    "unknown-resend@example.com",
-    "expired-resend@example.com",
-    "revoked-resend@example.com",
-  ].entries()) {
-    const response = await request.post("/api/auth/resend", {
-      data: { email },
-      headers: {
-        origin: appUrl,
-        "x-vercel-forwarded-for": `192.0.2.${60 + index}`,
-      },
-    });
-    expect(response.status()).toBe(202);
-    resendBodies.push(await response.json());
-  }
-  expect(
-    resendBodies.every((body) => JSON.stringify(body) === JSON.stringify(resendBodies[0])),
-  ).toBe(true);
 });
 
 test("an invalid or expired refresh token cannot authorize a member route", async ({ request }) => {

@@ -1,5 +1,6 @@
 import { AuthShell, StatusMessage } from "../components/auth-shell";
-import { InvitationForm } from "./invitation-form";
+import { RegistrationForm } from "./registration-form";
+import { RegistrationUrlCleanup } from "./registration-url-cleanup";
 
 export default async function RegisterPage({
   searchParams,
@@ -9,11 +10,12 @@ export default async function RegisterPage({
 
   return (
     <AuthShell
-      description="Create your account with the email address that received this invitation."
-      title="Accept invitation"
+      description="Build your applications, preparation plans, evidence stories and interview answers in one place."
+      title="Create your OfferLab account"
     >
+      <RegistrationUrlCleanup />
       <StatusMessage>{error}</StatusMessage>
-      <InvitationForm />
+      <RegistrationForm />
       <p>
         Already registered? <a href="/sign-in">Sign in</a>
       </p>

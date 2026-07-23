@@ -1,5 +1,7 @@
 # ADR 0015: Invite-only beta entitlement before Stripe
 
+> Superseded for new registrations by ADR 0016. Retained as historical context for the inactive legacy invitation schema.
+
 - Status: Accepted
 - Date: 2026-07-19
 

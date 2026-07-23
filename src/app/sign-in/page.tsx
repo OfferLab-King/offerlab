@@ -16,7 +16,7 @@ export default async function SignInPage({
         : undefined;
 
   return (
-    <AuthShell description="Use your verified invited account." title="Sign in">
+    <AuthShell description="Use your verified OfferLab account." title="Sign in">
       <StatusMessage>{error ?? notice}</StatusMessage>
       <SignInForm next={next} />
       <p>

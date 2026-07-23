@@ -3,7 +3,7 @@ import type {
   PathSection,
 } from "../../../modules/learning-paths/infrastructure/learning-path-repository";
 
-export type LearnDestination = "overview" | "paths" | "resources";
+export type LearnDestination = "answer-bank" | "overview" | "paths" | "resources";
 
 export function learnDestination(pathname: string): LearnDestination {
   if (pathname.startsWith("/member/learn/paths")) return "paths";

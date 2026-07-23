@@ -8,51 +8,25 @@ import { requireMember } from "../../../modules/identity-access/application/auth
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
 import { MemberApplicationsHeader } from "../applications/member-applications-header";
 import { LearnNavigation } from "./learn-navigation";
-import {
-  FOUNDATION_PATH_SLUG,
-  nextPreparationArea,
-  readyAreaCount,
-  selectContinuePreparation,
-} from "./learn-presenters";
-import { PreparationPlanCard } from "./preparation-plan-card";
+import { nextPreparationArea, readyAreaCount, selectContinuePreparation } from "./learn-presenters";
+import { readAnswerBankSummary } from "../../../modules/answer-bank/application/answer-bank";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function HowPreparationWorks() {
-  const steps = [
-    ["Choose", "Select a foundation or recruitment stage."],
-    ["Prepare", "Work through focused activities in any order."],
-    ["Continue", "Return to the next area that needs attention."],
-  ];
-  return (
-    <section aria-labelledby="how-preparation-works" className="learn-section">
-      <h2 id="how-preparation-works">How preparation works</h2>
-      <ol className="preparation-steps">
-        {steps.map(([title, description]) => (
-          <li key={title}>
-            <strong>{title}</strong>
-            <span>{description}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
 export default async function LearnPage() {
   const auth = await requireMember();
   if (!(await readOnboardingProfile(auth.userId))?.completedAt) redirect("/member/onboarding");
-  const paths = await readLearningPaths(auth.userId);
+  const [paths, bank] = await Promise.all([
+    readLearningPaths(auth.userId),
+    readAnswerBankSummary(auth.userId),
+  ]);
   const continuedPath = selectContinuePreparation(paths);
   const nextResource = continuedPath ? continueItem(continuedPath) : null;
   const nextArea = continuedPath ? nextPreparationArea(continuedPath) : null;
   const followedPaths = paths.filter((path) => path.following);
   const allFollowedComplete =
     followedPaths.length > 0 && followedPaths.every((path) => path.progress === 100);
-  const foundational = paths.find((path) => path.slug === FOUNDATION_PATH_SLUG);
-  const stagePaths = paths.filter((path) => path.slug !== FOUNDATION_PATH_SLUG);
-  const alternativeStagePaths = stagePaths.filter((path) => path.id !== continuedPath?.id);
 
   return (
     <main className="applications-shell learn-overview">
@@ -60,8 +34,8 @@ export default async function LearnPage() {
       <LearnNavigation active="overview" />
       <section className="applications-heading">
         <div>
-          <p className="eyebrow">Learn</p>
-          <h1>Prepare for every stage</h1>
+          <p className="eyebrow">Prepare</p>
+          <h1>Preparation Hub</h1>
           <p className="intro">
             Choose what you are preparing for, cover every important area, and return to the exact
             next step.
@@ -133,51 +107,44 @@ export default async function LearnPage() {
         <section aria-labelledby="start-preparation" className="learn-section">
           <p className="eyebrow">Choose your focus</p>
           <h2 id="start-preparation">What are you preparing for?</h2>
+          <p>Choose a Preparation Plan for the recruitment stage you are facing.</p>
+          <Link className="button-link" href="/member/learn/paths">
+            Choose a Preparation Plan
+          </Link>
+        </section>
+      )}
+
+      <section aria-labelledby="answer-story-bank" className="learn-section">
+        <p className="eyebrow">My Answer &amp; Story Bank</p>
+        <article className="card hub-panel">
+          <div>
+            <h2 id="answer-story-bank">Build reusable interview preparation</h2>
+            <p>
+              {bank.stories} evidence stories · {bank.readyAnswers} Ready answers
+            </p>
+            <p>{bank.competenciesCovered} of 10 core competencies covered</p>
+            <p>
+              <strong>Next:</strong> {bank.nextAction}
+            </p>
+          </div>
+          <Link className="button-link" href="/member/learn/answer-bank">
+            Open my Answer Bank
+          </Link>
+        </article>
+      </section>
+
+      <section aria-labelledby="structured-preparation" className="card hub-panel learn-section">
+        <div>
+          <h2 id="structured-preparation">Structured Preparation Plans</h2>
           <p>
-            Choose the recruitment stage you are currently facing. You will see the full preparation
-            structure and what to do next.
+            Follow complete preparation coverage for video interviews, online assessments,
+            assessment centres and final interviews.
           </p>
-          {!stagePaths.length && (
-            <article className="card empty-state">
-              <h3>Preparation Plans are not available yet.</h3>
-              <p>Browse focused resources while new plans are being prepared.</p>
-            </article>
-          )}
-        </section>
-      )}
-
-      {alternativeStagePaths.length > 0 && (
-        <section aria-labelledby="stage-plans" className="learn-section grouped-plans">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Recruitment-stage plans</p>
-              <h2 id="stage-plans">Prepare by recruitment stage</h2>
-            </div>
-            <Link href="/member/learn/paths">View all plans</Link>
-          </div>
-          <div className="path-grid overview-path-grid">
-            {alternativeStagePaths.map((path) => (
-              <PreparationPlanCard key={path.id} path={path} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {foundational && foundational.id !== continuedPath?.id && (
-        <section aria-labelledby="interview-foundations" className="learn-section grouped-plans">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Foundational preparation</p>
-              <h2 id="interview-foundations">Build your interview foundations</h2>
-            </div>
-          </div>
-          <div className="path-grid overview-path-grid">
-            <PreparationPlanCard path={foundational} />
-          </div>
-        </section>
-      )}
-
-      <HowPreparationWorks />
+        </div>
+        <Link className="button-link" href="/member/learn/paths">
+          View Preparation Plans
+        </Link>
+      </section>
 
       <section aria-labelledby="explore-resources" className="card explore-resources">
         <div>

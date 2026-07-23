@@ -1,4 +1,4 @@
-# Authentication and invite operations
+# Authentication operations
 
 ## Credential and role boundaries
 
@@ -12,21 +12,18 @@ Supabase's local migration principal cannot `SET ROLE supabase_auth_admin` and c
 
 Supabase owns passwords, email verification, recovery, password updates, access tokens, refresh tokens, and sessions. OfferLab issues no reset credential and does not use a service-role client for password changes.
 
-## Bearer invitation and identity lifecycle
+## Registration and identity lifecycle
 
-An authorised migration-credential command creates a 32-byte random token for one normalized email. Only its SHA-256 hash is stored. The raw value is printed once in a URL fragment, captured by the registration page, and removed from the address immediately.
+Registration uses Supabase email/password authentication directly. OfferLab does not require, accept, bind, or consume an invitation in the active registration flow.
 
 The cross-system state machine is:
 
-1. OfferLab checks the token hash, normalized email, expiry, revocation, and consumption state through a narrow function.
-2. Supabase independently creates the external Auth identity.
-3. OfferLab binds that exact invitation row to the returned external identity. The function reads the identity email from `auth.users`; it does not trust a request-supplied identity email.
-4. Supabase independently verifies the email and establishes a session.
-5. The callback passes the verified external ID to the narrow linkage function.
-6. One PostgreSQL transaction advisory-locks the external ID, re-reads trusted verified identity data, locks only its bound invitation, creates the internal user, consumes that exact invitation, activates entitlement, and appends audit events.
-7. Completed linkage is idempotent. Concurrent retries return the same internal authorization state.
+1. Supabase creates the external Auth identity and applies its configured email-confirmation behavior.
+2. When confirmation is required, the callback passes the verified external ID to the narrow linkage function. When confirmation is disabled and Supabase returns a session, registration invokes the same function immediately.
+3. One PostgreSQL transaction advisory-locks the external ID, reads trusted verified identity data, creates an internal user explicitly as `member`, activates member entitlement, and appends content-free audit events.
+4. Completed linkage is idempotent. Concurrent retries return the same internal authorization state.
 
-Supabase identity creation and the PostgreSQL binding/linkage operations are not one ACID transaction. If Auth creation succeeds but initial binding fails, the user verifies/signs in, reopens the original invitation link, and submits it while authenticated; OfferLab then binds it to that trusted session identity. A revoked or expired invitation cannot be linked. A replacement invitation may be bound after the previous one is revoked or expired. Temporary callback failure is recovered by a later protected request, which retries the same bound linkage.
+Supabase identity creation and PostgreSQL linkage are not one ACID transaction. Temporary callback failure is recovered by a later protected request, which retries the same idempotent verified-identity linkage. Legacy invitation tables and functions remain for non-destructive history but no active registration or authorization path reads or writes them.
 
 ## Supabase SSR sessions
 
@@ -47,7 +44,7 @@ Authenticated and auth-flow routes are dynamic/private and receive `Cache-Contro
 
 OfferLab uses a PostgreSQL fixed-window limiter through the narrow identity-sync principal. Keys are HMAC-SHA-256 fingerprints using `AUTH_RATE_LIMIT_SECRET`; raw emails, IP/token combinations, and tokens are never stored or logged.
 
-- Registration/invitation assertion: 5 attempts per 15 minutes for each IP, account fingerprint, and token fingerprint.
+- Registration: 5 attempts per 15 minutes for each IP and account fingerprint.
 - Identity linkage: 10 attempts per 15 minutes for each IP and authenticated identity fingerprint.
 - Recovery request: 5 attempts per 15 minutes for each IP and account fingerprint.
 - Verification resend: 3 attempts per 15 minutes for each IP and account fingerprint.
@@ -60,7 +57,7 @@ Before launch, record hosted Supabase rate-limit values from the dashboard or Ma
 
 ## Enumeration, analytics, and recovery
 
-Registration, recovery, resend, invitation, and callback failures use generic public responses. Recovery and resend return the same body for known and unknown accounts. Analytics is property-free and emitted only by server code at completed transitions; there is no anonymous auth-event ingestion endpoint.
+Registration, recovery, resend, and callback failures use generic public responses. Recovery and resend return the same body for known and unknown accounts. Analytics is property-free and emitted only by server code at completed transitions; there is no anonymous auth-event ingestion endpoint.
 
 If a session-bound password update succeeds but provider logout fails, the endpoint clears local Supabase cookies, records only the fixed event name `password_update_logout_failed`, and tells the member that the password changed but global logout is unconfirmed. The member is told to close the browser and sign in again with the new password; the response does not recommend repeating the password change.
 
