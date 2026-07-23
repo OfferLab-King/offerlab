@@ -361,7 +361,7 @@ Recommend:
 - Current stage should determine the main preparation category.
 - Existing progress should prevent repeatedly recommending completed items.
 - Missing data should result in helpful prompts, not errors.
-- The MVP should not require generative AI.
+- Controlled recommendations remain deterministic. Approved optional AI coaching follows `ai-product-strategy.md` and must have a continue-without-AI path.
 - Recommendation rules should be documented and testable.
 
 ### Success condition
@@ -588,7 +588,7 @@ The user receives:
 
 - membership extension
 - future Group Mock credit
-- future AI feedback credit
+- bounded AI feedback credit where the service has passed the approved release gates
 - contributor badge
 - access to selected premium resources
 

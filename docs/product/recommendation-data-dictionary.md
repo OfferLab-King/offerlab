@@ -284,6 +284,6 @@ PostgreSQL deliberately does not enumerate the complete code catalogue or decide
 
 ## Future replacement or complementary systems
 
-A later enriched or AI-assisted recommender may be introduced only behind the recommendations module's public contract and after an explicit product, privacy, security, and architecture decision. It must not weaken owner scoping, forced RLS, controlled inputs, stable/versioned identities, interaction-state semantics, deterministic caps, explainability, accessible presentation, generic conflicts, or audit/analytics/logging boundaries.
+An enriched or AI-assisted recommendation experiment may be introduced only behind the recommendations module's public contract and under `ai-product-strategy.md`. It must not weaken owner scoping, forced RLS, controlled inputs, stable/versioned identities, interaction-state semantics, deterministic caps, explainability, accessible presentation, generic conflicts, or audit/analytics/logging boundaries.
 
 The main journey must retain a deterministic controlled-data path. Any complementary system must provide a safe fallback, must not cause private application content to enter prompts or third-party systems without a separately approved data contract, and must return outputs that can be validated and capped before display. New provenance or generated-content persistence would require its own reviewed schema and retention decision; it is not implied by this interaction-state table.

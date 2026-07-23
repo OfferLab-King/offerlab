@@ -66,9 +66,9 @@ Students should be encouraged to create real examples rather than manufacture st
 
 The platform should provide clear organisation, filters and concise context so members can find and use the right material directly.
 
-### 3.4 Structured tools before unrestricted AI
+### 3.4 Structured tools with bounded AI
 
-Rules, templates, clear fields and optional plans should handle most user needs without forcing a sequence.
+Rules, templates, clear fields and optional plans should handle deterministic needs without forcing a sequence. Bounded AI may add personalised interpretation or feedback under `ai-product-strategy.md`; it should use the member's evidence and OfferLab's rubric rather than behave as a generic chatbot.
 
 AI should only be used where personalised interpretation creates meaningful value.
 
@@ -476,7 +476,7 @@ The dashboard should show:
 - Dashboard recommendations change when an application stage changes.
 - A user with no applications is prompted to add one.
 - A user with an upcoming assessment receives relevant preparation links.
-- The dashboard does not depend on generative AI.
+- The dashboard's records, navigation and rule-based recommendations remain useful when AI is unavailable; approved AI coaching may be offered as an explicit action.
 - Recommendations are based on documented rules.
 - Administrators can update recommendation mappings without rebuilding the application where practical.
 
@@ -895,7 +895,7 @@ An approved high-quality report may earn:
 - One free membership month.
 - Membership extension.
 - Group Mock credit.
-- Future AI feedback credit.
+- Bounded AI feedback credit where the service has passed the approved release gates.
 - Premium contributor badge.
 - Access to selected additional resources.
 
@@ -1104,7 +1104,7 @@ The exact architecture should be decided after the product brief is reviewed, bu
 - Automated backups.
 - Staging and production environments.
 - CI checks before deployment.
-- No generative AI dependency in the main product journey.
+- AI-enhanced actions fail safely and do not block access to member records, curated content or deterministic recommendations.
 
 ---
 
@@ -1196,7 +1196,7 @@ Expand the Professional Language Library.
 
 ### If users request individual feedback
 
-Introduce one bounded AI feedback tool or curated mentor review.
+Introduce the evidence-grounded Answer Coach defined in `ai-product-strategy.md`, or a curated mentor review, and compare their usefulness and unit economics.
 
 ### If members want human support
 

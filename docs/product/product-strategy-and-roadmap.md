@@ -95,6 +95,7 @@ The primary product is a searchable, moderated report database, not a chat feed.
 4. Run the first Group Mock sessions as a manually scheduled pilot.
 5. Offer one or two bounded founder or vetted-coach feedback services.
 6. Rework public positioning so visitors can preview these formats and see honest availability before registration.
+7. Evaluate and prototype the bounded Answer Coach defined in `ai-product-strategy.md`, using Story Bank evidence and a founder-reviewed rubric before any member pilot.
 
 This phase tests whether members value OfferLab's judgement, current intelligence and live support, not merely its organisational tools. It does not require automatic matching, an open marketplace or a full social network.
 
@@ -112,7 +113,7 @@ Operational delivery may use simple external scheduling and video tools before b
 - Expand contextual skill labs only where demand is demonstrated.
 - Add corroboration and contributor recognition to recruitment intelligence.
 - Improve peer matching after session liquidity is proven.
-- Test narrow, bounded AI feedback only where it improves turnaround or consistency without replacing coach judgement.
+- Expand only the AI coaching and editorial tasks that have met their usefulness, safety, privacy and unit-economics gates; retain clear separation from human coach feedback.
 
 ### Phase 4 — experience creation
 
