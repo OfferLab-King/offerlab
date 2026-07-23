@@ -4,14 +4,9 @@ import { captureAnalyticsEvent } from "../../../../infrastructure/analytics/capt
 import { getIdentitySyncDatabase } from "../../../../infrastructure/database/runtime-connections";
 import { createSupabaseRouteClient } from "../../../../infrastructure/supabase/route";
 import { linkVerifiedIdentity } from "../../../../modules/identity-access/infrastructure/identity-linking";
-import {
-  assertUsableInvitation,
-  bindInvitationToIdentity,
-} from "../../../../modules/identity-access/infrastructure/invitations";
 import { checkAuthRateLimit } from "../../../../modules/identity-access/infrastructure/rate-limits";
 import {
   hasSameOrigin,
-  opaqueTokenSubject,
   readPublicJson,
   requestClientAddress,
 } from "../../../../modules/identity-access/application/request-security";
@@ -40,20 +35,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
   const input = parsed.value as {
     email?: unknown;
-    invitation?: unknown;
     password?: unknown;
   } | null;
   const email = typeof input?.email === "string" ? input.email.trim().toLowerCase() : "";
-  const token = typeof input?.invitation === "string" ? input.invitation.trim() : "";
   const password = typeof input?.password === "string" ? input.password : "";
-  if (!email || !token || password.length < 10) {
+  if (!email || password.length < 10) {
     return NextResponse.json({ message: genericError }, { status: 400 });
   }
 
-  const decision = await checkAuthRateLimit(database, "registration", [
-    `account:${email}`,
-    `token:${opaqueTokenSubject(token)}`,
-  ]);
+  const decision = await checkAuthRateLimit(database, "registration", [`account:${email}`]);
   if (!decision.allowed) {
     return NextResponse.json(
       { message: "Too many attempts. Please wait and try again." },
@@ -62,16 +52,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    await assertUsableInvitation(database, token, email);
     const supabase = createSupabaseRouteClient(request);
     const { data: existing } = await supabase.client.auth.getUser();
     if (existing.user?.email_confirmed_at) {
       if (existing.user.email?.trim().toLowerCase() !== email) throw new Error("identity mismatch");
-      if (!(await bindInvitationToIdentity(database, { authUserId: existing.user.id, token }))) {
-        throw new Error("binding failed");
-      }
       await linkVerifiedIdentity(database, existing.user.id);
-      await captureAnalyticsEvent("invitation_accepted");
       await captureAnalyticsEvent("identity_linked");
       return supabase.applyTo(NextResponse.json({ next: "/member" }));
     }
@@ -82,10 +67,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       options: { emailRedirectTo: `${appUrl()}/auth/callback?next=/member` },
     });
     if (error || !data.user) throw new Error("signup failed");
-    if (!(await bindInvitationToIdentity(database, { authUserId: data.user.id, token }))) {
-      throw new Error("binding failed");
+    if (data.session || data.user.email_confirmed_at) {
+      await linkVerifiedIdentity(database, data.user.id);
+      await captureAnalyticsEvent("identity_linked");
+      await captureAnalyticsEvent("registration_completed");
+      return supabase.applyTo(NextResponse.json({ next: "/member" }));
     }
-    await captureAnalyticsEvent("invitation_accepted");
     await captureAnalyticsEvent("registration_completed");
     return supabase.applyTo(NextResponse.json({ next: "/verify-email?registered=1" }));
   } catch {

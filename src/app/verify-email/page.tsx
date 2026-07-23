@@ -4,7 +4,7 @@ import { VerificationResendForm } from "./verification-resend-form";
 export default function VerifyEmailPage() {
   return (
     <AuthShell
-      description="Open the verification message sent by Supabase and follow its link. Member access remains locked until your email is verified and your invitation is claimed."
+      description="Open the verification message sent by Supabase and follow its link. Member access remains locked until your email is verified."
       title="Verify your email"
     >
       <p className="status">

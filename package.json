@@ -36,8 +36,6 @@
     "env:check": "tsx scripts/validate-environment.ts",
     "env:example:check": "tsx scripts/validate-environment-example.ts",
     "admin:promote": "tsx scripts/promote-administrator.ts",
-    "invite:create": "tsx scripts/create-invitation.ts",
-    "invite:revoke": "tsx scripts/revoke-invitation.ts",
     "auth-rate-limits:cleanup": "tsx scripts/cleanup-auth-rate-limits.ts",
     "security:audit": "pnpm audit --audit-level high",
     "validate": "tsx scripts/validate.ts"

@@ -140,7 +140,7 @@ async function latestEmailLink(email: string, subjectIncludes: string): Promise<
   return link;
 }
 
-test("invite-only authentication and recovery journey", async ({ page }, testInfo) => {
+test("open registration authentication and recovery journey", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const suffix = `${testInfo.project.name.replaceAll(/\W/g, "-")}-${Date.now()}`;
   const email = `invited-${suffix}@example.com`;
@@ -155,13 +155,8 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 
-    const invitation = await createInvitation(database, {
-      email,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-    });
-
-    await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.goto("/register");
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     const [registrationResponse] = await Promise.all([
       page.waitForResponse((response) => response.url().endsWith("/api/auth/register")),
@@ -448,13 +443,13 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
     });
     expect(createError).toBeNull();
     await page.goto(await latestEmailLink(uninvitedEmail, "confirm"));
-    await expect(page.getByText(/unable to verify that link/i)).toBeVisible();
+    await expect(page.getByText(/email is verified/i)).toBeVisible();
     await page.getByLabel("Email").fill(uninvitedEmail);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Beta access unavailable" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tell us where you’re heading" })).toBeVisible();
     await page.goto("/admin");
-    await expect(page.getByRole("heading", { name: "Beta access unavailable" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
     await page.getByRole("button", { name: "Sign out" }).click();
 
     const unverifiedEmail = `unverified-${suffix}@example.com`;
@@ -463,7 +458,7 @@ test("invite-only authentication and recovery journey", async ({ page }, testInf
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(unverifiedInvitation.token)}`);
-    await page.getByLabel("Invited email").fill(unverifiedEmail);
+    await page.getByLabel("Email").fill(unverifiedEmail);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
@@ -500,7 +495,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await page.goto(await latestEmailLink(email, "confirm"));
@@ -618,7 +613,7 @@ test("direct application and recommendation endpoints enforce real authenticatio
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     });
     await page.goto(`/register#invitation=${encodeURIComponent(invitation.token)}`);
-    await page.getByLabel("Invited email").fill(email);
+    await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
     await page.goto(await latestEmailLink(email, "confirm"));

@@ -73,7 +73,7 @@ Seed data lives in `supabase/seed.sql`. It must be deterministic, synthetic, non
 
 ## Administrator bootstrap
 
-After an invited user has a linked internal OfferLab record and has verified their Supabase email, promote the first administrator with:
+After a registered user has a linked internal OfferLab record and has verified their Supabase email, promote the first administrator with:
 
 ```bash
 pnpm admin:promote -- founder@example.com --confirm
@@ -81,21 +81,11 @@ pnpm admin:promote -- founder@example.com --confirm
 
 `DATABASE_MIGRATION_URL` must be available in `.env.local` or the shell. The command refuses missing or unverified users, refuses an already-promoted user, refuses to create a second administrator, and writes a durable audit event in the same transaction.
 
-## Invite-only beta access
+## Member registration
 
-Create a seven-day invitation with the isolated development/administrator command:
+Members register directly at `/register`. When Supabase email confirmation is enabled, they verify their email before signing in. Verified identities are linked idempotently to an internal OfferLab member and then complete onboarding.
 
-```bash
-pnpm invite:create -- invited@example.com 7
-```
-
-The command prints a fragment-based acceptance link once. The browser fragment keeps the raw token out of HTTP request logs; only its SHA-256 hash is stored. Revoke an unused invitation by its database UUID:
-
-```bash
-pnpm invite:revoke -- 00000000-0000-0000-0000-000000000000
-```
-
-Registration, verified identity linkage, invitation consumption, and explicit beta entitlement are separate states. See `docs/operations/authentication.md` for the flow and deployment controls.
+Legacy invitation schema is retained but inactive; registration does not read or consume it. See `docs/operations/authentication.md` for the flow and deployment controls.
 
 ## Environments
 
