@@ -15,6 +15,261 @@ main {
   padding: 0 1.5rem;
 }
 
+.marketing-main {
+  margin: 0 auto;
+  max-width: 78rem;
+  overflow: hidden;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+
+.marketing-nav {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 5rem;
+}
+
+.marketing-nav > div,
+.marketing-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.marketing-brand {
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.compact-button {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+}
+
+.marketing-hero {
+  align-items: center;
+  display: grid;
+  gap: clamp(2rem, 6vw, 5rem);
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+  min-height: min(44rem, calc(100vh - 5rem));
+  padding: clamp(3rem, 8vw, 7rem) 0;
+}
+
+.marketing-hero-copy h1 {
+  font-size: clamp(3rem, 7vw, 5.8rem);
+  line-height: 0.94;
+  margin: 1.25rem 0 1.5rem;
+  max-width: 10ch;
+}
+
+.marketing-lead {
+  color: #405249;
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+  line-height: 1.6;
+  max-width: 38rem;
+}
+
+.marketing-primary-action {
+  background: #123e28;
+  box-shadow: 0 0.65rem 1.4rem rgb(18 62 40 / 18%);
+}
+
+.marketing-note,
+.preview-footnote {
+  color: #607068;
+  font-size: 0.88rem;
+}
+
+.coaching-preview {
+  background: #fffdf7;
+  border: 1px solid #c8d4ca;
+  border-radius: 1.25rem;
+  box-shadow: 0 2rem 5rem rgb(20 37 28 / 14%);
+  box-sizing: border-box;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  position: relative;
+}
+
+.coaching-preview::before {
+  background: #dcefe1;
+  border-radius: 999px;
+  content: "";
+  height: 10rem;
+  position: absolute;
+  right: -4rem;
+  top: -4rem;
+  width: 10rem;
+  z-index: -1;
+}
+
+.preview-toolbar,
+.preview-evidence {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.preview-label {
+  color: #17643a;
+  font-size: 0.84rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.preview-question {
+  font-size: 1.3rem;
+  font-weight: 750;
+  line-height: 1.35;
+  margin-block: 2rem;
+}
+
+.preview-evidence {
+  background: #edf5ee;
+  border-radius: 0.7rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem;
+}
+
+.preview-evidence span {
+  color: #607068;
+  font-size: 0.8rem;
+}
+
+.coaching-preview blockquote {
+  border-left: 4px solid #d69324;
+  display: grid;
+  gap: 0.55rem;
+  line-height: 1.55;
+  margin: 1.25rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+}
+
+.marketing-section {
+  border-top: 1px solid #c8d4ca;
+  padding: clamp(4rem, 8vw, 7rem) 0;
+}
+
+.section-introduction {
+  max-width: 47rem;
+}
+
+.section-introduction h2,
+.marketing-cta h2 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.section-introduction > p:last-child,
+.marketing-cta p {
+  color: #405249;
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.marketing-card-grid,
+.distinctive-grid,
+.direct-tool-grid,
+.upcoming-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 2.5rem;
+}
+
+.marketing-feature-card,
+.distinctive-card {
+  border-radius: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.marketing-feature-card {
+  background: white;
+  border: 1px solid #dce4dd;
+}
+
+.marketing-feature-card h3,
+.distinctive-card h3,
+.direct-tool-card h3,
+.upcoming-grid h3 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  margin: 0.75rem 0;
+}
+
+.marketing-feature-card p:last-child,
+.distinctive-card p,
+.direct-tool-card p,
+.upcoming-grid p {
+  color: #506057;
+  line-height: 1.55;
+}
+
+.distinctive-section {
+  background: #123e28;
+  border: 0;
+  border-radius: 1.5rem;
+  color: white;
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+}
+
+.distinctive-section .eyebrow,
+.distinctive-section .section-introduction > p:last-child,
+.distinctive-card p {
+  color: #dcefe1;
+}
+
+.distinctive-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.distinctive-card {
+  background: rgb(255 255 255 / 7%);
+  border: 1px solid rgb(255 255 255 / 18%);
+}
+
+.availability-label {
+  background: #f4dfad;
+  border-radius: 999px;
+  color: #563e00;
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 750;
+  padding: 0.32rem 0.65rem;
+}
+
+.marketing-cta {
+  align-items: center;
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(5rem, 10vw, 9rem) 0;
+}
+
+.marketing-cta h2 {
+  max-width: 19ch;
+}
+
+.marketing-footer {
+  align-items: center;
+  border-top: 1px solid #c8d4ca;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 2rem 0;
+}
+
+.marketing-footer p {
+  color: #607068;
+}
+
 .auth-shell {
   max-width: 30rem;
 }
@@ -224,6 +479,38 @@ button:disabled {
   justify-content: space-between;
 }
 
+.direct-tool-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.direct-tool-card {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+}
+
+.direct-tool-card .button-link {
+  margin-top: auto;
+}
+
+.upcoming-experiences {
+  background: #edf5ee;
+  border-radius: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.upcoming-grid {
+  margin-top: 1.25rem;
+}
+
+.upcoming-grid article {
+  background: white;
+  border: 1px solid #dce4dd;
+  border-radius: 0.8rem;
+  padding: 1.25rem;
+}
+
 .filter-bar {
   align-items: end;
   display: flex;
@@ -247,6 +534,49 @@ button:disabled {
   .learn-nav a {
     flex: 1 1 auto;
     text-align: center;
+  }
+}
+
+@media (max-width: 52rem) {
+  .marketing-hero {
+    grid-template-columns: 1fr;
+  }
+  .marketing-hero-copy h1 {
+    max-width: 12ch;
+  }
+  .marketing-card-grid,
+  .upcoming-grid {
+    grid-template-columns: 1fr;
+  }
+  .marketing-cta {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 36rem) {
+  .marketing-nav > div > a:first-child {
+    display: none;
+  }
+  .marketing-hero {
+    min-height: 0;
+    padding-top: 2.5rem;
+  }
+  .marketing-hero-copy h1 {
+    font-size: clamp(2.7rem, 14vw, 4rem);
+  }
+  .marketing-actions > * {
+    box-sizing: border-box;
+    text-align: center;
+    width: 100%;
+  }
+  .distinctive-grid,
+  .direct-tool-grid {
+    grid-template-columns: 1fr;
+  }
+  .marketing-footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

@@ -4,9 +4,17 @@
 **Date:** 2026-07-19  
 **Authority:** These decisions clarify the draft product documents and govern Vertical Slice 01 implementation.
 
+## Product experience
+
+`docs/product/experience-principles.md` is the current authoritative UX decision. OfferLab is a preparation workspace, not a course or wizard. Default to direct, compact interfaces and proportionate contextual guidance. Earlier draft requirements for guided journeys, fixed pathways, central next-action panels, progress displays or completion targets are not active unless a later scoped decision justifies them.
+
+`docs/product/product-strategy-and-roadmap.md` is the current authority for product positioning and priority. The workspace foundation supports, but must not obscure, OfferLab's distinctive annotated coaching cases, current recruitment intelligence, Group Mock practice, curated questions, industry cases and bounded premium feedback. Build manually operated practice or coaching services before speculative marketplace automation.
+
+`docs/product/ai-product-strategy.md` governs permitted AI product use. OfferLab may introduce bounded, evidence-grounded AI early when it passes the defined product, privacy, evaluation and cost gates. AI should express OfferLab's coaching method and member evidence, not reproduce a generic chatbot.
+
 ## Architecture
 
-Use a single Next.js App Router modular monolith with React, strict TypeScript, Node database operations, Supabase PostgreSQL/Auth, internal OfferLab UUIDs, Drizzle, explicit SQL migrations, mandatory RLS, Vercel London compute, Vitest, real PostgreSQL integration tests, and Playwright. Do not introduce generative AI.
+Use a single Next.js App Router modular monolith with React, strict TypeScript, Node database operations, Supabase PostgreSQL/Auth, internal OfferLab UUIDs, Drizzle, explicit SQL migrations, mandatory RLS, Vercel London compute, Vitest, real PostgreSQL integration tests, and Playwright. Approved AI capabilities remain inside this modular monolith behind a provider-neutral application boundary; they must not bypass domain, privacy, validation, logging or owner-scoping rules.
 
 ## Onboarding
 
@@ -51,6 +59,8 @@ Specificity outranks priority. Priority applies only within equal specificity. O
 6. Stable key.
 
 Group by application, deduplicate within an application, permit the same resource across different applications, return at most five per application and ten across the dashboard, exclude inactive rules/resources, and provide deterministic explanations.
+
+Recommendations remain optional and secondary to direct navigation. Their availability does not require a next-action-led page layout.
 
 ## Dates
 

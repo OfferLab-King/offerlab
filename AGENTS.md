@@ -2,17 +2,20 @@
 
 ## Product context
 
-OfferLab is a responsive web platform that helps UK graduate applicants track applications and receive structured preparation guidance. The first delivery scope is Vertical Slice 01. The technical foundation must remain a modular monolith and the main journey must not depend on generative AI.
+OfferLab is a responsive preparation workspace for UK graduate applicants. It provides clean structures for applications, evidence, answers and resources; it is not a course or wizard. The first delivery scope is Vertical Slice 01. The technical foundation must remain a modular monolith. Bounded AI is permitted under `docs/product/ai-product-strategy.md`; core records, navigation and deterministic recommendations must remain available without it.
 
 ## Sources of truth
 
 Read these before changing behavior:
 
 1. `docs/architecture/founder-decisions.md` — approved clarifications; highest product authority for implementation.
-2. `docs/product/vertical-slice-01.md` — binding first implementation scope.
-3. `docs/product/mvp-brief.md` — broader product direction.
-4. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — journey and screen context.
-5. `docs/architecture/decisions/` — accepted technical decisions.
+2. `docs/product/product-strategy-and-roadmap.md` — binding product positioning and priority.
+3. `docs/product/experience-principles.md` — binding product and UX defaults.
+4. `docs/product/ai-product-strategy.md` — binding AI product, privacy, evaluation and cost policy.
+5. `docs/product/vertical-slice-01.md` — binding first implementation scope.
+6. `docs/product/mvp-brief.md` — broader product direction, subject to the current product policies.
+7. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
+8. `docs/architecture/decisions/` — accepted technical decisions.
 
 If sources conflict, do not guess. Apply the precedence above, document the conflict, and ask the founder when it materially affects behavior, privacy, security, schema, or scope.
 
@@ -94,6 +97,7 @@ The seed creates two deterministic, non-login identities for database isolation 
 - Never send company names, role names, notes, emails, or raw application IDs to analytics.
 - Audit events and product analytics are separate stores and concepts.
 - Do not derive authorization from user-editable metadata.
+- AI prompts, outputs and member source content must not be logged. AI features require the data, provider, evaluation and cost controls in `docs/product/ai-product-strategy.md`.
 
 ## Scope discipline
 
@@ -103,6 +107,8 @@ The seed creates two deterministic, non-login identities for database isolation 
 - Update tests whenever behavior changes.
 - Record significant architectural changes as an ADR before relying on them.
 - Preserve stable internal keys; display labels are not identifiers.
+- Default to direct, compact interfaces. Do not add staged journeys, dashboards, targets, metrics or instructional panels without a demonstrated decision or safety need.
+- Do not mistake simplicity for generic positioning. Make the approved distinctive value visible, but validate manually operated services before building matching, marketplace or network infrastructure.
 
 ## Definition of done
 

@@ -4,6 +4,10 @@
 **Status:** Draft source of truth  
 **Primary owner:** Founder / Product
 
+> **Current experience direction:** This draft predates `experience-principles.md`. Its scope and research context remain useful, but guided journeys, fixed pathways, central next-action UX and progress-led defaults are superseded by the approved workspace-first principles.
+>
+> **Current product priority:** `product-strategy-and-roadmap.md` supersedes this draft's MVP ordering. In particular, distinctive coaching cases, curated questions, current recruitment intelligence, manually operated Group Mock and bounded premium feedback should be validated without first building the entire course, community or marketplace vision.
+
 ---
 
 ## 1. Product summary
@@ -58,13 +62,13 @@ OfferLab should teach skills and behaviours students can genuinely use in projec
 
 Students should be encouraged to create real examples rather than manufacture stories for interviews.
 
-### 3.3 Guidance before information overload
+### 3.3 Structure before information overload
 
-The platform should help users decide what to do next instead of presenting an unstructured library of resources.
+The platform should provide clear organisation, filters and concise context so members can find and use the right material directly.
 
-### 3.4 Structured workflows before unrestricted AI
+### 3.4 Structured tools with bounded AI
 
-Rules, templates, guided questions and predefined pathways should handle most user needs.
+Rules, templates, clear fields and optional plans should handle deterministic needs without forcing a sequence. Bounded AI may add personalised interpretation or feedback under `ai-product-strategy.md`; it should use the member's evidence and OfferLab's rubric rather than behave as a generic chatbot.
 
 AI should only be used where personalised interpretation creates meaningful value.
 
@@ -298,9 +302,9 @@ The user adds:
 - Next known deadline.
 - Personal notes.
 
-### 9.6 Receive preparation recommendations
+### 9.6 View optional preparation recommendations
 
-The dashboard recommends relevant actions based on the current stage.
+The workspace may show a concise set of relevant, dismissible suggestions based on the current stage. Direct navigation remains primary.
 
 Example:
 
@@ -308,7 +312,7 @@ Example:
 
 Recommended actions:
 
-- Complete the video interview preparation path.
+- Open the video interview Preparation Plan, if useful.
 - Review teamwork and motivation examples.
 - Read recent reports for the company.
 - Complete the recording checklist.
@@ -472,7 +476,7 @@ The dashboard should show:
 - Dashboard recommendations change when an application stage changes.
 - A user with no applications is prompted to add one.
 - A user with an upcoming assessment receives relevant preparation links.
-- The dashboard does not depend on generative AI.
+- The dashboard's records, navigation and rule-based recommendations remain useful when AI is unavailable; approved AI coaching may be offered as an explicit action.
 - Recommendations are based on documented rules.
 - Administrators can update recommendation mappings without rebuilding the application where practical.
 
@@ -891,7 +895,7 @@ An approved high-quality report may earn:
 - One free membership month.
 - Membership extension.
 - Group Mock credit.
-- Future AI feedback credit.
+- Bounded AI feedback credit where the service has passed the approved release gates.
 - Premium contributor badge.
 - Access to selected additional resources.
 
@@ -1057,7 +1061,7 @@ The MVP exists to answer the following business questions:
 
 ### Risk: Students join only for one report and leave
 
-**Mitigation:** Connect reports to application tracking, preparation pathways, examples and progress tools.
+**Mitigation:** Connect reports to directly accessible applications, examples, resources and optional Preparation Plans.
 
 ### Risk: Content is copied or shared
 
@@ -1065,7 +1069,7 @@ The MVP exists to answer the following business questions:
 
 ### Risk: Product becomes another course library
 
-**Mitigation:** Make the dashboard and recommended next actions central to the user experience.
+**Mitigation:** Make applications, evidence, answers and resources easy to navigate and use directly; keep recommendations optional and secondary.
 
 ### Risk: The application tracker feels generic
 
@@ -1100,7 +1104,7 @@ The exact architecture should be decided after the product brief is reviewed, bu
 - Automated backups.
 - Staging and production environments.
 - CI checks before deployment.
-- No generative AI dependency in the main product journey.
+- AI-enhanced actions fail safely and do not block access to member records, curated content or deterministic recommendations.
 
 ---
 
@@ -1151,9 +1155,9 @@ If your strongest existing audience is concentrated in a narrower industry, laun
 
 ---
 
-## 22. First paid user journey
+## 22. First paid-user scenario
 
-The most important journey to validate is:
+One important scenario to validate is:
 
 > A student has an upcoming graduate interview or assessment and wants a clear preparation plan.
 
@@ -1162,7 +1166,7 @@ The student:
 1. Joins OfferLab.
 2. Adds the company and opportunity.
 3. Records the upcoming stage and deadline.
-4. Receives a relevant preparation pathway.
+4. Opens relevant resources or an optional Preparation Plan.
 5. Studies an expert guide.
 6. Reviews an annotated student example.
 7. Reads recent candidate reports.
@@ -1170,7 +1174,7 @@ The student:
 9. Updates the application afterwards.
 10. Contributes a report for future members.
 
-This is the primary product loop.
+This scenario must not become compulsory navigation; members may enter and use each workspace area directly.
 
 ---
 
@@ -1184,7 +1188,7 @@ Build Group Mock scheduling and peer matching.
 
 ### If members struggle to form examples
 
-Build the guided competency-answer builder.
+Build the simplest direct competency-answer workspace first; add extra guidance only if user testing demonstrates a need.
 
 ### If international students show strong demand
 
@@ -1192,7 +1196,7 @@ Expand the Professional Language Library.
 
 ### If users request individual feedback
 
-Introduce one bounded AI feedback tool or curated mentor review.
+Introduce the evidence-grounded Answer Coach defined in `ai-product-strategy.md`, or a curated mentor review, and compare their usefulness and unit economics.
 
 ### If members want human support
 

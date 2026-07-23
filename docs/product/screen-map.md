@@ -4,6 +4,10 @@
 **Status:** Draft for architecture and UX review  
 **Related documents:** `mvp-brief.md`, `critical-user-journey.md`
 
+> **Current UX authority:** `experience-principles.md` governs implementation. This draft inventory describes possible capabilities, not a requirement for large instructional screens, fixed progression, central next-action panels or progress displays without practical decision value.
+>
+> `product-strategy-and-roadmap.md` governs which capabilities deserve attention and delivery priority. This inventory must not be treated as a requirement to build every listed screen.
+
 ---
 
 ## 1. Purpose
@@ -508,11 +512,11 @@ Move the newly onboarded member into the core product loop.
 
 ### Purpose
 
-Show the user's current situation and next most relevant actions.
+Provide compact access to active applications and useful workspace areas.
 
 ### Primary actions
 
-- Open recommended preparation
+- Browse preparation resources
 - Add or update application
 - Continue learning
 - View relevant reports
@@ -521,7 +525,7 @@ Show the user's current situation and next most relevant actions.
 
 - Active applications summary
 - Upcoming deadlines
-- Recommended next actions
+- Optional relevant suggestions
 - Continue learning
 - Relevant current reports
 - Saved resources
@@ -691,7 +695,7 @@ Provide a fast stage-change workflow.
 
 ### Result
 
-Dashboard and recommendations update immediately.
+The application updates immediately; any optional suggestions are recalculated.
 
 ---
 
@@ -726,23 +730,23 @@ Allow members to browse and search preparation content.
 
 ---
 
-## L02 — Learning path catalogue
+## L02 — Preparation Plan catalogue
 
 ### Purpose
 
-Display available structured learning paths.
+Display optional structured Preparation Plans.
 
 ### Primary action
 
-`Start path`
+`Open plan`
 
-### Required information
+### Useful information
 
 - Title
 - Outcome
-- Estimated effort
-- Number of lessons
-- Completion status
+- Short description
+- Number of items, when decision-useful
+- Status, when decision-useful
 - Relevant stages
 
 ### States
@@ -768,7 +772,7 @@ Explain the path and display lessons.
 
 - Outcome
 - Lesson sequence
-- Progress
+- Compact status, when decision-useful
 - Required or optional exercises
 - Related resources
 
@@ -1369,7 +1373,6 @@ Create and order lessons.
 - Description
 - Relevant stages
 - Lesson order
-- Estimated effort
 - Publication state
 
 ---

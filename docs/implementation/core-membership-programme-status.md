@@ -1,5 +1,7 @@
 # Core membership programme status
 
+> **Historical implementation ledger:** This is not the current product roadmap. Use `../product/product-strategy-and-roadmap.md` for current priorities. Increment numbering here belongs to an earlier programme and must not be used to infer the status or priority of later Answer Bank work.
+
 This ledger records local implementation progress for Increments 6–12. It contains no credentials, personal content, provider identifiers, or generated request payloads.
 
 | Phase                                             | Status      | Migrations added                             | Principal routes added                                                                                       | Focused tests run                                                                                                                                              | Known blockers                             | Local checkpoint |
