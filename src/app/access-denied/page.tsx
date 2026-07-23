@@ -1,4 +1,5 @@
 import { AuthShell } from "../components/auth-shell";
+import { SignOutButton } from "../components/sign-out-button";
 
 export default function AccessDeniedPage() {
   return (
@@ -9,6 +10,7 @@ export default function AccessDeniedPage() {
       <a className="button-link" href="/member">
         Return to member area
       </a>
+      <SignOutButton />
     </AuthShell>
   );
 }

@@ -1,20 +1,89 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import postgres from "postgres";
+import postgres, { type Sql } from "postgres";
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 const password = "StrongPassword123!";
+
+async function cleanUpLearningPathFixture(
+  db: Sql,
+  fixture: Readonly<{
+    authId?: string;
+    email: string;
+    ownerId?: string;
+    pathId?: string;
+    pathKey: string;
+  }>,
+) {
+  const internalUsers = await db<{ auth_user_id: string; id: string }[]>`
+    select auth_user_id,id from app."user"
+    where email=${fixture.email}
+       or (${fixture.ownerId || null}::uuid is not null and id=${fixture.ownerId || null}::uuid)
+       or (${fixture.authId || null}::uuid is not null and auth_user_id=${fixture.authId || null}::uuid)
+  `;
+  const ownerIds = [...new Set(internalUsers.map(({ id }) => id))];
+  const authIds = [
+    ...new Set([
+      ...internalUsers.map(({ auth_user_id }) => auth_user_id),
+      ...(fixture.authId ? [fixture.authId] : []),
+    ]),
+  ];
+  const paths = await db<{ id: string }[]>`
+    select id from app.learning_path
+    where path_key=${fixture.pathKey}
+       or (${fixture.pathId || null}::uuid is not null and id=${fixture.pathId || null}::uuid)
+  `;
+  const pathIds = paths.map(({ id }) => id);
+  const entityIds: string[] = [...pathIds];
+
+  if (ownerIds.length > 0) {
+    const states = await db<{ id: string }[]>`
+      select id from app.member_learning_path_state where owner_user_id=any(${ownerIds}::uuid[])
+      union all
+      select id from app.member_resource_state where owner_user_id=any(${ownerIds}::uuid[])
+    `;
+    entityIds.push(...states.map(({ id }) => id));
+  }
+  if (ownerIds.length > 0 || entityIds.length > 0) {
+    await db`
+      delete from app.audit_event
+      where (${ownerIds.length > 0} and actor_user_id=any(${ownerIds}::uuid[]))
+         or (${entityIds.length > 0} and entity_id=any(${entityIds}::uuid[]))
+    `;
+  }
+  if (ownerIds.length > 0) {
+    await db`delete from app.member_learning_path_state where owner_user_id=any(${ownerIds}::uuid[])`;
+    await db`delete from app.member_resource_state where owner_user_id=any(${ownerIds}::uuid[])`;
+  }
+  if (pathIds.length > 0) await db`delete from app.learning_path where id=any(${pathIds}::uuid[])`;
+  if (ownerIds.length > 0) {
+    await db`delete from app.onboarding_profile where user_id=any(${ownerIds}::uuid[])`;
+    await db`delete from app.beta_entitlement where user_id=any(${ownerIds}::uuid[])`;
+    await db`delete from app."user" where id=any(${ownerIds}::uuid[])`;
+  }
+  if (authIds.length > 0) await db`delete from auth.users where id=any(${authIds}::uuid[])`;
+  await db`delete from auth.users where email=${fixture.email}`;
+}
+
 test("administrator publishes a path and member progress follows resource completion", async ({
   page,
 }, testInfo) => {
   test.setTimeout(120_000);
   const db = postgres(databaseUrl, { prepare: false });
-  const suffix = `${testInfo.project.name}-${Date.now()}`.replaceAll(/[^a-z0-9-]/g, "-");
+  const suffix = `${testInfo.project.name}`.replaceAll(/[^a-z0-9-]/g, "-");
   const email = `path-${suffix}@example.com`;
+  const pathKey = `browser_path_${suffix.replaceAll("-", "_")}`;
   let authId = "",
     ownerId = "",
-    pathId = "";
+    pathId = "",
+    unrelatedAuditId = "";
   try {
+    await cleanUpLearningPathFixture(db, { email, pathKey });
+    unrelatedAuditId = (
+      await db<
+        { id: string }[]
+      >`insert into app.audit_event(action,entity_type,metadata) values('e2e.fixture.sentinel','e2e_fixture','{}') returning id`
+    )[0]!.id;
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL,
       key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key) throw new Error("Supabase configuration missing");
@@ -36,7 +105,7 @@ test("administrator publishes a path and member progress follows resource comple
     pathId = (
       await db<
         { id: string }[]
-      >`insert into app.learning_path(path_key,slug,title,short_description,introduction) values(${`browser_path_${suffix.replaceAll("-", "_")}`},${slug},${title},'A focused browser-tested guided path.','') returning id`
+      >`insert into app.learning_path(path_key,slug,title,short_description,introduction) values(${pathKey},${slug},${title},'A focused browser-tested guided path.','') returning id`
     )[0]!.id;
     const firstSectionId = (
       await db<
@@ -144,21 +213,17 @@ test("administrator publishes a path and member progress follows resource comple
     await page.goto(`/admin/content/paths/${pathId}`);
     await page.getByRole("button", { name: "Unpublish", exact: true }).click();
   } finally {
-    if (ownerId) {
-      await db`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
-      await db`delete from app.member_learning_path_state where owner_user_id=${ownerId}::uuid`;
-      await db`delete from app.member_resource_state where owner_user_id=${ownerId}::uuid`;
+    try {
+      await cleanUpLearningPathFixture(db, { authId, email, ownerId, pathId, pathKey });
+      if (unrelatedAuditId) {
+        const sentinel = await db<{ count: number }[]>`
+          select count(*)::int count from app.audit_event where id=${unrelatedAuditId}::uuid
+        `;
+        expect(sentinel).toEqual([{ count: 1 }]);
+        await db`delete from app.audit_event where id=${unrelatedAuditId}::uuid`;
+      }
+    } finally {
+      await db.end();
     }
-    if (pathId) {
-      await db`delete from app.audit_event where entity_id=${pathId}::uuid`;
-      await db`delete from app.learning_path where id=${pathId}::uuid`;
-    }
-    if (ownerId) {
-      await db`delete from app.onboarding_profile where user_id=${ownerId}::uuid`;
-      await db`delete from app.beta_entitlement where user_id=${ownerId}::uuid`;
-      await db`delete from app."user" where id=${ownerId}::uuid`;
-    }
-    if (authId) await db`delete from auth.users where id=${authId}::uuid`;
-    await db.end();
   }
 });

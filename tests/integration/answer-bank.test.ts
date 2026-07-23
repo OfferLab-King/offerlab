@@ -22,6 +22,9 @@ runtimeUrl.password = "postgres";
 const runtime = postgres(runtimeUrl.toString(), { max: 2, prepare: false });
 const one = "20000000-0000-4000-8000-000000000001",
   two = "20000000-0000-4000-8000-000000000002";
+const questionKey = "integration_answer_bank_teamwork",
+  questionFamily = "competency_and_behavioural" as const;
+let questionId = "";
 async function as<T>(owner: string, fn: (db: TransactionSql) => PromiseLike<T>) {
   return runtime.begin(async (db) => {
     await db`set local role offerlab_app`;
@@ -48,8 +51,19 @@ beforeEach(async () => {
   await migration`delete from app.member_answer`;
   await migration`delete from app.member_story_competency`;
   await migration`delete from app.member_story`;
+  await migration`delete from app.interview_question where stable_key=${questionKey}`;
+  questionId = (
+    await migration<
+      { id: string }[]
+    >`insert into app.interview_question(stable_key,question_family,prompt,guidance,position) values(${questionKey},${questionFamily},'Tell me about a time you contributed to a team.','Use a specific example.',900001) returning id`
+  )[0]!.id;
+  await migration`insert into app.interview_question_stage(question_id,recruitment_stage) values(${questionId}::uuid,'interview')`;
 });
-afterAll(() => Promise.all([migration.end(), runtime.end()]));
+afterAll(async () => {
+  await migration`delete from app.member_answer where question_id=${questionId}::uuid`;
+  await migration`delete from app.interview_question where stable_key=${questionKey}`;
+  await Promise.all([migration.end(), runtime.end()]);
+});
 describe("private Answer and Story Bank", () => {
   it("creates, updates, maps competencies, archives and restores a story with safe audit", async () => {
     const made = await as(one, (db) => createStory(db, one, story));
@@ -88,14 +102,15 @@ describe("private Answer and Story Bank", () => {
   it("creates canonical and custom answers, reuses ordered stories, and rejects cross-owner application links", async () => {
     const first = await as(one, (db) => createStory(db, one, story)),
       second = await as(one, (db) => createStory(db, one, { ...story, title: "Another example" }));
-    const q = (await as(one, (db) => listQuestions(db, one))).find((x) =>
-      x.prompt.includes("team"),
-    )!;
+    const questions = await as(one, (db) => listQuestions(db, one));
+    expect(questions).toContainEqual(
+      expect.objectContaining({ id: questionId, family: questionFamily, stages: ["interview"] }),
+    );
     const answer = await as(one, (db) =>
       createAnswer(db, one, {
-        questionId: q.id,
+        questionId,
         customQuestion: null,
-        questionFamily: q.family,
+        questionFamily,
         title: "Teamwork",
         keyPoints: "My contribution",
         draftAnswer: "A concise answer",
