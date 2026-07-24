@@ -19,9 +19,11 @@ export default async function Page() {
   return (
     <AnswerBankShell active="overview">
       <header className="applications-heading">
-        <p className="eyebrow">My Answer &amp; Story Bank</p>
-        <h1>Your preparation</h1>
-        <p className="intro">Build reusable answers and evidence stories for interviews.</p>
+        <div>
+          <p className="eyebrow">My Answer &amp; Story Bank</p>
+          <h1>Your preparation</h1>
+          <p className="intro">Build reusable answers and evidence stories for interviews.</p>
+        </div>
       </header>
       <section className="metric-grid" aria-label="Preparation totals">
         <article className="card">

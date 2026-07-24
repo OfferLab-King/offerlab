@@ -4,8 +4,10 @@ export default function Page() {
   return (
     <AnswerBankShell active="stories">
       <header className="applications-heading">
-        <p className="eyebrow">Story Bank</p>
-        <h1>Add an evidence story</h1>
+        <div>
+          <p className="eyebrow">Story Bank</p>
+          <h1>Add an evidence story</h1>
+        </div>
       </header>
       <StoryForm />
     </AnswerBankShell>

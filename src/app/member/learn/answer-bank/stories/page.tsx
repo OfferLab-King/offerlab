@@ -18,18 +18,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ v
           <h1>Evidence stories</h1>
           <p className="intro">Build reusable examples using STAR plus reasoning and reflection.</p>
         </div>
-        <Link className="button-link" href="/member/learn/answer-bank/stories/new">
-          Add a story
-        </Link>
-        <Link
-          href={
-            archived
-              ? "/member/learn/answer-bank/stories"
-              : "/member/learn/answer-bank/stories?view=archived"
-          }
-        >
-          {archived ? "View active stories" : "View archived stories"}
-        </Link>
+        <div className="heading-actions">
+          <Link className="button-link" href="/member/learn/answer-bank/stories/new">
+            Add a story
+          </Link>
+          <Link
+            className="button-link button-secondary"
+            href={
+              archived
+                ? "/member/learn/answer-bank/stories"
+                : "/member/learn/answer-bank/stories?view=archived"
+            }
+          >
+            {archived ? "View active stories" : "View archived stories"}
+          </Link>
+        </div>
       </header>
       {!stories.length ? (
         <section className="card empty-state">
