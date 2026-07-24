@@ -19,42 +19,52 @@ export default async function Page({
   return (
     <AnswerBankShell active="questions">
       <header className="applications-heading">
-        <p className="eyebrow">Interview Questions</p>
-        <h1>Core Interview Questions</h1>
-        <p className="intro">
-          Prioritise prompts relevant to your applications; you do not need to complete every
-          question.
-        </p>
-        <strong>
-          {q.filter((x) => x.status === "Ready").length} of {q.length} answers ready
-        </strong>
+        <div>
+          <p className="eyebrow">Interview Questions</p>
+          <h1>Core Interview Questions</h1>
+          <p className="intro">
+            Prioritise prompts relevant to your applications; you do not need to complete every
+            question.
+          </p>
+        </div>
+        {q.length > 0 && (
+          <strong className="application-count">
+            {q.filter((x) => x.status === "Ready").length} of {q.length} answers ready
+          </strong>
+        )}
       </header>
       <form className="filter-bar">
-        <label htmlFor="family">Family</label>
-        <select id="family" name="family" defaultValue={f.family ?? ""}>
-          <option value="">All families</option>
-          {Object.entries(questionFamilies).map(([k, l]) => (
-            <option value={k} key={k}>
-              {l}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="status">Status</label>
-        <select id="status" name="status" defaultValue={f.status ?? ""}>
-          <option value="">All statuses</option>
-          <option>Not started</option>
-          <option>Draft</option>
-          <option>Ready</option>
-        </select>
-        <label htmlFor="stage">Recruitment stage</label>
-        <select id="stage" name="stage" defaultValue={f.stage ?? ""}>
-          <option value="">All stages</option>
-          {Object.entries(recruitmentStages).map(([key, label]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <label htmlFor="family">
+          Family
+          <select id="family" name="family" defaultValue={f.family ?? ""}>
+            <option value="">All families</option>
+            {Object.entries(questionFamilies).map(([k, l]) => (
+              <option value={k} key={k}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label htmlFor="status">
+          Status
+          <select id="status" name="status" defaultValue={f.status ?? ""}>
+            <option value="">All statuses</option>
+            <option>Not started</option>
+            <option>Draft</option>
+            <option>Ready</option>
+          </select>
+        </label>
+        <label htmlFor="stage">
+          Recruitment stage
+          <select id="stage" name="stage" defaultValue={f.stage ?? ""}>
+            <option value="">All stages</option>
+            {Object.entries(recruitmentStages).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
         <button type="submit">Filter</button>
         {(f.family || f.status || f.stage) && (
           <Link href="/member/learn/answer-bank/questions">Clear filters</Link>

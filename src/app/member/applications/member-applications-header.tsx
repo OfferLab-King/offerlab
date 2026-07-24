@@ -11,8 +11,8 @@ export function MemberApplicationsHeader() {
       </Link>
       <nav aria-label="Member navigation" className="member-nav">
         <MemberNavLinks />
-        <SignOutButton />
       </nav>
+      <SignOutButton />
     </header>
   );
 }

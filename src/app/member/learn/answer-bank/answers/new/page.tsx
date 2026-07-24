@@ -20,8 +20,10 @@ export default async function Page({
   return (
     <AnswerBankShell active="answers">
       <header className="applications-heading">
-        <p className="eyebrow">Answer Bank</p>
-        <h1>Draft an answer</h1>
+        <div>
+          <p className="eyebrow">Answer Bank</p>
+          <h1>Draft an answer</h1>
+        </div>
       </header>
       <AnswerForm
         questions={questions}

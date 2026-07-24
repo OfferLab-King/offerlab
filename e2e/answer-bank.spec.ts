@@ -5,6 +5,10 @@ const databaseUrl =
     process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres",
   password = "StrongPassword123!";
 test("member completes the Answer and Story Bank journey at 390px", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "chromium",
+    "This focused journey declares its own 390px viewport and runs once.",
+  );
   const db = postgres(databaseUrl, { prepare: false }),
     suffix = `${testInfo.project.name}-${Date.now()}`.replaceAll(/[^a-z0-9-]/g, "-"),
     email = `answer-bank-${suffix}@example.com`,
@@ -36,13 +40,28 @@ test("member completes the Answer and Story Bank journey at 390px", async ({ pag
     )[0]!.id;
     await db`insert into app.interview_question_stage(question_id,recruitment_stage) values(${questionId}::uuid,'interview')`;
     await db`insert into app.member_story(owner_user_id,title,experience_type,situation,task,actions,reasoning,result,reflection,ready_at) values(${ownerId}::uuid,${`Existing leadership story ${suffix}`},'employment','A project needed direction.','Set a clear plan.','I coordinated the work.','Clarity reduced risk.','The project completed.','I learned to align early.',now())`;
-    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/sign-in");
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(/\/member$/);
+    const homeWidth = await page
+      .locator("main")
+      .evaluate((main) => main.getBoundingClientRect().width);
     await page.getByRole("link", { name: "Prepare" }).click();
+    const prepareWidth = await page
+      .locator("main")
+      .evaluate((main) => main.getBoundingClientRect().width);
+    expect(prepareWidth).toBe(homeWidth);
+    const headerAlignment = await page.locator(".member-header").evaluate((header) => {
+      const brand = header.querySelector(".brand")?.getBoundingClientRect();
+      const signOut = header.querySelector("button")?.getBoundingClientRect();
+      if (!brand || !signOut) return Number.POSITIVE_INFINITY;
+      return Math.abs(brand.top + brand.height / 2 - (signOut.top + signOut.height / 2));
+    });
+    expect(headerAlignment).toBeLessThanOrEqual(1);
+    await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole("navigation", { name: "Prepare" })).toBeVisible();
     await page.getByRole("link", { name: "Open my Answer Bank" }).click();
     await expect(page.getByRole("navigation", { name: "My Answer and Story Bank" })).toBeVisible();
@@ -113,6 +132,12 @@ test("member completes the Answer and Story Bank journey at 390px", async ({ pag
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
       ),
     ).toBe(false);
+    await page.getByRole("link", { name: "Profile" }).click();
+    await expect(page.getByRole("navigation", { name: "Member navigation" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Profile" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   } finally {
     if (ownerId) {
       await db`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;

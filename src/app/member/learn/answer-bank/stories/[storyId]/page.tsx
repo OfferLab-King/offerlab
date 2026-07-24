@@ -10,8 +10,10 @@ export default async function Page({ params }: { params: Promise<{ storyId: stri
   return (
     <AnswerBankShell active="stories">
       <header className="applications-heading">
-        <p className="eyebrow">Story Bank</p>
-        <h1>{s.ready ? "Review" : "Edit"} evidence story</h1>
+        <div>
+          <p className="eyebrow">Story Bank</p>
+          <h1>{s.ready ? "Review" : "Edit"} evidence story</h1>
+        </div>
       </header>
       <StoryForm initial={s} />
     </AnswerBankShell>

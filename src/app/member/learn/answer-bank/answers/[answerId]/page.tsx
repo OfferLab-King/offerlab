@@ -21,8 +21,10 @@ export default async function Page({ params }: { params: Promise<{ answerId: str
   return (
     <AnswerBankShell active="answers">
       <header className="applications-heading">
-        <p className="eyebrow">Answer Bank</p>
-        <h1>{answer.ready ? "Review" : "Continue"} answer</h1>
+        <div>
+          <p className="eyebrow">Answer Bank</p>
+          <h1>{answer.ready ? "Review" : "Continue"} answer</h1>
+        </div>
       </header>
       <AnswerForm initial={answer} questions={questions} stories={stories} applications={apps} />
     </AnswerBankShell>

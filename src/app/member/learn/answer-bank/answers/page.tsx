@@ -20,18 +20,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ v
           <p className="eyebrow">Answer Bank</p>
           <h1>Interview answers</h1>
         </div>
-        <Link className="button-link" href="/member/learn/answer-bank/answers/new">
-          Draft an answer
-        </Link>
-        <Link
-          href={
-            archived
-              ? "/member/learn/answer-bank/answers"
-              : "/member/learn/answer-bank/answers?view=archived"
-          }
-        >
-          {archived ? "View active answers" : "View archived answers"}
-        </Link>
+        <div className="heading-actions">
+          <Link className="button-link" href="/member/learn/answer-bank/answers/new">
+            Draft an answer
+          </Link>
+          <Link
+            className="button-link button-secondary"
+            href={
+              archived
+                ? "/member/learn/answer-bank/answers"
+                : "/member/learn/answer-bank/answers?view=archived"
+            }
+          >
+            {archived ? "View active answers" : "View archived answers"}
+          </Link>
+        </div>
       </header>
       {!answers.length ? (
         <section className="card empty-state">
