@@ -1,45 +1,43 @@
 import { describe, expect, it } from "vitest";
+import { answerCoachCategories, validateProviderReview } from "../domain/review";
+import { answerCoachEvaluationExamples } from "../evaluation/examples";
 import { localRubricProvider } from "./local-rubric-provider";
 
-describe("local Answer Coach prototype", () => {
-  it("returns bounded observations without copying or inventing member facts", async () => {
-    const privateMarker = "PRIVATE-MARKER-8472";
-    const review = await localRubricProvider.review({
-      draftAnswer: `We completed the work. ${privateMarker}`,
-      keyPoints: "",
-      question: "Tell me about teamwork",
-      stories: [],
-    });
-    expect(review.priorities.map((item) => item.heading)).toEqual([
-      "Develop the evidence",
-      "Make your role explicit",
-      "Ground the answer",
-    ]);
-    expect(JSON.stringify(review)).not.toContain(privateMarker);
-    expect(review.coachingQuestions.length).toBeLessThanOrEqual(3);
-  });
+describe("local Answer Coach fallback", () => {
+  it.each(answerCoachEvaluationExamples)(
+    "returns valid grounded output for $id",
+    async ({ input }) => {
+      const raw = await localRubricProvider.review(input);
+      const review = validateProviderReview(raw, input.draftAnswer.trim());
+      expect(review.comments.length).toBeGreaterThan(0);
+      expect(review.comments.length).toBeLessThanOrEqual(8);
+      expect(
+        review.comments.every((comment) => answerCoachCategories.includes(comment.category)),
+      ).toBe(true);
+    },
+  );
 
-  it("recognises linked evidence and individual contribution", async () => {
-    const review = await localRubricProvider.review({
-      draftAnswer: `I clarified the objective, tested the options and helped the group agree. ${"Specific detail. ".repeat(30)}`,
-      keyPoints: "",
-      question: "Describe your contribution",
-      stories: [
+  it("rejects malformed and ungrounded provider anchors", () => {
+    expect(() => validateProviderReview({ comments: [], extra: true }, "Answer")).toThrow();
+    expect(() =>
+      validateProviderReview(
         {
-          actions: "I tested the options.",
-          reasoning: "The criteria kept the comparison fair.",
-          reflection: "I would invite quieter voices earlier.",
-          result: "The group agreed a recommendation.",
-          situation: "The group had limited time.",
-          task: "Reach a recommendation.",
+          comments: [
+            {
+              anchor: { start: 0, end: 5, quote: "Wrong" },
+              category: "Evidence",
+              coachingQuestion: "What happened?",
+              observation: "Add evidence.",
+              optionalRevision: null,
+            },
+          ],
+          followUpQuestions: [],
+          strengths: [],
+          summary: "Review.",
+          unsupportedClaimsDetected: [],
         },
-      ],
-    });
-    expect(review.strengths.map((item) => item.heading)).toEqual([
-      "Useful level of detail",
-      "Personal contribution",
-      "Evidence connected",
-    ]);
-    expect(review.priorities).toEqual([]);
+        "Right answer",
+      ),
+    ).toThrow("answer_coach_invalid_anchor");
   });
 });

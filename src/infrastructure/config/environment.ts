@@ -7,6 +7,7 @@ export const environmentKeys = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "AUTH_RATE_LIMIT_SECRET",
+  "ANSWER_COACH_ENABLED",
   "DATABASE_URL",
   "IDENTITY_SYNC_DATABASE_URL",
   "LOG_LEVEL",
@@ -21,6 +22,7 @@ const optionalString = z.preprocess(
 const serverEnvironmentSchema = z
   .object({
     APP_ENV: z.enum(["local", "test", "staging", "production"]),
+    ANSWER_COACH_ENABLED: z.enum(["true", "false"]).optional(),
     AUTH_RATE_LIMIT_SECRET: optionalString,
     DATABASE_URL: optionalString,
     IDENTITY_SYNC_DATABASE_URL: optionalString,

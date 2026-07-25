@@ -1048,6 +1048,177 @@ textarea[aria-invalid="true"] {
   padding: var(--space-2);
 }
 
+.answer-coach-review-mode {
+  background: #eef1f4;
+  border: 1px solid #cdd3da;
+  border-radius: var(--radius-panel);
+  margin-top: var(--space-3);
+  overflow: hidden;
+}
+
+.coach-toolbar {
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #d7dce1;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem 1rem;
+}
+
+.coach-toolbar h2,
+.coach-comments-heading h3 {
+  margin: 0;
+}
+.coach-toolbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+}
+.coach-toolbar-actions label {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+.coach-privacy-note {
+  background: #f8faf8;
+  border-bottom: 1px solid #d7dce1;
+  margin: 0;
+  padding: 0.65rem 1rem;
+}
+.coach-empty {
+  background: white;
+  margin: 3rem auto;
+  max-width: 38rem;
+  padding: 2rem;
+  text-align: center;
+}
+.coach-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  min-height: 38rem;
+  position: relative;
+}
+.coach-answer-canvas {
+  max-height: 48rem;
+  overflow: auto;
+  padding: 2.5rem;
+}
+.coach-page {
+  background: white;
+  box-shadow: 0 2px 12px rgb(32 43 54 / 14%);
+  margin: 0 auto;
+  min-height: 34rem;
+  max-width: 46rem;
+  padding: 3.25rem 3.5rem;
+}
+.coach-page footer {
+  border-top: 1px solid #e2e5e8;
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 3rem;
+  padding-top: 0.8rem;
+}
+.coach-review-summary {
+  color: #34495e;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+.coach-answer-text {
+  font-family: Georgia, serif;
+  font-size: 1.08rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+.coach-highlight {
+  border-bottom: 2px solid #c39218;
+  cursor: pointer;
+  padding: 0.08rem 0;
+}
+.coach-highlight-evidence {
+  background: #fff0a8;
+}
+.coach-highlight-reasoning {
+  background: #dcedff;
+}
+.coach-highlight-relevance {
+  background: #daf1df;
+}
+.coach-highlight-structure {
+  background: #eadfff;
+}
+.coach-highlight-reflection {
+  background: #ffe0d9;
+}
+.coach-highlight.is-selected {
+  outline: 3px solid #275e43;
+  outline-offset: 2px;
+}
+.coach-comments-panel {
+  background: #fff;
+  border-left: 1px solid #cdd3da;
+  max-height: 48rem;
+  overflow: auto;
+  padding: 1rem;
+  z-index: 3;
+}
+.coach-comments-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.coach-comments-close,
+.coach-mobile-comments {
+  display: none;
+}
+.coach-comment-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+.coach-comment-card {
+  border: 1px solid #d8dde2;
+  border-left: 4px solid #8a699f;
+  border-radius: 0.45rem;
+  padding: 0.9rem;
+}
+.coach-comment-card.is-selected {
+  box-shadow: 0 0 0 2px #275e43;
+}
+.coach-comment-card.is-addressed {
+  opacity: 0.62;
+}
+.coach-comment-card.is-dismissed {
+  display: none;
+}
+.coach-category {
+  background: #edf0f3;
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 750;
+  padding: 0.22rem 0.55rem;
+}
+.coach-question {
+  color: #34495e;
+  font-style: italic;
+}
+.coach-comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+}
+.button-quiet {
+  background: transparent;
+  border: 0;
+  color: var(--accent-dark);
+  min-height: auto;
+  padding: 0;
+  text-decoration: underline;
+}
+.coach-sheet-backdrop {
+  display: none;
+}
+
 .intelligence-submission > summary {
   color: var(--accent-dark);
   cursor: pointer;
@@ -2107,6 +2278,65 @@ progress {
 
   .service-grid .direct-tool-card {
     min-height: 0;
+  }
+
+  .coach-toolbar {
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+  .coach-toolbar-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .coach-workspace {
+    display: block;
+    min-height: 0;
+  }
+  .coach-answer-canvas {
+    max-height: none;
+    padding: 0.8rem;
+  }
+  .coach-page {
+    min-height: 28rem;
+    padding: 1.5rem 1.25rem;
+  }
+  .coach-mobile-comments {
+    display: block;
+  }
+  .coach-comments-panel {
+    border: 0;
+    border-radius: 1rem 1rem 0 0;
+    bottom: 0;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / 20%);
+    display: none;
+    left: 0;
+    max-height: 72vh;
+    padding: 1rem;
+    position: fixed;
+    right: 0;
+    z-index: 20;
+  }
+  .coach-comments-panel.is-open {
+    display: block;
+  }
+  .coach-comments-close {
+    background: transparent;
+    border: 0;
+    display: block;
+    font-size: 2rem;
+    min-height: auto;
+    padding: 0.2rem 0.5rem;
+  }
+  .coach-sheet-backdrop {
+    background: rgb(0 0 0 / 35%);
+    border: 0;
+    bottom: 0;
+    display: block;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    z-index: 19;
   }
 }
 

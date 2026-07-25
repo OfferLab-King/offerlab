@@ -111,6 +111,24 @@ test("member completes the Answer and Story Bank journey at 390px", async ({ pag
     await expect(page.getByText("Covered").first()).toBeVisible();
     await page.getByRole("link", { name: "Answers", exact: true }).click();
     await page.getByRole("link", { name: "Review" }).click();
+    await expect(page.getByRole("heading", { name: "Review mode" })).toBeVisible();
+    await page.getByRole("button", { name: "Review this answer" }).click();
+    const commentsSheet = page.getByRole("dialog", { name: "Coaching comments" });
+    await expect(commentsSheet).toBeVisible();
+    await expect(commentsSheet.locator(".coach-category").first()).toBeVisible();
+    await commentsSheet.getByRole("button", { name: "Jump to highlight" }).first().click();
+    await expect(page.locator("mark.is-selected")).toBeVisible();
+    await page.getByRole("button", { name: /Comments \(/ }).click();
+    await commentsSheet.getByRole("button", { name: "Mark addressed" }).first().click();
+    await expect(commentsSheet.locator(".is-addressed")).toHaveCount(1);
+    await commentsSheet.getByRole("button", { name: "Close comments" }).click();
+    await page.getByRole("button", { name: "Review again" }).click();
+    await expect(commentsSheet).toBeVisible();
+    await commentsSheet.getByRole("button", { name: "Close comments" }).click();
+    await expect(page.getByLabel("Previous review")).toContainText("Latest");
+    await expect(page.getByLabel("Draft answer")).toHaveValue(
+      "I coordinated a team under time pressure and helped us deliver a strong result.",
+    );
     await page.getByRole("button", { name: "Archive answer" }).click();
     await expect(page.getByRole("link", { name: "View active answers" })).toBeVisible();
     await expect(page.getByText("Archived", { exact: true }).first()).toBeVisible();
@@ -141,6 +159,8 @@ test("member completes the Answer and Story Bank journey at 390px", async ({ pag
   } finally {
     if (ownerId) {
       await db`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
+      await db`delete from app.answer_coach_comment where owner_user_id=${ownerId}::uuid`;
+      await db`delete from app.answer_coach_review where owner_user_id=${ownerId}::uuid`;
       await db`delete from app.member_answer_story where owner_user_id=${ownerId}::uuid`;
       await db`delete from app.member_answer where owner_user_id=${ownerId}::uuid`;
       await db`delete from app.member_story_competency where owner_user_id=${ownerId}::uuid`;
