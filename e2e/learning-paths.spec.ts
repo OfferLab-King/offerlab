@@ -149,8 +149,10 @@ test("administrator publishes a path and member progress follows resource comple
       "href",
       "/member/learn/answer-bank/questions",
     );
-    await expect(page.getByRole("heading", { name: "Coming to OfferLab" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "AI Answer Coach" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Go beyond generic preparation" }),
+    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Answer Coach" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(

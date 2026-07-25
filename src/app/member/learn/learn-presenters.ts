@@ -3,10 +3,15 @@ import type {
   PathSection,
 } from "../../../modules/learning-paths/infrastructure/learning-path-repository";
 
-export type LearnDestination = "answer-bank" | "overview" | "paths" | "resources";
+export type LearnDestination =
+  "answer-bank" | "cases" | "intelligence" | "overview" | "paths" | "practice" | "resources";
 
 export function learnDestination(pathname: string): LearnDestination {
   if (pathname.startsWith("/member/learn/paths")) return "paths";
+  if (pathname.startsWith("/member/learn/answer-bank")) return "answer-bank";
+  if (pathname.startsWith("/member/learn/cases")) return "cases";
+  if (pathname.startsWith("/member/learn/intelligence")) return "intelligence";
+  if (pathname.startsWith("/member/learn/practice")) return "practice";
   if (pathname === "/member/learn/resources" || pathname.startsWith("/member/learn/resources/"))
     return "resources";
   return "overview";

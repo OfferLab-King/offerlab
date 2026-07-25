@@ -164,27 +164,50 @@ export default async function LearnPage() {
               Browse resources
             </Link>
           </article>
+          <article className="card compact-card direct-tool-card">
+            <h3>Annotated Coaching Cases</h3>
+            <p>
+              See how reasoning, trade-offs and coach annotations turn a scenario into useful
+              practice.
+            </p>
+            <Link className="button-link" href="/member/learn/cases">
+              Study a case
+            </Link>
+          </article>
+          <article className="card compact-card direct-tool-card">
+            <h3>Practice &amp; Feedback</h3>
+            <p>Register interest in a Group Mock, answer review or focused mock-interview pilot.</p>
+            <Link className="button-link" href="/member/learn/practice">
+              View pilots
+            </Link>
+          </article>
         </div>
       </section>
 
-      <section aria-labelledby="coming-to-offerlab" className="learn-section upcoming-experiences">
-        <p className="eyebrow">Practise and get feedback</p>
-        <h2 id="coming-to-offerlab">Coming to OfferLab</h2>
+      <section aria-labelledby="distinctive-tools" className="learn-section upcoming-experiences">
+        <p className="eyebrow">OfferLab tools</p>
+        <h2 id="distinctive-tools">Go beyond generic preparation</h2>
         <div className="upcoming-grid">
           <article>
-            <span className="availability-label">In development</span>
-            <h3>AI Answer Coach</h3>
-            <p>Evidence-grounded feedback using your linked stories and OfferLab’s rubric.</p>
+            <span className="availability-label">Local prototype</span>
+            <h3>Answer Coach</h3>
+            <p>
+              Open an answer for an evidence-grounded rubric review. No AI provider receives your
+              content.
+            </p>
+            <Link href="/member/learn/answer-bank/answers">Review an answer</Link>
           </article>
           <article>
-            <span className="availability-label">Pilot planned</span>
+            <span className="availability-label">Register interest</span>
             <h3>Group Mock</h3>
             <p>Structured group-exercise practice with peer or facilitator feedback.</p>
+            <Link href="/member/learn/practice">View the pilot</Link>
           </article>
           <article>
-            <span className="availability-label">Pilot planned</span>
+            <span className="availability-label">Human moderated</span>
             <h3>Recruitment intelligence</h3>
             <p>Moderated, cycle-dated candidate reports by stage, format and assessed skill.</p>
+            <Link href="/member/learn/intelligence">Explore reports</Link>
           </article>
         </div>
       </section>

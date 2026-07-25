@@ -36,7 +36,8 @@ export type AdminResource = Readonly<{
   primaryCategoryId: string | null;
   publicationState: "draft" | "published" | "archived";
   relatedResourceIds: readonly string[];
-  resourceType: "guide" | "checklist" | "template" | "video" | "exercise" | "article";
+  resourceType:
+    "guide" | "checklist" | "template" | "video" | "exercise" | "article" | "coaching_case";
   shortDescription: string;
   slug: string;
   stages: readonly string[];
