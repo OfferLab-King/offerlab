@@ -111,14 +111,15 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     resourceId = page.url().split("/").at(-1);
     if (!categoryId || !resourceId || !tagId) throw new Error("Created CMS identifier missing.");
     await page.getByLabel(tagName).check();
-    await page.getByLabel("video interview").check();
-    await page.getByLabel("graduate scheme").check();
-    await page
-      .getByLabel("Controlled links (JSON array in display order)")
-      .fill('[{"type":"external","label":"Example","url":"https://example.com/guide"}]');
+    await page.getByRole("checkbox", { name: "video interview", exact: true }).check();
+    await page.getByRole("checkbox", { name: "graduate scheme", exact: true }).check();
+    await page.getByText("Related content and links", { exact: true }).click();
+    await page.getByRole("button", { name: "Add link" }).click();
+    await page.getByLabel("Link 1 label").fill("Example");
+    await page.getByLabel("Link 1 URL").fill("https://example.com/guide");
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Resource updated.")).toBeVisible();
-    await expect(page.getByText(/Administrator CMS · published/)).toBeVisible();
+    await expect(page.getByText(/Content editor · published/)).toBeVisible();
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("No changes were needed.")).toBeVisible();
     const resourceTimestamps = await database<
@@ -177,7 +178,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     ).resolves.toEqual([{ title: serverTitle }]);
     await resourceConflict.getByRole("link", { name: "Reload current content" }).click();
     await page
-      .locator("article.card")
+      .locator("article.cms-content-row")
       .filter({ has: page.getByRole("heading", { name: serverTitle }) })
       .getByRole("link", { name: "Edit" })
       .click();
@@ -209,32 +210,25 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     ).resolves.toEqual(resourceAuditsBefore);
     await publicationConflict.getByRole("link", { name: "Reload current content" }).click();
     await page
-      .locator("article.card")
+      .locator("article.cms-content-row")
       .filter({ has: page.getByRole("heading", { name: serverTitle }) })
       .getByRole("link", { name: "Edit" })
       .click();
     await page.getByRole("button", { name: "Unpublish" }).click();
-    await expect(page.getByText(/Administrator CMS · draft/)).toBeVisible();
+    await expect(page.getByText(/Content editor · draft/)).toBeVisible();
     await page.getByRole("button", { name: "Archive" }).click();
-    await expect(page.getByText(/Administrator CMS · archived/)).toBeVisible();
+    await expect(page.getByText(/Content editor · archived/)).toBeVisible();
     await page.getByRole("button", { name: "Restore to draft" }).click();
-    await expect(page.getByText(/Administrator CMS · draft/)).toBeVisible();
-    const overflowing = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>("body *")]
-        .filter(
-          (element) =>
-            element.getBoundingClientRect().right > document.documentElement.clientWidth + 1,
-        )
-        .map((element) => ({
-          className: element.className,
-          tag: element.tagName,
-          text: element.textContent?.slice(0, 80),
-        })),
-    );
-    expect(overflowing).toEqual([]);
+    await expect(page.getByText(/Content editor · draft/)).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
 
     await page.goto("/admin/content/tags");
-    let tagForm = page.locator("form.card").filter({ hasText: tagSlug });
+    let tagForm = page.locator("form.cms-taxonomy-row").filter({ hasText: tagSlug });
     const tagAuditsBefore = await database<
       { count: number }[]
     >`select count(*)::int count from app.audit_event where entity_id in (select id from app.content_tag where slug=${tagSlug})`;
@@ -261,14 +255,14 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       database`select count(*)::int count from app.audit_event where entity_id in (select id from app.content_tag where slug=${tagSlug})`,
     ).resolves.toEqual(tagAuditsBefore);
     await tagConflict.getByRole("link", { name: "Reload current content" }).click();
-    tagForm = page.locator("form.card").filter({ hasText: tagSlug });
+    tagForm = page.locator("form.cms-taxonomy-row").filter({ hasText: tagSlug });
     await tagForm.getByRole("button", { name: "Archive" }).click();
     await expect(page.getByRole("status")).toContainText("changed");
-    const restoredTag = page.locator("form.card").filter({ hasText: tagSlug });
+    const restoredTag = page.locator("form.cms-taxonomy-row").filter({ hasText: tagSlug });
     await restoredTag.getByRole("button", { name: "Restore" }).click();
     await expect(page.getByRole("status")).toContainText("changed");
     await page.goto("/admin/content/categories");
-    let categoryForm = page.locator("form.card").filter({ hasText: categorySlug });
+    let categoryForm = page.locator("form.cms-taxonomy-row").filter({ hasText: categorySlug });
     const categoryAuditsBefore = await database<
       { count: number }[]
     >`select count(*)::int count from app.audit_event where entity_id in (select id from app.content_category where slug=${categorySlug})`;
@@ -297,10 +291,12 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       database`select count(*)::int count from app.audit_event where entity_id in (select id from app.content_category where slug=${categorySlug})`,
     ).resolves.toEqual(categoryAuditsBefore);
     await categoryConflict.getByRole("link", { name: "Reload current content" }).click();
-    categoryForm = page.locator("form.card").filter({ hasText: categorySlug });
+    categoryForm = page.locator("form.cms-taxonomy-row").filter({ hasText: categorySlug });
     await categoryForm.getByRole("button", { name: "Archive" }).click();
     await expect(page.getByRole("status")).toContainText("changed");
-    const restoredCategory = page.locator("form.card").filter({ hasText: categorySlug });
+    const restoredCategory = page
+      .locator("form.cms-taxonomy-row")
+      .filter({ hasText: categorySlug });
     await restoredCategory.getByRole("button", { name: "Restore" }).click();
     await expect(page.getByRole("status")).toContainText("changed");
   } finally {

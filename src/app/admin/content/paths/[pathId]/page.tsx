@@ -25,12 +25,23 @@ export default async function Page({
   if (!path) notFound();
   const query = await searchParams;
   return (
-    <main>
-      <p className="eyebrow">Administrator CMS · {path.publicationState}</p>
-      <h1>Edit learning path</h1>
-      {query.error === "conflict" && (
-        <ConflictAlert reloadHref={`/admin/content/paths/${id}`} />
-      )}{" "}
+    <main className="cms-editor-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Preparation paths · {path.publicationState}</p>
+          <h1>{path.title || "Untitled learning path"}</h1>
+          <p>Update the sequence, context and publication state.</p>
+        </div>
+        <a
+          className="button-secondary button-link"
+          href={`/admin/content/paths/${id}/preview`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Preview path
+        </a>
+      </header>
+      {query.error === "conflict" && <ConflictAlert reloadHref={`/admin/content/paths/${id}`} />}{" "}
       {query.error === "validation" && (
         <div className="error-summary" role="alert">
           The path could not be saved. Check all fields and publication requirements.
@@ -41,11 +52,6 @@ export default async function Page({
           {query.status === "unchanged" ? "No changes to save." : "Learning path saved."}
         </p>
       )}
-      <p>
-        <a href={`/admin/content/paths/${id}/preview`} target="_blank" rel="noreferrer">
-          Preview path
-        </a>
-      </p>
       <PathEditor
         action={updatePathAction.bind(null, id)}
         categories={options.categories}

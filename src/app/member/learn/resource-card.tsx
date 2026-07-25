@@ -19,6 +19,11 @@ export function ResourceCard({ resource }: { resource: ResourceRecord }) {
         <Link href={`/member/learn/${resource.slug}`}>{resource.title}</Link>
       </h2>
       <p>{resource.shortDescription}</p>
+      {resource.resourceType === "coaching_case" && resource.coachingCase && (
+        <p className="resource-stage">
+          <strong>Question:</strong> {resource.coachingCase.question}
+        </p>
+      )}
       {resource.stages.length > 0 && (
         <p className="resource-stage">{resource.stages.map(recruitmentStageLabel).join(", ")}</p>
       )}

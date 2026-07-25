@@ -52,9 +52,16 @@ export default async function Page({
     stages: [],
   } as const;
   return (
-    <main>
-      <p className="eyebrow">Administrator CMS · {r.publicationState}</p>
-      <h1>Edit resource</h1>
+    <main className="cms-page cms-editor-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Content editor · {r.publicationState}</p>
+          <h1>{r.title || "Untitled content"}</h1>
+          <p>
+            Version {r.version} · /{r.slug}
+          </p>
+        </div>
+      </header>
       {query.error === "conflict" ? (
         <ConflictAlert reloadHref="?" />
       ) : query.error ? (
@@ -67,10 +74,13 @@ export default async function Page({
           {query.status === "unchanged" ? "No changes were needed." : "Resource updated."}
         </p>
       )}
-      <form action={save} className="application-form">
+      <form action={save} className="application-form cms-resource-form">
         <input name="expectedVersion" type="hidden" value={r.version} />
         <ContentFields categories={categories} resource={r} resources={resources} tags={tags} />
-        <div className="form-actions">
+        <div className="form-actions cms-sticky-actions">
+          <span className={`cms-status cms-status-${r.publicationState}`}>
+            {r.publicationState}
+          </span>
           <button name="intent" value="save">
             Save
           </button>
@@ -88,8 +98,12 @@ export default async function Page({
           </button>
         </div>
       </form>
-      <h2>Private preview</h2>
-      <ResourceContent resource={previewResource} />
+      <details className="cms-preview">
+        <summary>Preview member view</summary>
+        <div className="cms-preview-body">
+          <ResourceContent resource={previewResource} />
+        </div>
+      </details>
     </main>
   );
 }

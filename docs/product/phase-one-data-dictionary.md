@@ -38,3 +38,9 @@ Offerings are administrator-curated descriptions of manually operated pilots. Av
 - The local pilot permits five reviews per rolling ten minutes and twenty per calendar month per owner. `ANSWER_COACH_ENABLED=false` is the operational kill switch.
 
 The review is generated only on explicit request and returned as validated structured output. The local prototype derives only generic rubric observations. No model provider receives content. Moving to a production AI provider requires the privacy, provider, evaluation, cost, rate-limit and release controls in `ai-product-strategy.md`.
+
+## Structured annotated coaching cases
+
+`coaching_case_detail` attaches an editorial teaching record to an existing `coaching_case` preparation resource. It stores the canonical or displayed question, anonymised original answer, improved answer, bounded exact-range changes, controlled comment categories, common weaknesses, improvement reasoning and a practice prompt. Change ranges must be ordered, non-overlapping and reproduce the improved answer exactly under application validation.
+
+Cases use the existing content catalogue, access level, publication state, category, tags and saving controls. Members can read only details whose parent resource is published; only administrators can write details. Synthetic examples are the default. Previous-student material requires the `anonymised_approved` source state plus a confirming administrator and timestamp before it satisfies the database constraint. No real previous-student content is seeded.

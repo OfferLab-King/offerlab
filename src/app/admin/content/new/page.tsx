@@ -23,12 +23,20 @@ export default async function Page() {
     redirect("/admin/content/new?error=validation");
   }
   return (
-    <main>
-      <p className="eyebrow">Administrator CMS</p>
-      <h1>Create draft</h1>
-      <form action={create} className="application-form">
+    <main className="cms-page cms-editor-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">New content</p>
+          <h1>Create content</h1>
+          <p>Start as a private draft. Nothing becomes visible until you publish it.</p>
+        </div>
+      </header>
+      <form action={create} className="application-form cms-resource-form">
         <ContentFields categories={categories} resources={resources} tags={tags} />
-        <button type="submit">Save draft</button>
+        <div className="cms-sticky-actions">
+          <span>New private draft</span>
+          <button type="submit">Save draft</button>
+        </div>
       </form>
     </main>
   );

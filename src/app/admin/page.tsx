@@ -8,19 +8,36 @@ export const dynamic = "force-dynamic";
 export default async function AdministratorPage() {
   await requireAdministrator();
   return (
-    <main>
-      <section className="card">
-        <p className="eyebrow">Protected administrator route</p>
-        <h1>OfferLab administration</h1>
-        <p>Administrator authorization has been confirmed.</p>
-        <Link className="button-link" href="/admin/content">
-          Manage content
-        </Link>
-        <Link className="button-link" href="/admin/operations">
-          Moderate intelligence and pilot requests
-        </Link>
+    <main className="admin-home">
+      <header className="admin-home-header">
+        <div>
+          <p className="eyebrow">OfferLab administration</p>
+          <h1>What would you like to manage?</h1>
+          <p>Publish learning content or review operational submissions.</p>
+        </div>
         <SignOutButton />
+      </header>
+      <section className="admin-home-grid">
+        <Link className="admin-home-card" href="/admin/content">
+          <span className="admin-home-icon">C</span>
+          <div>
+            <h2>Content management</h2>
+            <p>
+              Create resources, annotated coaching cases, categories, tags and preparation paths.
+            </p>
+            <strong>Open CMS →</strong>
+          </div>
+        </Link>
+        <Link className="admin-home-card" href="/admin/operations">
+          <span className="admin-home-icon">O</span>
+          <div>
+            <h2>Operations</h2>
+            <p>Moderate recruitment intelligence and manually managed pilot requests.</p>
+            <strong>Open operations →</strong>
+          </div>
+        </Link>
       </section>
+      <Link href="/member/learn">View the member workspace</Link>
     </main>
   );
 }

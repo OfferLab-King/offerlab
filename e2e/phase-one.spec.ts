@@ -57,6 +57,26 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(/\/(admin|member)$/);
+
+    await page.goto("/admin/content?type=coaching_case");
+    await expect(page.getByRole("navigation", { name: "Content management" })).toBeVisible();
+    const coachingCaseRow = page
+      .locator("article.cms-content-row")
+      .filter({ hasText: "Before and after: making teamwork evidence specific" });
+    const editHref = await coachingCaseRow.getByRole("link", { name: "Edit" }).getAttribute("href");
+    if (!editHref) throw new Error("Coaching-case edit link missing.");
+    await page.goto(editHref);
+    await expect(
+      page.getByRole("heading", { name: "Build the annotated before-and-after" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add comment to selection" })).toBeVisible();
+    await expect(page.getByText("Coaching-case detail (validated JSON)")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+
     await page.goto("/member/learn");
     await expect(
       page.getByRole("heading", { name: "Go beyond generic preparation" }),
@@ -68,6 +88,32 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       .click();
     await expect(page.getByRole("heading", { name: "Annotated Coaching Cases" })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Demonstration case/ })).toBeVisible();
+    await page
+      .getByRole("link", { name: "Before and after: making teamwork evidence specific" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "See the edit and the reasoning" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("article", { name: "Answer with tracked changes" }).locator("del"),
+    ).toHaveCount(3);
+    await expect(
+      page.getByRole("article", { name: "Answer with tracked changes" }).locator("ins"),
+    ).toHaveCount(3);
+    await page.getByRole("button", { name: "Jump to change" }).first().click();
+    await expect(page.locator("[data-case-change='individual_action']")).toHaveClass(/is-selected/);
+    await page.getByRole("button", { name: "Original only" }).click();
+    await expect(page.getByRole("article", { name: "Original answer" }).locator("ins")).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole("heading", { name: "Common mistakes shown here" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Why the revised answer is stronger" }),
+    ).toBeVisible();
+    await page
+      .getByRole("navigation", { name: "Prepare" })
+      .getByRole("link", { name: "Coaching Cases" })
+      .click();
 
     await page
       .getByRole("navigation", { name: "Prepare" })
@@ -81,10 +127,11 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     );
 
     await page.goto(`/member/learn/answer-bank/answers/${answerId}`);
-    await expect(page.getByText("No AI provider receives your content")).toBeVisible();
+    await expect(page.getByText(/local fallback sends nothing to an AI provider/i)).toBeVisible();
     await page.getByRole("button", { name: "Review this answer" }).click();
-    await expect(page.getByRole("heading", { name: "What is working" })).toBeVisible();
-    await expect(page.getByText("Evidence connected")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Coaching comments" })).toBeVisible();
+    await expect(page.locator(".coach-category").first()).toBeVisible();
+    await page.getByRole("button", { name: "Close comments" }).first().click();
 
     await page
       .getByRole("navigation", { name: "Prepare" })
@@ -143,6 +190,8 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
       await database`delete from app.service_request where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.recruitment_intelligence_report where owner_user_id=${ownerId}::uuid`;
+      await database`delete from app.answer_coach_comment where owner_user_id=${ownerId}::uuid`;
+      await database`delete from app.answer_coach_review where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.member_answer_story where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.member_answer where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.member_story_competency where owner_user_id=${ownerId}::uuid`;
