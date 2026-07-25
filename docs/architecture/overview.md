@@ -23,6 +23,9 @@ There is no separate backend deployment. Route handlers and server actions are a
 - **Applications:** private application lifecycle, stage and deadlines. All repository operations require owner ID.
 - **Taxonomy:** stable education, opportunity, industry, priority, and recruitment-stage keys.
 - **Preparation resources:** canonical safe-Markdown library content, publication/access lifecycle, search, taxonomy associations, and owner-private save/completion state.
+- **Recruitment intelligence:** cycle-dated candidate reports, controlled context, human moderation, publication confidence and privacy-safe contribution status.
+- **Practice services:** curated pilot availability and privacy-minimal member requests. It does not perform payments, matching, messaging or marketplace discovery.
+- **Answer coaching:** a provider-neutral review contract and bounded structured output. The initial member prototype uses a deterministic local rubric; a model provider remains behind the AI privacy and evaluation gate.
 - **Recommendations:** pure deterministic matching, ordering, deduplication, limits, and explanations.
 - **Dashboard:** composes applications, deadlines, and recommendations without owning their rules.
 - **Administration:** explicit administrative use cases; no general private-note access.

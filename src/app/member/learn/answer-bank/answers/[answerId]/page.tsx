@@ -8,6 +8,7 @@ import {
 } from "../../../../../../modules/answer-bank/application/answer-bank";
 import { AnswerBankShell } from "../../shell";
 import { AnswerForm } from "../answer-form";
+import { AnswerCoachPanel } from "./answer-coach-panel";
 export default async function Page({ params }: { params: Promise<{ answerId: string }> }) {
   const { userId } = await requireMember(),
     id = (await params).answerId;
@@ -27,6 +28,7 @@ export default async function Page({ params }: { params: Promise<{ answerId: str
         </div>
       </header>
       <AnswerForm initial={answer} questions={questions} stories={stories} applications={apps} />
+      {!answer.archivedAt && <AnswerCoachPanel answerId={answer.id} />}
     </AnswerBankShell>
   );
 }

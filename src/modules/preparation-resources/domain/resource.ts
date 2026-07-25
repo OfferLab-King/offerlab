@@ -7,6 +7,7 @@ export const resourceTypes = [
   "video",
   "exercise",
   "article",
+  "coaching_case",
 ] as const;
 export const resourceTypeLabels = {
   guide: "Guide",
@@ -15,6 +16,7 @@ export const resourceTypeLabels = {
   video: "Video",
   exercise: "Exercise",
   article: "Article",
+  coaching_case: "Annotated coaching case",
 } as const satisfies Record<(typeof resourceTypes)[number], string>;
 export const accessLevels = ["public", "member"] as const;
 export const publicationStates = ["draft", "published", "archived"] as const;

@@ -41,9 +41,11 @@ export function ContentFields({
       <label>
         Type
         <select defaultValue={resource?.resourceType ?? "guide"} name="resourceType">
-          {["guide", "checklist", "template", "video", "exercise", "article"].map((x) => (
-            <option key={x}>{x}</option>
-          ))}
+          {["guide", "checklist", "template", "video", "exercise", "article", "coaching_case"].map(
+            (x) => (
+              <option key={x}>{x}</option>
+            ),
+          )}
         </select>
       </label>
       <label>

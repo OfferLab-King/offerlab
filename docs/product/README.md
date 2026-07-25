@@ -2,6 +2,10 @@
 
 > Approved clarifications are recorded in `../architecture/founder-decisions.md`. Current positioning and priorities are in `product-strategy-and-roadmap.md`; current UX defaults are in `experience-principles.md`; permitted AI use is governed by `ai-product-strategy.md`. Together they supersede conflicting priorities, AI restrictions and guided-journey defaults in the earlier drafts below.
 
+Visual implementation must also follow `ui-ux-design-system.md`, which defines OfferLab's spacing,
+typography, colour, component, responsive and accessibility standards without overriding the
+workspace-first behaviour in `experience-principles.md`.
+
 This bundle contains the governing product strategy, experience principles and earlier documents retained for scope and capability context.
 
 ## Files
@@ -32,6 +36,10 @@ This bundle contains the governing product strategy, experience principles and e
 
 9. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
    Record the deterministic recommendation and canonical preparation-resource contracts.
+
+10. `phase-one-data-dictionary.md`
+    Records the bounded data and privacy contracts for annotated cases, moderated intelligence,
+    manually operated practice/feedback pilots and the local Answer Coach prototype.
 
 ## Suggested repository location
 

@@ -11,11 +11,12 @@ Read these before changing behavior:
 1. `docs/architecture/founder-decisions.md` — approved clarifications; highest product authority for implementation.
 2. `docs/product/product-strategy-and-roadmap.md` — binding product positioning and priority.
 3. `docs/product/experience-principles.md` — binding product and UX defaults.
-4. `docs/product/ai-product-strategy.md` — binding AI product, privacy, evaluation and cost policy.
-5. `docs/product/vertical-slice-01.md` — binding first implementation scope.
-6. `docs/product/mvp-brief.md` — broader product direction, subject to the current product policies.
-7. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
-8. `docs/architecture/decisions/` — accepted technical decisions.
+4. `docs/product/ui-ux-design-system.md` — binding visual consistency and accessibility standard.
+5. `docs/product/ai-product-strategy.md` — binding AI product, privacy, evaluation and cost policy.
+6. `docs/product/vertical-slice-01.md` — binding first implementation scope.
+7. `docs/product/mvp-brief.md` — broader product direction, subject to the current product policies.
+8. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
+9. `docs/architecture/decisions/` — accepted technical decisions.
 
 If sources conflict, do not guess. Apply the precedence above, document the conflict, and ask the founder when it materially affects behavior, privacy, security, schema, or scope.
 

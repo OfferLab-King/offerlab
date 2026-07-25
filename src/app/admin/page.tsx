@@ -16,6 +16,9 @@ export default async function AdministratorPage() {
         <Link className="button-link" href="/admin/content">
           Manage content
         </Link>
+        <Link className="button-link" href="/admin/operations">
+          Moderate intelligence and pilot requests
+        </Link>
         <SignOutButton />
       </section>
     </main>

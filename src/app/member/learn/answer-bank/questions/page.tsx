@@ -33,6 +33,30 @@ export default async function Page({
           </strong>
         )}
       </header>
+      {!f.family && !f.stage && !f.status && q.length > 0 && (
+        <section aria-labelledby="top-questions" className="card top-question-collection">
+          <p className="eyebrow">Curated starting point</p>
+          <h2 id="top-questions">Top 10 interview questions</h2>
+          <p>
+            Start with the canonical questions that cover introductions, motivation, evidence and
+            reflection. The order is editorially controlled and stable.
+          </p>
+          <ol>
+            {q.slice(0, 10).map((question) => (
+              <li key={question.id}>
+                <Link href={`/member/learn/answer-bank/answers/new?question=${question.id}`}>
+                  {question.prompt}
+                </Link>
+              </li>
+            ))}
+          </ol>
+          <div className="form-actions">
+            <Link href="?family=competency_and_behavioural">Competency collection</Link>
+            <Link href="?family=motivation_and_fit">Motivation collection</Link>
+            <Link href="?stage=assessment_centre">Assessment-centre collection</Link>
+          </div>
+        </section>
+      )}
       <form className="filter-bar">
         <label htmlFor="family">
           Family

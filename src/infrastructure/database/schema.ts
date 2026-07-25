@@ -356,3 +356,68 @@ export const memberAnswers = appSchema.table("member_answer", {
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   version: integer("version").default(1).notNull(),
 });
+
+export const recruitmentIntelligenceReports = appSchema.table(
+  "recruitment_intelligence_report",
+  {
+    approximateDate: date("approximate_date").notNull(),
+    assessedSkills: text("assessed_skills").array().default([]).notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    formatSummary: text("format_summary").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    industry: text("industry"),
+    moderatedAt: timestamp("moderated_at", { mode: "date", withTimezone: true }),
+    moderatedByUserId: uuid("moderated_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    moderationConfidence: text("moderation_confidence"),
+    moderationState: text("moderation_state").default("pending").notNull(),
+    opportunityType: text("opportunity_type"),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    recruitmentCycle: text("recruitment_cycle").notNull(),
+    recruitmentStage: text("recruitment_stage").notNull(),
+    reflection: text("reflection").notNull(),
+    themes: text("themes").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [unique("recruitment_intelligence_owner_id_unique").on(table.ownerUserId, table.id)],
+);
+
+export const serviceOfferings = appSchema.table("service_offering", {
+  availability: text("availability").default("interest").notNull(),
+  capacity: integer("capacity"),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  deliveryMode: text("delivery_mode").notNull(),
+  endsAt: timestamp("ends_at", { mode: "date", withTimezone: true }),
+  id: uuid("id").defaultRandom().primaryKey(),
+  offeringType: text("offering_type").notNull(),
+  position: integer("position").notNull().unique(),
+  stableKey: text("stable_key").notNull().unique(),
+  startsAt: timestamp("starts_at", { mode: "date", withTimezone: true }),
+  summary: text("summary").notNull(),
+  title: text("title").notNull(),
+  turnaroundDays: integer("turnaround_days"),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export const serviceRequests = appSchema.table(
+  "service_request",
+  {
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    offeringId: uuid("offering_id")
+      .notNull()
+      .references(() => serviceOfferings.id, { onDelete: "restrict" }),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    status: text("status").default("requested").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [unique("service_request_identity_unique").on(table.ownerUserId, table.offeringId)],
+);

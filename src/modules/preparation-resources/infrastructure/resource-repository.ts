@@ -15,7 +15,8 @@ export type ResourceRecord = Readonly<{
   }>[];
   publicationState: "draft" | "published" | "archived";
   resourceKey: string;
-  resourceType: "guide" | "checklist" | "template" | "video" | "exercise" | "article";
+  resourceType:
+    "guide" | "checklist" | "template" | "video" | "exercise" | "article" | "coaching_case";
   relatedResources: readonly Readonly<{
     accessLevel: "public" | "member";
     slug: string;
