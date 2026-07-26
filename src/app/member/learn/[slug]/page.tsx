@@ -40,7 +40,7 @@ export default async function Page({
       ? `${backToPlanHref}?completed=1`
       : undefined;
   return (
-    <main className="applications-shell">
+    <main className="applications-shell resource-detail-page">
       <MemberApplicationsHeader />
       <LearnNavigation active={context ? "paths" : "resources"} />
       {context && (

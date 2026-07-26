@@ -103,6 +103,16 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await expect(
       page.getByRole("heading", { name: "See the edit and the reasoning" }),
     ).toBeVisible();
+    const resourceContentBox = await page.locator(".resource-content").first().boundingBox();
+    const coachingCaseBox = await page.locator(".coaching-case-review").boundingBox();
+    const resourceActionsBox = await page
+      .getByRole("region", { name: "Resource actions" })
+      .boundingBox();
+    expect(resourceContentBox).not.toBeNull();
+    expect(coachingCaseBox).not.toBeNull();
+    expect(resourceActionsBox).not.toBeNull();
+    expect(Math.abs(resourceContentBox!.x - coachingCaseBox!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(resourceContentBox!.x - resourceActionsBox!.x)).toBeLessThanOrEqual(1);
     await expect(
       page.getByRole("article", { name: "Answer with tracked changes" }).locator("del"),
     ).toHaveCount(3);
