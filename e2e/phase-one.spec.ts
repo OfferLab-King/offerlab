@@ -109,6 +109,14 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await expect(
       page.getByRole("article", { name: "Answer with tracked changes" }).locator("ins"),
     ).toHaveCount(3);
+    const commentHues = await page
+      .locator("[data-case-comment]")
+      .evaluateAll((comments) =>
+        comments.map((comment) =>
+          (comment as HTMLElement).style.getPropertyValue("--case-comment-hue"),
+        ),
+      );
+    expect(new Set(commentHues).size).toBe(commentHues.length);
     await page.getByRole("button", { name: "Jump to change" }).first().click();
     await expect(page.locator("[data-case-change='individual_action']")).toHaveClass(/is-selected/);
     await page.getByRole("button", { name: "Original only" }).click();

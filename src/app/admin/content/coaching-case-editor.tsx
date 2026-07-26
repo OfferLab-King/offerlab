@@ -6,6 +6,7 @@ import {
   coachingCaseDetailSchema,
   type CoachingCaseDetail,
 } from "../../../modules/preparation-resources/domain/coaching-case";
+import { coachingCaseTone } from "../../components/coaching-case-tone";
 
 type Change = CoachingCaseDetail["changes"][number];
 
@@ -210,7 +211,12 @@ export function CoachingCaseEditor({
           </div>
         ) : (
           changes.map((change, index) => (
-            <fieldset className="cms-comment-editor" key={change.id}>
+            <fieldset
+              className="cms-comment-editor"
+              data-case-comment={change.id}
+              key={change.id}
+              style={coachingCaseTone(index)}
+            >
               <legend>Comment {index + 1}</legend>
               <p className="cms-selected-quote">“{original.slice(change.start, change.end)}”</p>
               <div className="cms-field-grid">

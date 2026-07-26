@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CoachingCaseDetail } from "../../../modules/preparation-resources/domain/coaching-case";
+import { coachingCaseTone } from "../../components/coaching-case-tone";
 
 type Piece = {
   change?: CoachingCaseDetail["changes"][number];
@@ -81,12 +82,16 @@ export function CoachingCaseView({ detail }: { detail: CoachingCaseDetail }) {
             {rendered.map((piece, index) => {
               if (!piece.change) return <span key={index}>{piece.text}</span>;
               const active = selected === piece.change.id;
+              const commentIndex = detail.changes.findIndex(
+                (change) => change.id === piece.change?.id,
+              );
               return piece.kind === "delete" ? (
                 <del
                   className={`case-change case-change-${piece.change.category.toLowerCase()}${active ? " is-selected" : ""}`}
                   data-case-change={piece.change.id}
                   key={`d-${piece.change.id}`}
                   onClick={() => setSelected(piece.change!.id)}
+                  style={coachingCaseTone(commentIndex)}
                 >
                   {piece.text}
                 </del>
@@ -95,6 +100,7 @@ export function CoachingCaseView({ detail }: { detail: CoachingCaseDetail }) {
                   className={`case-insertion${active ? " is-selected" : ""}`}
                   key={`i-${piece.change.id}`}
                   onClick={() => setSelected(piece.change!.id)}
+                  style={coachingCaseTone(commentIndex)}
                 >
                   {piece.text}
                 </ins>
@@ -107,7 +113,9 @@ export function CoachingCaseView({ detail }: { detail: CoachingCaseDetail }) {
           {detail.changes.map((change, index) => (
             <article
               className={`case-comment${selected === change.id ? " is-selected" : ""}`}
+              data-case-comment={change.id}
               key={change.id}
+              style={coachingCaseTone(index)}
             >
               <div>
                 <span className="case-comment-number">{index + 1}</span>
