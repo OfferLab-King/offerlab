@@ -2436,7 +2436,8 @@ progress {
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   padding: 1.5rem 1rem;
   position: sticky;
   top: 0;
@@ -2481,6 +2482,12 @@ progress {
 .cms-sidebar nav a:hover,
 .cms-sidebar-footer a:hover {
   background: rgb(255 255 255 / 10%);
+  color: #fff;
+}
+
+.cms-sidebar nav a[aria-current="page"] {
+  background: rgb(255 255 255 / 12%);
+  box-shadow: inset 3px 0 #a9d8b7;
   color: #fff;
 }
 
@@ -2580,10 +2587,17 @@ progress {
   min-width: 0;
 }
 
+.cms-filter-bar input,
+.cms-filter-bar select {
+  min-width: 0;
+  width: 100%;
+}
+
 .cms-filter-actions {
   align-items: center;
   display: flex;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .cms-filter-actions > * {
@@ -2640,6 +2654,8 @@ progress {
 
 .cms-row-actions {
   flex: 0 0 auto;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .cms-status,
@@ -2824,6 +2840,14 @@ progress {
   z-index: 5;
 }
 
+.cms-sticky-action-buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
 .cms-preview {
   margin-top: 1rem;
 }
@@ -2839,6 +2863,11 @@ progress {
   border-radius: var(--radius-control);
   margin-top: 0.75rem;
   padding: 1rem;
+}
+
+.cms-preview-page > .card,
+.cms-preview-page > .path-section {
+  margin-top: 1rem;
 }
 
 .cms-case-editor {
@@ -3031,6 +3060,39 @@ progress {
   width: 2.5rem;
 }
 
+@media (min-width: 40.01rem) and (max-width: 75rem) {
+  .cms-filter-bar:not(.cms-path-filter) {
+    grid-template-columns: minmax(14rem, 2fr) repeat(2, minmax(9rem, 1fr));
+  }
+
+  .cms-filter-bar:not(.cms-path-filter) .cms-filter-actions {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}
+
+@media (min-width: 40.01rem) and (max-width: 68rem) {
+  .cms-taxonomy-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-taxonomy-create {
+    position: static;
+  }
+}
+
+@media (min-width: 40.01rem) and (max-width: 55rem) {
+  .cms-content-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cms-row-actions {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 40rem) {
   .cms-shell {
     display: block;
@@ -3038,6 +3100,7 @@ progress {
 
   .cms-sidebar {
     gap: 0.75rem;
+    height: auto;
     max-width: 100vw;
     min-height: 0;
     overflow: hidden;
@@ -3128,7 +3191,19 @@ progress {
   }
 
   .cms-sticky-actions {
+    align-items: stretch;
     bottom: 0.5rem;
+    flex-direction: column;
+  }
+
+  .cms-sticky-action-buttons,
+  .cms-sticky-actions > button {
+    width: 100%;
+  }
+
+  .cms-sticky-action-buttons {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .member-header {

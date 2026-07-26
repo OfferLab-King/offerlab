@@ -81,21 +81,33 @@ export default async function Page({
           <span className={`cms-status cms-status-${r.publicationState}`}>
             {r.publicationState}
           </span>
-          <button name="intent" value="save">
-            Save
-          </button>
-          <button name="intent" value="publish">
-            Publish
-          </button>
-          <button name="intent" value="unpublish">
-            Unpublish
-          </button>
-          <button name="intent" value="archive">
-            Archive
-          </button>
-          <button name="intent" value="restore">
-            Restore to draft
-          </button>
+          <div className="cms-sticky-action-buttons">
+            {r.publicationState !== "archived" && (
+              <button name="intent" value="save">
+                Save {r.publicationState === "published" ? "changes" : "draft"}
+              </button>
+            )}
+            {r.publicationState === "draft" && (
+              <button name="intent" value="publish">
+                Publish
+              </button>
+            )}
+            {r.publicationState === "published" && (
+              <button className="button-secondary" name="intent" value="unpublish">
+                Unpublish
+              </button>
+            )}
+            {r.publicationState !== "archived" && (
+              <button className="button-secondary" name="intent" value="archive">
+                Archive
+              </button>
+            )}
+            {r.publicationState === "archived" && (
+              <button className="button-secondary" name="intent" value="restore">
+                Restore to draft
+              </button>
+            )}
+          </div>
         </div>
       </form>
       <details className="cms-preview">

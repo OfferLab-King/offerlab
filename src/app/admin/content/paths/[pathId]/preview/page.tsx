@@ -18,11 +18,17 @@ export default async function Page({ params }: { params: Promise<{ pathId: strin
   if (!path) notFound();
   const resources = new Map(options.resources.map((resource) => [resource.id, resource]));
   return (
-    <main className="applications-shell path-detail">
-      <p className="eyebrow">Administrator preview · {path.publicationState}</p>
-      <h1>{path.title || "Untitled learning path"}</h1>
-      <p className="intro">{path.shortDescription || "No description yet."}</p>
-      <Link href={`/admin/content/paths/${id}`}>← Back to editor</Link>
+    <main className="cms-page cms-preview-page path-detail">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Path preview · {path.publicationState}</p>
+          <h1>{path.title || "Untitled learning path"}</h1>
+          <p>{path.shortDescription || "No description yet."}</p>
+        </div>
+        <Link className="button-secondary button-link" href={`/admin/content/paths/${id}`}>
+          Back to editor
+        </Link>
+      </header>
       {path.introduction && (
         <div className="card">
           <MarkdownContent markdown={path.introduction} />

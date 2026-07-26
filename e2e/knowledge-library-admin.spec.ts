@@ -71,6 +71,38 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(/\/(?:admin|member)$/);
 
+    await page.setViewportSize({ width: 950, height: 800 });
+    await page.goto("/admin/content?type=coaching_case");
+    await expect(
+      page
+        .getByRole("navigation", { name: "Content management" })
+        .getByRole("link", { name: "Coaching cases" }),
+    ).toHaveAttribute("aria-current", "page");
+    const typeBox = await page.getByLabel("Type").boundingBox();
+    const filterButtonBox = await page
+      .getByRole("button", { name: "Apply filters", exact: true })
+      .boundingBox();
+    if (!typeBox || !filterButtonBox) throw new Error("CMS filter controls missing.");
+    const filtersOverlap =
+      typeBox.x < filterButtonBox.x + filterButtonBox.width &&
+      typeBox.x + typeBox.width > filterButtonBox.x &&
+      typeBox.y < filterButtonBox.y + filterButtonBox.height &&
+      typeBox.y + typeBox.height > filterButtonBox.y;
+    expect(filtersOverlap).toBe(false);
+    const coachingFooterTop = await page
+      .locator(".cms-sidebar-footer")
+      .evaluate((element) => Math.round(element.getBoundingClientRect().top));
+    await page.goto("/admin/content/paths");
+    await expect(
+      page
+        .getByRole("navigation", { name: "Content management" })
+        .getByRole("link", { name: "Preparation paths" }),
+    ).toHaveAttribute("aria-current", "page");
+    const pathsFooterTop = await page
+      .locator(".cms-sidebar-footer")
+      .evaluate((element) => Math.round(element.getBoundingClientRect().top));
+    expect(pathsFooterTop).toBe(coachingFooterTop);
+
     await page.goto("/admin/content/categories");
     const categoryCreate = page
       .locator("form")
@@ -126,7 +158,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Resource updated.")).toBeVisible();
     await expect(page.getByText(/Content editor · published/)).toBeVisible();
-    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Save changes", exact: true }).click();
     await expect(page.getByText("No changes were needed.")).toBeVisible();
     const resourceTimestamps = await database<
       { createdAt: Date; firstPublishedAt: Date; publishedAt: Date; updatedAt: Date }[]
@@ -151,26 +183,29 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       input.value = "0";
     });
     await editor.getByLabel("Title (required to publish)").fill(attemptedTitle);
-    await submitAndInspectConflict(page.getByRole("button", { name: "Save", exact: true }), [
-      resourceId,
-      categoryId,
-      tagId,
-      resourceTitle,
-      serverTitle,
-      attemptedTitle,
-      "Browser-tested summary.",
-      "Browser-tested body",
-      categoryName,
-      tagName,
-      categorySlug,
-      tagSlug,
-      resourceSlug,
-      "video_interview",
-      "graduate_scheme",
-      "https://example.com/guide",
-      ...prohibitedTimestamps,
-      ...prohibitedInfrastructure,
-    ]);
+    await submitAndInspectConflict(
+      page.getByRole("button", { name: "Save changes", exact: true }),
+      [
+        resourceId,
+        categoryId,
+        tagId,
+        resourceTitle,
+        serverTitle,
+        attemptedTitle,
+        "Browser-tested summary.",
+        "Browser-tested body",
+        categoryName,
+        tagName,
+        categorySlug,
+        tagSlug,
+        resourceSlug,
+        "video_interview",
+        "graduate_scheme",
+        "https://example.com/guide",
+        ...prohibitedTimestamps,
+        ...prohibitedInfrastructure,
+      ],
+    );
     const resourceConflict = page.getByRole("alert").filter({ hasText: "changed elsewhere" });
     await expect(resourceConflict).toBeVisible();
     await expect(
@@ -189,6 +224,11 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       .getByRole("link", { name: "Edit" })
       .click();
 
+    await page.getByRole("button", { name: "Unpublish" }).click();
+    await expect(page.getByText(/Content editor · draft/)).toBeVisible();
+    const publicationAuditsBefore = await database<
+      { count: number }[]
+    >`select count(*)::int count from app.audit_event where entity_id=${resourceId}::uuid`;
     const serverSummary = `SERVER_RESOURCE_SUMMARY_${suffix}`;
     const attemptedPublishTitle = `ATTEMPTED_PUBLISH_TITLE_${suffix}`;
     await database`update app.preparation_resource set short_description=${serverSummary},version=version+1 where id=${resourceId}::uuid`;
@@ -213,13 +253,15 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await expect(publicationConflict).toBeVisible();
     await expect(
       database`select count(*)::int count from app.audit_event where entity_id=${resourceId}::uuid`,
-    ).resolves.toEqual(resourceAuditsBefore);
+    ).resolves.toEqual(publicationAuditsBefore);
     await publicationConflict.getByRole("link", { name: "Reload current content" }).click();
     await page
       .locator("article.cms-content-row")
       .filter({ has: page.getByRole("heading", { name: serverTitle }) })
       .getByRole("link", { name: "Edit" })
       .click();
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await expect(page.getByText(/Content editor · published/)).toBeVisible();
     await page.getByRole("button", { name: "Unpublish" }).click();
     await expect(page.getByText(/Content editor · draft/)).toBeVisible();
     await page.getByRole("button", { name: "Archive" }).click();
