@@ -140,6 +140,11 @@ when an adjacent token works.
   because the fixed sidebar and browser zoom change that width independently of the viewport.
 - Repeated records use the shared content-row or operation-card patterns. Forms inside those records
   use the shared filter, operation or action layouts so labels, controls and buttons cannot overlap.
+- Resource creation and editing use the shared member renderer as a live visual canvas. Editable
+  regions select structured fields in an adjacent panel; do not introduce a second approximation of
+  the member page or an unstructured whole-page `contenteditable` surface.
+- Draft canvases are labelled private. When a published resource is edited, the save action must say
+  that it updates members, and browser coverage must prove the member route reads the saved content.
 - Add responsive assertions for any new administrator route at 390px and at a constrained desktop
   width before considering its interface complete.
 

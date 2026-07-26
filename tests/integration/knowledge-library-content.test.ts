@@ -7,7 +7,10 @@ import {
   updateResource,
   updateTaxonomy,
 } from "../../src/modules/preparation-resources/application/admin-content";
-import { readPublicResource } from "../../src/modules/preparation-resources/application/resources";
+import {
+  readMemberResource,
+  readPublicResource,
+} from "../../src/modules/preparation-resources/application/resources";
 
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
@@ -105,6 +108,20 @@ describe("knowledge library CMS and production-equivalent policies", () => {
     expect(published).toMatchObject({ ok: true, outcome: "changed", version: 2 });
     const unchanged = await updateResource(adminId, resourceId, 2, form(values), "publish");
     expect(unchanged).toEqual({ ok: true, outcome: "unchanged", version: 2 });
+    const memberVisibleValues = { ...values, title: "Member-visible saved title" };
+    const memberVisibleUpdate = await updateResource(
+      adminId,
+      resourceId,
+      2,
+      form(memberVisibleValues),
+      "save",
+    );
+    expect(memberVisibleUpdate).toMatchObject({ ok: true, outcome: "changed", version: 3 });
+    await expect(readMemberResource(memberTwo, "acceptance-resource")).resolves.toMatchObject({
+      markdownBody: values.markdownBody,
+      shortDescription: values.shortDescription,
+      title: memberVisibleValues.title,
+    });
     const stale = await updateResource(
       adminId,
       resourceId,
@@ -116,16 +133,20 @@ describe("knowledge library CMS and production-equivalent policies", () => {
     expect(stale).not.toHaveProperty("resource");
     const persisted = await findAdminResource(adminId, resourceId);
     expect(persisted).toMatchObject({
-      title: "Acceptance resource",
+      title: memberVisibleValues.title,
       tagIds: [tagId],
       stages: ["video_interview"],
       opportunityTypes: ["graduate_scheme"],
-      version: 2,
+      version: 3,
     });
     const audits = await migration<
       { action: string }[]
     >`select action from app.audit_event where entity_id=${resourceId}::uuid order by created_at`;
-    expect(audits.map((x) => x.action)).toEqual(["content.created", "content.published"]);
+    expect(audits.map((x) => x.action)).toEqual([
+      "content.created",
+      "content.published",
+      "content.updated",
+    ]);
   });
 
   it("keeps recommendation and standalone resource state independent", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   coachingCaseCategories,
   coachingCaseDetailSchema,
@@ -21,9 +21,11 @@ function rebuild(original: string, changes: readonly Change[]) {
 
 export function CoachingCaseEditor({
   detail,
+  onPreviewChange,
   sourceKind,
 }: {
   detail?: CoachingCaseDetail | null | undefined;
+  onPreviewChange?: (detail: CoachingCaseDetail | null) => void;
   sourceKind?: "synthetic" | "anonymised_approved" | null | undefined;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +51,15 @@ export function CoachingCaseEditor({
     whyStronger,
   };
   const valid = coachingCaseDetailSchema.safeParse(payload).success;
+  const serializedPayload = valid ? JSON.stringify(payload) : "";
+
+  useEffect(() => {
+    onPreviewChange?.(
+      serializedPayload
+        ? coachingCaseDetailSchema.parse(JSON.parse(serializedPayload) as unknown)
+        : null,
+    );
+  }, [onPreviewChange, serializedPayload]);
 
   function updateChange(id: string, patch: Partial<Change>) {
     setChanges((current) =>
@@ -111,7 +122,7 @@ export function CoachingCaseEditor({
           {valid ? "Ready to save" : "Needs more detail"}
         </span>
       </div>
-      <input name="coachingCaseDetail" type="hidden" value={valid ? JSON.stringify(payload) : ""} />
+      <input name="coachingCaseDetail" type="hidden" value={serializedPayload} />
       <div className="cms-case-source">
         <label>
           Source

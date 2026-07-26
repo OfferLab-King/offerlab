@@ -59,4 +59,17 @@ describe("rendered resource security", () => {
     expect(html).not.toContain("<img");
     expect(html).toContain("secret");
   });
+  it("uses the same content renderer for selectable administrator regions", () => {
+    const html = renderToStaticMarkup(
+      <ResourceContent
+        editor={{ activeSection: "body", onSelect: () => undefined }}
+        resource={{ ...base, markdownBody: "## Shared member content" }}
+      />,
+    );
+    expect(html).toContain("Shared member content");
+    expect(html).toContain('data-editor-region="introduction"');
+    expect(html).toContain('data-editor-region="body"');
+    expect(html).toContain('aria-label="Edit content body"');
+    expect(html).toContain('class="cms-preview-region is-active"');
+  });
 });

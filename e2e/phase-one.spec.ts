@@ -69,6 +69,8 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await expect(
       page.getByRole("heading", { name: "Build the annotated before-and-after" }),
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit the member view" })).toBeVisible();
+    await expect(page.locator(".cms-member-canvas .resource-content")).toBeVisible();
     await expect(page.getByRole("button", { name: "Add comment to selection" })).toBeVisible();
     await expect(page.getByText("Coaching-case detail (validated JSON)")).toHaveCount(0);
     await expect(page.getByText(/Synthetic examples must not contain real student/)).toBeVisible();

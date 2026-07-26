@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ResourceContent } from "../../../components/resource-content";
+import Link from "next/link";
 import { requireAdministrator } from "../../../../modules/identity-access/application/authorization";
 import {
   findAdminResource,
@@ -40,17 +40,6 @@ export default async function Page({
           : `/admin/content/${id}?status=${result.outcome}`,
     );
   }
-  const previewResource = {
-    ...r,
-    categoryName: categories.find((c) => c.id === r.primaryCategoryId)?.name ?? "Uncategorised",
-    completedAt: null,
-    savedAt: null,
-    resourceKey: "preview",
-    relatedResources: resources
-      .filter((item) => r.relatedResourceIds.includes(item.id))
-      .map((item) => ({ accessLevel: item.accessLevel, slug: item.slug, title: item.title })),
-    stages: [],
-  } as const;
   return (
     <main className="cms-page cms-editor-page">
       <header className="cms-page-header">
@@ -61,6 +50,16 @@ export default async function Page({
             Version {r.version} · /{r.slug}
           </p>
         </div>
+        {r.publicationState === "published" && (
+          <Link
+            className="button-secondary button-link"
+            href={`/member/learn/${r.slug}`}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open member view
+          </Link>
+        )}
       </header>
       {query.error === "conflict" ? (
         <ConflictAlert reloadHref="?" />
@@ -84,7 +83,7 @@ export default async function Page({
           <div className="cms-sticky-action-buttons">
             {r.publicationState !== "archived" && (
               <button name="intent" value="save">
-                Save {r.publicationState === "published" ? "changes" : "draft"}
+                {r.publicationState === "published" ? "Save and update members" : "Save draft"}
               </button>
             )}
             {r.publicationState === "draft" && (
@@ -110,12 +109,6 @@ export default async function Page({
           </div>
         </div>
       </form>
-      <details className="cms-preview">
-        <summary>Preview member view</summary>
-        <div className="cms-preview-body">
-          <ResourceContent resource={previewResource} />
-        </div>
-      </details>
     </main>
   );
 }

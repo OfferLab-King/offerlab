@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { ResourceContent, type ResourceEditorSection } from "../../components/resource-content";
+import { CoachingCaseView } from "../../member/learn/coaching-case-view";
 import type {
   AdminResource,
   CategoryOption,
   ControlledLink,
   TaxonomyRecord,
 } from "../../../modules/preparation-resources/application/admin-content";
+import type { CoachingCaseDetail } from "../../../modules/preparation-resources/domain/coaching-case";
+import { parseYouTubeVideoId } from "../../../modules/preparation-resources/domain/resource";
 import { CoachingCaseEditor } from "./coaching-case-editor";
 
 const types = [
@@ -35,8 +39,13 @@ function label(value: string) {
   return value.replaceAll("_", " ");
 }
 
-function LinksEditor({ initial }: { initial: readonly ControlledLink[] }) {
-  const [links, setLinks] = useState<ControlledLink[]>([...initial]);
+function LinksEditor({
+  links,
+  setLinks,
+}: {
+  links: ControlledLink[];
+  setLinks: React.Dispatch<React.SetStateAction<ControlledLink[]>>;
+}) {
   return (
     <div className="cms-links-editor">
       <input name="controlledLinks" type="hidden" value={JSON.stringify(links)} />
@@ -138,25 +147,178 @@ export function ContentFields({
   const [resourceType, setResourceType] = useState<AdminResource["resourceType"]>(
     resource?.resourceType ?? "guide",
   );
+  const [activeSection, setActiveSection] = useState<ResourceEditorSection>("introduction");
+  const [title, setTitle] = useState(resource?.title ?? "");
+  const [shortDescription, setShortDescription] = useState(resource?.shortDescription ?? "");
+  const [markdownBody, setMarkdownBody] = useState(resource?.markdownBody ?? "");
+  const [estimatedMinutes, setEstimatedMinutes] = useState(
+    resource?.estimatedMinutes?.toString() ?? "",
+  );
+  const [youtubeVideo, setYoutubeVideo] = useState(resource?.youtubeVideoId ?? "");
+  const [primaryCategoryId, setPrimaryCategoryId] = useState(resource?.primaryCategoryId ?? "");
+  const [links, setLinks] = useState<ControlledLink[]>([...(resource?.links ?? [])]);
+  const [relatedResourceIds, setRelatedResourceIds] = useState<string[]>([
+    ...(resource?.relatedResourceIds ?? []),
+  ]);
+  const [coachingCasePreview, setCoachingCasePreview] = useState<CoachingCaseDetail | null>(
+    resource?.coachingCaseDetail ?? null,
+  );
+  const categoryName =
+    categories.find((category) => category.id === primaryCategoryId)?.name ?? "Uncategorised";
+  const parsedVideo = parseYouTubeVideoId(youtubeVideo);
+  const previewResource = {
+    categoryName,
+    estimatedMinutes: estimatedMinutes ? Number(estimatedMinutes) : null,
+    links: links.filter((link) => link.label && link.url),
+    markdownBody,
+    relatedResources: resources
+      .filter((item) => relatedResourceIds.includes(item.id))
+      .map((item) => ({ accessLevel: item.accessLevel, slug: item.slug, title: item.title })),
+    resourceType,
+    shortDescription,
+    title,
+    youtubeVideoId: parsedVideo,
+  } as const;
   return (
     <div className="cms-editor-sections">
+      <section aria-labelledby="visual-editor-title" className="cms-visual-editor">
+        <div className="cms-section-heading">
+          <div>
+            <p className="eyebrow">Visual editor</p>
+            <h2 id="visual-editor-title">Edit the member view</h2>
+            <p>Select a region on the canvas, then edit it in the panel. Changes appear live.</p>
+          </div>
+          <span className="cms-required-note">
+            {resource?.publicationState === "published"
+              ? "Saving updates the member view"
+              : "Private draft preview"}
+          </span>
+        </div>
+        <input name="title" type="hidden" value={title} />
+        <input name="shortDescription" type="hidden" value={shortDescription} />
+        <input name="markdownBody" type="hidden" value={markdownBody} />
+        <input name="estimatedMinutes" type="hidden" value={estimatedMinutes} />
+        <input name="youtubeVideo" type="hidden" value={youtubeVideo} />
+        <div className="cms-visual-workspace">
+          <div
+            className="cms-member-canvas"
+            onClick={(event) => {
+              if ((event.target as Element).closest("a")) event.preventDefault();
+            }}
+          >
+            <div className="cms-member-canvas-label">Member view</div>
+            <ResourceContent
+              editor={{ activeSection, onSelect: setActiveSection }}
+              resource={previewResource}
+            />
+            {resourceType === "coaching_case" && coachingCasePreview && (
+              <CoachingCaseView detail={coachingCasePreview} />
+            )}
+            {resourceType === "coaching_case" && !coachingCasePreview && (
+              <p className="cms-empty-inline">
+                Complete the coaching-case fields below to render the annotated member view here.
+              </p>
+            )}
+          </div>
+          <aside aria-label="Selected content block" className="cms-edit-panel">
+            <div className="cms-edit-panel-tabs" role="group" aria-label="Content block">
+              {(
+                [
+                  ["introduction", "Title and summary"],
+                  ["body", "Content body"],
+                  ["media", "Media and timing"],
+                ] as const
+              ).map(([section, sectionLabel]) => (
+                <button
+                  aria-pressed={activeSection === section}
+                  className={activeSection === section ? "is-active" : ""}
+                  key={section}
+                  onClick={() => setActiveSection(section)}
+                  type="button"
+                >
+                  {sectionLabel}
+                </button>
+              ))}
+            </div>
+            {activeSection === "introduction" && (
+              <div className="cms-edit-panel-fields">
+                <h3>Title and summary</h3>
+                <label>
+                  Title (required to publish)
+                  <input
+                    maxLength={160}
+                    onChange={(event) => setTitle(event.target.value)}
+                    placeholder="A clear, specific title"
+                    value={title}
+                  />
+                </label>
+                <label>
+                  Short description (required to publish)
+                  <textarea
+                    maxLength={500}
+                    onChange={(event) => setShortDescription(event.target.value)}
+                    placeholder="Tell members what they will learn or be able to do."
+                    rows={2}
+                    value={shortDescription}
+                  />
+                </label>
+              </div>
+            )}
+            {activeSection === "body" && (
+              <div className="cms-edit-panel-fields">
+                <h3>Content body</h3>
+                <p className="hint">
+                  Use Markdown for headings, short paragraphs, lists and tables.
+                </p>
+                <label>
+                  Markdown body
+                  <textarea
+                    maxLength={100000}
+                    onChange={(event) => setMarkdownBody(event.target.value)}
+                    placeholder="Use headings, short paragraphs and lists."
+                    rows={20}
+                    value={markdownBody}
+                  />
+                </label>
+              </div>
+            )}
+            {activeSection === "media" && (
+              <div className="cms-edit-panel-fields">
+                <h3>Media and timing</h3>
+                <label>
+                  Estimated minutes (optional)
+                  <input
+                    max={600}
+                    min={1}
+                    onChange={(event) => setEstimatedMinutes(event.target.value)}
+                    type="number"
+                    value={estimatedMinutes}
+                  />
+                </label>
+                <label>
+                  YouTube URL or ID (optional)
+                  <input
+                    maxLength={2048}
+                    onChange={(event) => setYoutubeVideo(event.target.value)}
+                    value={youtubeVideo}
+                  />
+                </label>
+                {youtubeVideo && !parsedVideo && (
+                  <p className="field-error">Enter a valid YouTube URL or video ID.</p>
+                )}
+              </div>
+            )}
+          </aside>
+        </div>
+      </section>
       <section className="cms-editor-card">
         <div className="cms-section-heading">
           <div>
-            <p className="eyebrow">Basics</p>
-            <h2>Name and describe the content</h2>
+            <p className="eyebrow">Publishing</p>
+            <h2>Set the URL and content type</h2>
           </div>
           <span className="cms-required-note">Required to publish</span>
         </div>
-        <label>
-          Title (required to publish)
-          <input
-            defaultValue={resource?.title}
-            maxLength={160}
-            name="title"
-            placeholder="A clear, specific title"
-          />
-        </label>
         <div className="cms-field-grid">
           <label>
             Slug (required)
@@ -193,16 +355,6 @@ export function ContentFields({
             </select>
           </label>
         </div>
-        <label>
-          Short description (required to publish)
-          <textarea
-            defaultValue={resource?.shortDescription}
-            maxLength={500}
-            name="shortDescription"
-            placeholder="Tell members what they will learn or be able to do."
-            rows={2}
-          />
-        </label>
       </section>
 
       <section className="cms-editor-card">
@@ -222,7 +374,11 @@ export function ContentFields({
           </label>
           <label>
             Primary category
-            <select defaultValue={resource?.primaryCategoryId ?? ""} name="primaryCategoryId">
+            <select
+              name="primaryCategoryId"
+              onChange={(event) => setPrimaryCategoryId(event.target.value)}
+              value={primaryCategoryId}
+            >
               <option value="">Select a category</option>
               {categories.map((category) => (
                 <option
@@ -291,52 +447,10 @@ export function ContentFields({
         </fieldset>
       </section>
 
-      <section className="cms-editor-card">
-        <div className="cms-section-heading">
-          <div>
-            <p className="eyebrow">Content</p>
-            <h2>Write the resource</h2>
-            <p>
-              This introduction appears above a structured coaching case, or forms the main body of
-              other resources.
-            </p>
-          </div>
-        </div>
-        <label>
-          Markdown body
-          <textarea
-            defaultValue={resource?.markdownBody}
-            maxLength={100000}
-            name="markdownBody"
-            placeholder="Use headings, short paragraphs and lists."
-            rows={16}
-          />
-        </label>
-        <div className="cms-field-grid">
-          <label>
-            Estimated minutes (optional)
-            <input
-              defaultValue={resource?.estimatedMinutes ?? ""}
-              max={600}
-              min={1}
-              name="estimatedMinutes"
-              type="number"
-            />
-          </label>
-          <label>
-            YouTube URL or ID (optional)
-            <input
-              defaultValue={resource?.youtubeVideoId ?? ""}
-              maxLength={2048}
-              name="youtubeVideo"
-            />
-          </label>
-        </div>
-      </section>
-
       {resourceType === "coaching_case" ? (
         <CoachingCaseEditor
           detail={resource?.coachingCaseDetail}
+          onPreviewChange={setCoachingCasePreview}
           sourceKind={resource?.coachingCaseSourceKind}
         />
       ) : (
@@ -359,8 +473,15 @@ export function ContentFields({
                   .map((item) => (
                     <label className="cms-check-card" key={item.id}>
                       <input
-                        defaultChecked={resource?.relatedResourceIds.includes(item.id)}
+                        checked={relatedResourceIds.includes(item.id)}
                         name="relatedResourceIds"
+                        onChange={(event) =>
+                          setRelatedResourceIds((current) =>
+                            event.target.checked
+                              ? [...current, item.id]
+                              : current.filter((id) => id !== item.id),
+                          )
+                        }
                         type="checkbox"
                         value={item.id}
                       />
@@ -372,7 +493,7 @@ export function ContentFields({
                   ))}
               </div>
             </fieldset>
-            <LinksEditor initial={resource?.links ?? []} />
+            <LinksEditor links={links} setLinks={setLinks} />
           </div>
         </details>
       </section>

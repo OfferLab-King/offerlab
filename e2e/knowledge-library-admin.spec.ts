@@ -183,7 +183,11 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
 
     await page.goto("/admin/content/new");
     const editor = page.locator("form.application-form");
+    await expect(page.getByRole("heading", { name: "Edit the member view" })).toBeVisible();
     await editor.getByLabel("Title (required to publish)").fill(resourceTitle);
+    await expect(
+      page.locator(".cms-member-canvas").getByRole("heading", { name: resourceTitle, level: 1 }),
+    ).toBeVisible();
     await editor.getByLabel("Slug (required)").fill(resourceSlug);
     await editor
       .getByLabel("Short description (required to publish)")
@@ -193,7 +197,11 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       .boundingBox();
     expect(summaryField?.height).toBeLessThanOrEqual(100);
     await editor.getByLabel("Primary category").selectOption({ label: categoryName });
+    await page.getByRole("button", { name: "Edit content body" }).click();
     await editor.getByLabel("Markdown body").fill("## Browser-tested body\n\n- safe item");
+    await expect(
+      page.locator(".cms-member-canvas").getByRole("heading", { name: "Browser-tested body" }),
+    ).toBeVisible();
     await editor.getByLabel("Slug (required)").press("Enter");
     await page.waitForURL(/\/admin\/content\/[0-9a-f-]+$/);
     resourceId = page.url().split("/").at(-1);
@@ -210,7 +218,17 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Resource updated.")).toBeVisible();
     await expect(page.getByText(/Content editor · published/)).toBeVisible();
-    await page.getByRole("button", { name: "Save changes", exact: true }).click();
+    await expect(page.getByRole("link", { name: "Open member view" })).toHaveAttribute(
+      "href",
+      `/member/learn/${resourceSlug}`,
+    );
+    const memberUpdatedTitle = `${resourceTitle} updated`;
+    await editor.getByLabel("Title (required to publish)").fill(memberUpdatedTitle);
+    await page.getByRole("button", { name: "Save and update members", exact: true }).click();
+    await page.goto(`/member/learn/${resourceSlug}`);
+    await expect(page.getByRole("heading", { name: memberUpdatedTitle, level: 1 })).toBeVisible();
+    await page.goto(`/admin/content/${resourceId}`);
+    await page.getByRole("button", { name: "Save and update members", exact: true }).click();
     await expect(page.getByText("No changes were needed.")).toBeVisible();
     const resourceTimestamps = await database<
       { createdAt: Date; firstPublishedAt: Date; publishedAt: Date; updatedAt: Date }[]
@@ -236,12 +254,13 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     });
     await editor.getByLabel("Title (required to publish)").fill(attemptedTitle);
     await submitAndInspectConflict(
-      page.getByRole("button", { name: "Save changes", exact: true }),
+      page.getByRole("button", { name: "Save and update members", exact: true }),
       [
         resourceId,
         categoryId,
         tagId,
         resourceTitle,
+        memberUpdatedTitle,
         serverTitle,
         attemptedTitle,
         "Browser-tested summary.",

@@ -2723,6 +2723,201 @@ progress {
   gap: 1rem;
 }
 
+.cms-visual-editor {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.cms-visual-workspace {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
+}
+
+.cms-member-canvas {
+  background: #eef1ed;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2.5rem 1.5rem 1.5rem;
+  position: relative;
+}
+
+.cms-member-canvas-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  left: 1rem;
+  letter-spacing: 0.06em;
+  position: absolute;
+  text-transform: uppercase;
+  top: 0.75rem;
+}
+
+.cms-member-canvas > .resource-content,
+.cms-member-canvas > .coaching-case-review {
+  background: var(--surface);
+  border: 1px solid #dfe5df;
+  box-shadow: var(--shadow-card);
+  box-sizing: border-box;
+  margin-inline: auto;
+  max-width: 46rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.cms-member-canvas > .coaching-case-review {
+  margin-top: 1rem;
+}
+
+.cms-member-canvas .case-review-toolbar {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cms-member-canvas .case-review-workspace,
+.cms-member-canvas .case-learning-grid {
+  grid-template-columns: 1fr;
+}
+
+.cms-member-canvas .case-review-workspace {
+  min-height: 0;
+}
+
+.cms-member-canvas .case-document {
+  margin: 1rem;
+  padding: 1.5rem;
+}
+
+.cms-member-canvas .case-comments {
+  border-left: 0;
+  border-top: 1px solid #cbd2d8;
+  max-height: 24rem;
+}
+
+.cms-member-canvas .resource-content h1 {
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+}
+
+.cms-preview-region {
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  margin: -0.5rem;
+  min-width: 0;
+  padding: 0.5rem;
+  position: relative;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.cms-preview-region + .cms-preview-region {
+  margin-top: 0.5rem;
+}
+
+.cms-preview-region:hover,
+.cms-preview-region.is-active {
+  background: #f8fbf8;
+  border-color: #9bb7a2;
+}
+
+.cms-preview-region-action {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  min-height: 34px;
+  opacity: 0;
+  padding: 0.35rem 0.6rem;
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 2;
+}
+
+.cms-preview-region:hover .cms-preview-region-action,
+.cms-preview-region.is-active .cms-preview-region-action,
+.cms-preview-region-action:focus-visible {
+  opacity: 1;
+}
+
+.cms-preview-placeholder {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.cms-preview-body-placeholder {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-control);
+  line-height: 1.6;
+  padding: 1rem;
+}
+
+.cms-edit-panel {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  min-width: 0;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.cms-edit-panel-tabs,
+.cms-edit-panel-fields {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.cms-edit-panel-tabs {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
+.cms-edit-panel-tabs button {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 0.5rem 0.65rem;
+  text-align: left;
+}
+
+.cms-edit-panel-tabs button:hover,
+.cms-edit-panel-tabs button.is-active {
+  background: var(--accent-soft);
+  border-color: #c6dacb;
+  box-shadow: none;
+  color: var(--accent-dark);
+}
+
+.cms-edit-panel-fields h3,
+.cms-edit-panel-fields p {
+  margin-block: 0;
+}
+
+.cms-edit-panel-fields label {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0;
+  min-width: 0;
+}
+
+.cms-edit-panel-fields input,
+.cms-edit-panel-fields textarea {
+  width: 100%;
+}
+
 .cms-resource-form label,
 .cms-resource-form fieldset {
   min-width: 0;
@@ -3233,6 +3428,20 @@ progress {
   }
 }
 
+@container cms-workspace (max-width: 62rem) {
+  .cms-visual-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-edit-panel {
+    position: static;
+  }
+
+  .cms-edit-panel-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @container cms-workspace (max-width: 44rem) {
   .cms-content-row {
     align-items: flex-start;
@@ -3311,6 +3520,24 @@ progress {
   .cms-choice-grid,
   .cms-choice-grid-wide {
     grid-template-columns: 1fr;
+  }
+
+  .cms-member-canvas {
+    padding: 2.25rem 0.75rem 0.75rem;
+  }
+
+  .cms-member-canvas > .resource-content,
+  .cms-member-canvas > .coaching-case-review {
+    padding: 1rem;
+  }
+
+  .cms-edit-panel-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-preview-region-action {
+    opacity: 1;
+    position: static;
   }
 
   .cms-summary-grid {
