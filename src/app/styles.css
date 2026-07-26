@@ -2501,16 +2501,23 @@ progress {
 
 .cms-main {
   box-sizing: border-box;
+  container-name: cms-workspace;
+  container-type: inline-size;
   margin: 0;
   max-width: none;
   min-width: 0;
-  padding: clamp(1.5rem, 4vw, 3rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
 }
 
-.cms-page,
+.cms-page {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 0;
+}
+
 .cms-editor-page {
   margin: 0 auto;
-  max-width: 76rem;
+  max-width: 64rem;
   padding: 0;
 }
 
@@ -2528,9 +2535,22 @@ progress {
   margin-bottom: 1.5rem;
 }
 
+.cms-page-header h1 {
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  line-height: 1.08;
+  max-width: 26ch;
+  overflow-wrap: anywhere;
+}
+
 .cms-page-header h1,
-.cms-section-heading h2 {
+.cms-section-heading h2,
+.cms-operation-card h3 {
   margin: 0.2rem 0;
+}
+
+.cms-section-heading h2 {
+  font-size: clamp(1.25rem, 2vw, 1.55rem);
+  line-height: 1.2;
 }
 
 .cms-page-header p,
@@ -2666,6 +2686,9 @@ progress {
   font-size: 0.76rem;
   font-weight: 750;
   padding: 0.28rem 0.55rem;
+}
+
+.cms-status {
   text-transform: capitalize;
 }
 
@@ -2700,13 +2723,18 @@ progress {
   gap: 1rem;
 }
 
+.cms-resource-form label,
+.cms-resource-form fieldset {
+  min-width: 0;
+}
+
 .cms-editor-card,
 .cms-case-editor {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   box-sizing: border-box;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 1px 2px rgb(16 34 25 / 4%);
   max-width: 100%;
   min-width: 0;
   padding: clamp(1rem, 2.5vw, 1.5rem);
@@ -2750,6 +2778,11 @@ progress {
 .cms-comment-editor > label {
   display: grid;
   gap: 0.45rem;
+  margin-top: 0;
+}
+
+.cms-resource-form textarea {
+  line-height: 1.45;
 }
 
 .cms-choice-group {
@@ -2820,6 +2853,17 @@ progress {
   padding: 1rem;
 }
 
+.cms-comment-editor {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cms-comment-editor legend {
+  font-size: 1rem;
+  font-weight: 750;
+  padding-inline: 0.25rem;
+}
+
 .cms-link-row {
   display: grid;
   gap: 0.65rem;
@@ -2876,13 +2920,27 @@ progress {
 }
 
 .cms-case-source {
-  align-items: end;
+  align-items: stretch;
 }
 
 .cms-confirmation {
   background: #fff9e9;
   border-color: #ddc98d;
   font-size: 0.9rem;
+}
+
+.cms-source-note {
+  align-content: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  color: var(--muted);
+  display: grid;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  margin: 0;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
 }
 
 .cms-case-workspace {
@@ -2923,7 +2981,11 @@ progress {
 }
 
 .cms-comment-editor .cms-field-grid {
-  margin-top: 0.75rem;
+  margin-top: 0;
+}
+
+.cms-comment-copy-grid textarea {
+  min-height: 8rem;
 }
 
 .button-danger-outline {
@@ -3060,7 +3122,90 @@ progress {
   width: 2.5rem;
 }
 
-@media (min-width: 40.01rem) and (max-width: 75rem) {
+.admin-operations-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.admin-operations-page > .cms-page-header,
+.admin-operations-page > .success-summary,
+.admin-operations-page > .error-summary {
+  margin-bottom: 0;
+}
+
+.cms-operations-section {
+  min-width: 0;
+}
+
+.cms-offering-grid,
+.cms-request-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.cms-operation-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-sizing: border-box;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+.cms-operation-card > * {
+  margin-block: 0;
+  min-width: 0;
+}
+
+.cms-operation-form {
+  align-items: stretch;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+.cms-operation-form label,
+.cms-moderation-form label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.cms-operation-form select {
+  width: 100%;
+}
+
+.cms-operation-form button {
+  justify-self: start;
+}
+
+.cms-operation-actions {
+  margin-top: 0;
+}
+
+.cms-moderation-form {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  margin: 0;
+}
+
+.cms-moderation-form select {
+  width: 100%;
+}
+
+.admin-operations-page .item-list {
+  grid-template-columns: 1fr;
+}
+
+/* CMS internals respond to available workspace width, including browser zoom and the sidebar. */
+@container cms-workspace (max-width: 68rem) {
   .cms-filter-bar:not(.cms-path-filter) {
     grid-template-columns: minmax(14rem, 2fr) repeat(2, minmax(9rem, 1fr));
   }
@@ -3071,17 +3216,24 @@ progress {
   }
 }
 
-@media (min-width: 40.01rem) and (max-width: 68rem) {
-  .cms-taxonomy-layout {
+@container cms-workspace (max-width: 54rem) {
+  .cms-taxonomy-layout,
+  .cms-case-source,
+  .cms-case-workspace,
+  .cms-comment-copy-grid {
     grid-template-columns: 1fr;
   }
 
   .cms-taxonomy-create {
     position: static;
   }
+
+  .cms-case-preview {
+    min-height: 10rem;
+  }
 }
 
-@media (min-width: 40.01rem) and (max-width: 55rem) {
+@container cms-workspace (max-width: 44rem) {
   .cms-content-row {
     align-items: flex-start;
     flex-direction: column;
@@ -3090,6 +3242,16 @@ progress {
   .cms-row-actions {
     align-self: stretch;
     justify-content: flex-end;
+  }
+
+  .cms-field-grid,
+  .cms-choice-grid-wide,
+  .cms-moderation-form {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-moderation-form {
+    align-items: stretch;
   }
 }
 
@@ -3128,6 +3290,10 @@ progress {
     max-width: 100vw;
     overflow-x: clip;
     padding: 1.25rem 1rem 6rem;
+  }
+
+  .cms-page-header h1 {
+    font-size: clamp(1.75rem, 9vw, 2.25rem);
   }
 
   .cms-page-header,
@@ -3204,6 +3370,17 @@ progress {
   .cms-sticky-action-buttons {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .cms-moderation-form {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    margin: 0;
+  }
+
+  .cms-operation-form button,
+  .cms-operation-actions button {
+    width: 100%;
   }
 
   .member-header {

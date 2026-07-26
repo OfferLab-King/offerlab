@@ -131,6 +131,18 @@ when an adjacent token works.
 - Active navigation is compact and never fills a large empty container.
 - Contextual navigation sits directly above the content it changes.
 
+### Administrator workspace
+
+- Every `/admin` route uses the shared administrator shell, navigation and workspace gutters.
+- List pages use the shared admin page width; editors use the narrower shared editor width. Do not
+  introduce route-specific outer widths or inherit member-page shells inside the administrator area.
+- Multi-column admin controls respond to the available main-content width through container queries,
+  because the fixed sidebar and browser zoom change that width independently of the viewport.
+- Repeated records use the shared content-row or operation-card patterns. Forms inside those records
+  use the shared filter, operation or action layouts so labels, controls and buttons cannot overlap.
+- Add responsive assertions for any new administrator route at 390px and at a constrained desktop
+  width before considering its interface complete.
+
 ### Buttons
 
 - Primary: solid accent, used for the most important safe action.

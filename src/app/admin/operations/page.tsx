@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireAdministrator } from "../../../modules/identity-access/application/authorization";
 import {
   readServiceOfferingsForAdmin,
@@ -28,12 +27,14 @@ export default async function OperationsPage({
     searchParams,
   ]);
   return (
-    <main className="applications-shell">
-      <p className="eyebrow">Administrator operations</p>
-      <h1>Moderation &amp; Pilot Requests</h1>
-      <nav>
-        <Link href="/admin">Admin home</Link> · <Link href="/admin/content">Content</Link>
-      </nav>
+    <main className="cms-page admin-operations-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Administrator operations</p>
+          <h1>Moderation and pilot requests</h1>
+          <p>Review submissions and manage the availability of manually operated services.</p>
+        </div>
+      </header>
       {query.result === "saved" && (
         <p className="success-summary" role="status">
           Update saved.
@@ -44,15 +45,19 @@ export default async function OperationsPage({
           That update could not be saved. Reload and try again.
         </p>
       )}
-      <section className="learn-section" aria-labelledby="report-moderation">
-        <h2 id="report-moderation">Recruitment intelligence</h2>
-        <p>
-          Check for confidentiality, identifying information, usefulness and cycle relevance before
-          publishing.
-        </p>
+      <section className="cms-operations-section" aria-labelledby="report-moderation">
+        <div className="cms-section-heading">
+          <div>
+            <h2 id="report-moderation">Recruitment intelligence</h2>
+            <p>
+              Check confidentiality, identifying information, usefulness and cycle relevance before
+              publishing.
+            </p>
+          </div>
+        </div>
         <div className="item-list">
           {reports.map((report) => (
-            <article className="card compact-card" key={report.id}>
+            <article className="cms-operation-card" key={report.id}>
               <span className="status-badge">{report.moderationState}</span>
               <h3>{report.formatSummary}</h3>
               <p>
@@ -68,7 +73,7 @@ export default async function OperationsPage({
               <p>
                 <strong>Reflection:</strong> {report.reflection}
               </p>
-              <form action={moderateReportAction} className="form-actions">
+              <form action={moderateReportAction} className="cms-moderation-form">
                 <input name="id" type="hidden" value={report.id} />
                 <input name="version" type="hidden" value={report.version} />
                 <label>
@@ -79,25 +84,32 @@ export default async function OperationsPage({
                     <option value="high">High</option>
                   </select>
                 </label>
-                <button name="state" value="published" type="submit">
-                  Publish
-                </button>
-                <button className="button-secondary" name="state" value="rejected" type="submit">
-                  Reject
-                </button>
+                <div className="form-actions cms-operation-actions">
+                  <button name="state" value="published" type="submit">
+                    Publish
+                  </button>
+                  <button className="button-secondary" name="state" value="rejected" type="submit">
+                    Reject
+                  </button>
+                </div>
               </form>
             </article>
           ))}
-          {!reports.length && <p>No reports to moderate.</p>}
+          {!reports.length && <p className="cms-empty-inline">No reports to moderate.</p>}
         </div>
       </section>
-      <section className="learn-section" aria-labelledby="pilot-requests">
-        <h2 id="pilot-requests">Practice and feedback requests</h2>
-        <div className="resource-grid">
+      <section className="cms-operations-section" aria-labelledby="pilot-requests">
+        <div className="cms-section-heading">
+          <div>
+            <h2 id="pilot-requests">Practice and feedback requests</h2>
+            <p>Open, pause or collect interest for each manually managed service.</p>
+          </div>
+        </div>
+        <div className="cms-offering-grid">
           {offerings.map((offering) => (
-            <article className="card compact-card" key={offering.id}>
+            <article className="cms-operation-card" key={offering.id}>
               <h3>{offering.title}</h3>
-              <form action={updateServiceOfferingAction} className="form-actions">
+              <form action={updateServiceOfferingAction} className="cms-operation-form">
                 <input name="id" type="hidden" value={offering.id} />
                 <input name="version" type="hidden" value={offering.version} />
                 <label>
@@ -113,16 +125,19 @@ export default async function OperationsPage({
             </article>
           ))}
         </div>
-        <div className="item-list">
+        <div className="cms-request-list">
           {requests.map((request) => (
-            <article className="card compact-card" key={request.id}>
+            <article className="cms-operation-card" key={request.id}>
               <span className="status-badge">{request.status}</span>
               <h3>{request.offering_title}</h3>
               <p>
                 {request.offering_type.replaceAll("_", " ")} · requested{" "}
                 {new Date(request.created_at).toLocaleDateString("en-GB")}
               </p>
-              <form action={updateServiceRequestAction} className="form-actions">
+              <form
+                action={updateServiceRequestAction}
+                className="form-actions cms-operation-actions"
+              >
                 <input name="id" type="hidden" value={request.id} />
                 <input name="version" type="hidden" value={request.version} />
                 <button name="status" value="confirmed" type="submit">
@@ -137,7 +152,7 @@ export default async function OperationsPage({
               </form>
             </article>
           ))}
-          {!requests.length && <p>No pilot requests yet.</p>}
+          {!requests.length && <p className="cms-empty-inline">No pilot requests yet.</p>}
         </div>
       </section>
     </main>

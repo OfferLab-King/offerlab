@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function AdministratorPage() {
   await requireAdministrator();
   return (
-    <main className="admin-home">
-      <header className="admin-home-header">
+    <main className="cms-page admin-home">
+      <header className="cms-page-header admin-home-header">
         <div>
           <p className="eyebrow">OfferLab administration</p>
           <h1>What would you like to manage?</h1>

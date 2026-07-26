@@ -71,6 +71,13 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Add comment to selection" })).toBeVisible();
     await expect(page.getByText("Coaching-case detail (validated JSON)")).toHaveCount(0);
+    await expect(page.getByText(/Synthetic examples must not contain real student/)).toBeVisible();
+    await expect(page.getByText(/I confirm this material is authorised/)).toHaveCount(0);
+    await page
+      .getByLabel("Source")
+      .selectOption({ label: "Anonymised and approved previous work" });
+    await expect(page.getByText(/I confirm this material is authorised/)).toBeVisible();
+    await page.getByLabel("Source").selectOption({ label: "Synthetic teaching example" });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -170,6 +177,11 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await expect(page.getByRole("heading", { name: "Your reports" })).toBeVisible();
 
     await page.goto("/admin/operations");
+    await expect(
+      page
+        .getByRole("navigation", { name: "Content management" })
+        .getByRole("link", { name: "Operations" }),
+    ).toHaveAttribute("aria-current", "page");
     const reportCard = page
       .locator("article")
       .filter({ hasText: "Timed group discussion and recommendation" });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-const links = [
+const primaryLinks = [
   { href: "/admin/content", label: "Content", section: "content" },
   {
     href: "/admin/content?type=coaching_case",
@@ -13,20 +13,24 @@ const links = [
   { href: "/admin/content/paths", label: "Preparation paths", section: "paths" },
   { href: "/admin/content/categories", label: "Categories", section: "categories" },
   { href: "/admin/content/tags", label: "Tags", section: "tags" },
+  { href: "/admin/operations", label: "Operations", section: "operations" },
 ] as const;
 
-export function CmsShell({ children }: { children: React.ReactNode }) {
+function getActiveSection(pathname: string, type: string | null) {
+  if (pathname.startsWith("/admin/content/paths")) return "paths";
+  if (pathname === "/admin/content/categories") return "categories";
+  if (pathname === "/admin/content/tags") return "tags";
+  if (pathname === "/admin/operations") return "operations";
+  if (pathname === "/admin/content" && type === "coaching_case") return "coaching";
+  if (pathname.startsWith("/admin/content")) return "content";
+  return null;
+}
+
+export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeSection = pathname.startsWith("/admin/content/paths")
-    ? "paths"
-    : pathname === "/admin/content/categories"
-      ? "categories"
-      : pathname === "/admin/content/tags"
-        ? "tags"
-        : pathname === "/admin/content" && searchParams.get("type") === "coaching_case"
-          ? "coaching"
-          : "content";
+  const activeSection = getActiveSection(pathname, searchParams.get("type"));
+
   return (
     <div className="cms-shell">
       <aside className="cms-sidebar">
@@ -35,7 +39,7 @@ export function CmsShell({ children }: { children: React.ReactNode }) {
           <span>OfferLab CMS</span>
         </Link>
         <nav aria-label="Content management">
-          {links.map(({ href, label, section }) => (
+          {primaryLinks.map(({ href, label, section }) => (
             <Link
               aria-current={activeSection === section ? "page" : undefined}
               href={href as never}
@@ -47,7 +51,9 @@ export function CmsShell({ children }: { children: React.ReactNode }) {
         </nav>
         <nav aria-label="CMS shortcuts" className="cms-sidebar-footer">
           <Link href="/member/learn">View member workspace</Link>
-          <Link href="/admin">Admin home</Link>
+          <Link aria-current={pathname === "/admin" ? "page" : undefined} href="/admin">
+            Admin home
+          </Link>
         </nav>
       </aside>
       <div className="cms-main">{children}</div>

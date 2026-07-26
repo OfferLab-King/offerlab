@@ -22,6 +22,15 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     ownerId: string | undefined,
     resourceId: string | undefined,
     tagId: string | undefined;
+  const adminRoutes = [
+    "/admin",
+    "/admin/content",
+    "/admin/content?type=coaching_case",
+    "/admin/content/paths",
+    "/admin/content/categories",
+    "/admin/content/tags",
+    "/admin/operations",
+  ] as const;
   const submitAndInspectConflict = async (
     button: ReturnType<typeof page.getByRole>,
     prohibited: readonly string[],
@@ -72,6 +81,37 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.waitForURL(/\/(?:admin|member)$/);
 
     await page.setViewportSize({ width: 950, height: 800 });
+    for (const route of adminRoutes) {
+      await page.goto(route);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        ),
+        `${route} must not create page-level horizontal overflow`,
+      ).toBe(false);
+      await expect(page.locator("main")).toHaveCount(1);
+    }
+
+    await expect(
+      page
+        .getByRole("navigation", { name: "Content management" })
+        .getByRole("link", { name: "Operations" }),
+    ).toHaveAttribute("aria-current", "page");
+    const offeringForm = page.locator(".cms-operation-form").first();
+    const availabilityBox = await offeringForm.getByLabel("Availability").boundingBox();
+    const updateAvailabilityBox = await offeringForm
+      .getByRole("button", { name: "Update availability" })
+      .boundingBox();
+    if (!availabilityBox || !updateAvailabilityBox) {
+      throw new Error("Operations availability controls missing.");
+    }
+    const availabilityControlsOverlap =
+      availabilityBox.x < updateAvailabilityBox.x + updateAvailabilityBox.width &&
+      availabilityBox.x + availabilityBox.width > updateAvailabilityBox.x &&
+      availabilityBox.y < updateAvailabilityBox.y + updateAvailabilityBox.height &&
+      availabilityBox.y + availabilityBox.height > updateAvailabilityBox.y;
+    expect(availabilityControlsOverlap).toBe(false);
+
     await page.goto("/admin/content?type=coaching_case");
     await expect(
       page
@@ -102,6 +142,18 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       .locator(".cms-sidebar-footer")
       .evaluate((element) => Math.round(element.getBoundingClientRect().top));
     expect(pathsFooterTop).toBe(coachingFooterTop);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const route of adminRoutes) {
+      await page.goto(route);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        ),
+        `${route} must fit a 390px viewport`,
+      ).toBe(false);
+    }
+    await page.setViewportSize({ width: 950, height: 800 });
 
     await page.goto("/admin/content/categories");
     const categoryCreate = page

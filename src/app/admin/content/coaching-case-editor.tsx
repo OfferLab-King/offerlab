@@ -33,6 +33,7 @@ export function CoachingCaseEditor({
   const [weaknesses, setWeaknesses] = useState(detail?.keyWeaknesses.join("\n") ?? "");
   const [whyStronger, setWhyStronger] = useState(detail?.whyStronger ?? "");
   const [practicePrompt, setPracticePrompt] = useState(detail?.practicePrompt ?? "");
+  const [selectedSourceKind, setSelectedSourceKind] = useState(sourceKind ?? "synthetic");
   const [message, setMessage] = useState("");
   const improved = useMemo(() => rebuild(original, changes), [changes, original]);
   const payload = {
@@ -114,23 +115,35 @@ export function CoachingCaseEditor({
       <div className="cms-case-source">
         <label>
           Source
-          <select defaultValue={sourceKind ?? "synthetic"} name="coachingCaseSourceKind">
+          <select
+            name="coachingCaseSourceKind"
+            onChange={(event) =>
+              setSelectedSourceKind(event.target.value as typeof selectedSourceKind)
+            }
+            value={selectedSourceKind}
+          >
             <option value="synthetic">Synthetic teaching example</option>
             <option value="anonymised_approved">Anonymised and approved previous work</option>
           </select>
         </label>
-        <label className="cms-confirmation">
-          <input
-            defaultChecked={sourceKind === "anonymised_approved"}
-            name="anonymisationConfirmed"
-            type="checkbox"
-            value="yes"
-          />
-          <span>
-            I confirm previous-student material is authorised, fully anonymised and contains no
-            employer-private information.
-          </span>
-        </label>
+        {selectedSourceKind === "anonymised_approved" ? (
+          <label className="cms-confirmation">
+            <input
+              defaultChecked={sourceKind === "anonymised_approved"}
+              name="anonymisationConfirmed"
+              type="checkbox"
+              value="yes"
+            />
+            <span>
+              I confirm this material is authorised, fully anonymised and contains no
+              employer-private information.
+            </span>
+          </label>
+        ) : (
+          <p className="cms-source-note">
+            Synthetic examples must not contain real student or employer-private information.
+          </p>
+        )}
       </div>
       <label>
         Interview question
@@ -215,25 +228,31 @@ export function CoachingCaseEditor({
                   />
                 </label>
               </div>
-              <label>
-                Coach explanation
-                <textarea
-                  maxLength={800}
-                  onChange={(event) => updateChange(change.id, { explanation: event.target.value })}
-                  placeholder="Explain why this wording is weak and what the student should notice."
-                  rows={3}
-                  value={change.explanation}
-                />
-              </label>
-              <label>
-                Replacement wording
-                <textarea
-                  maxLength={1000}
-                  onChange={(event) => updateChange(change.id, { replacement: event.target.value })}
-                  rows={3}
-                  value={change.replacement}
-                />
-              </label>
+              <div className="cms-field-grid cms-comment-copy-grid">
+                <label>
+                  Coach explanation
+                  <textarea
+                    maxLength={800}
+                    onChange={(event) =>
+                      updateChange(change.id, { explanation: event.target.value })
+                    }
+                    placeholder="Explain why this wording is weak and what the student should notice."
+                    rows={4}
+                    value={change.explanation}
+                  />
+                </label>
+                <label>
+                  Replacement wording
+                  <textarea
+                    maxLength={1000}
+                    onChange={(event) =>
+                      updateChange(change.id, { replacement: event.target.value })
+                    }
+                    rows={4}
+                    value={change.replacement}
+                  />
+                </label>
+              </div>
               <button
                 className="button-danger-outline"
                 onClick={() =>
