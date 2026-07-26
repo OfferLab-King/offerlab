@@ -66,6 +66,31 @@ describe("knowledge library CMS and production-equivalent policies", () => {
       slug: "application-planning-checklist",
     });
   });
+
+  it("stores seeded Markdown with real line breaks", async () => {
+    const seeded = await migration<{ markdownBody: string; resourceKey: string }[]>`
+      select resource_key "resourceKey",markdown_body "markdownBody"
+      from app.preparation_resource
+      where resource_key in (
+        'application_planning_checklist',
+        'video_interview_preparation',
+        'motivation_question_preparation',
+        'teamwork_example_preparation',
+        'recording_checklist',
+        'online_test_preparation',
+        'assessment_centre_group_exercise',
+        'final_interview_preparation',
+        'demonstration_group_case'
+      )
+      order by resource_key`;
+
+    expect(seeded).toHaveLength(9);
+    for (const resource of seeded) {
+      expect(resource.markdownBody, resource.resourceKey).toContain("\n");
+      expect(resource.markdownBody, resource.resourceKey).not.toContain("\\n");
+    }
+  });
+
   it("creates an incomplete draft, atomically saves associations, publishes, detects no-op, and rejects stale writes", async () => {
     const draft = await createDraft(
       adminId,
