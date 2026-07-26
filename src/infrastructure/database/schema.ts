@@ -461,6 +461,72 @@ export const recruitmentIntelligenceReports = appSchema.table(
   (table) => [unique("recruitment_intelligence_owner_id_unique").on(table.ownerUserId, table.id)],
 );
 
+export const memberCommunityAgreements = appSchema.table("member_community_agreement", {
+  acceptedAt: timestamp("accepted_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  ownerUserId: uuid("owner_user_id")
+    .primaryKey()
+    .references(() => appUsers.id, { onDelete: "cascade" }),
+  termsVersion: text("terms_version").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const recruitmentIntelligenceComments = appSchema.table(
+  "recruitment_intelligence_comment",
+  {
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    moderatedAt: timestamp("moderated_at", { mode: "date", withTimezone: true }),
+    moderatedByUserId: uuid("moderated_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    moderationState: text("moderation_state").default("pending").notNull(),
+    moderatorNote: text("moderator_note"),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    parentCommentId: uuid("parent_comment_id"),
+    reportId: uuid("report_id")
+      .notNull()
+      .references(() => recruitmentIntelligenceReports.id, { onDelete: "cascade" }),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    index("recruitment_intelligence_comment_report_idx").on(
+      table.reportId,
+      table.moderationState,
+      table.createdAt,
+      table.id,
+    ),
+    unique("recruitment_intelligence_comment_report_id_unique").on(table.reportId, table.id),
+    unique("recruitment_intelligence_comment_owner_id_unique").on(table.ownerUserId, table.id),
+  ],
+);
+
+export const recruitmentIntelligenceCommentFlags = appSchema.table(
+  "recruitment_intelligence_comment_flag",
+  {
+    commentId: uuid("comment_id")
+      .notNull()
+      .references(() => recruitmentIntelligenceComments.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    resolution: text("resolution"),
+    resolvedAt: timestamp("resolved_at", { mode: "date", withTimezone: true }),
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+  },
+  (table) => [
+    unique("recruitment_intelligence_comment_flag_unique").on(table.commentId, table.ownerUserId),
+  ],
+);
+
 export const serviceOfferings = appSchema.table("service_offering", {
   availability: text("availability").default("interest").notNull(),
   capacity: integer("capacity"),

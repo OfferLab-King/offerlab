@@ -224,8 +224,39 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await expect(
       page.getByText("See assessed skills, reflection and preparation advice"),
     ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Member discussion" })).toHaveCount(0);
     await page.goto("/member/learn/intelligence");
     await expect(page.getByRole("heading", { name: "Example employer" })).toBeVisible();
+    await page
+      .locator("article")
+      .filter({ hasText: "Example employer" })
+      .getByRole("link", { name: "Read experience" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Ask for context and share useful experience" }),
+    ).toBeVisible();
+    await page
+      .getByLabel("Add a comment or question")
+      .fill("How did the group make space for quieter contributors?");
+    await page.getByRole("button", { name: "Submit for review" }).click();
+    await expect(page.getByText("Your comment is awaiting moderation.")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      ),
+    ).toBe(false);
+
+    await page.goto("/admin/intelligence#discussion-moderation");
+    const commentCard = page
+      .locator("article.cms-discussion-item")
+      .filter({ hasText: "How did the group make space" });
+    await commentCard.getByRole("button", { name: "Publish comment" }).click();
+    await expect(page.getByText("Discussion moderation updated.")).toBeVisible();
+    await page.goto(publicHref!.replace("/intelligence/", "/member/learn/intelligence/"));
+    await expect(
+      page.getByText("How did the group make space for quieter contributors?"),
+    ).toBeVisible();
+    await expect(page.getByText("1 published")).toBeVisible();
 
     expect(
       await page.evaluate(
@@ -236,6 +267,9 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     if (ownerId) {
       await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
       await database`delete from app.service_request where owner_user_id=${ownerId}::uuid`;
+      await database`delete from app.recruitment_intelligence_comment_flag where owner_user_id=${ownerId}::uuid`;
+      await database`delete from app.recruitment_intelligence_comment where owner_user_id=${ownerId}::uuid`;
+      await database`delete from app.member_community_agreement where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.recruitment_intelligence_report where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.answer_coach_comment where owner_user_id=${ownerId}::uuid`;
       await database`delete from app.answer_coach_review where owner_user_id=${ownerId}::uuid`;

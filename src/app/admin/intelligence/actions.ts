@@ -7,6 +7,10 @@ import {
   reviewIntelligenceReport,
   updateIntelligenceReport,
 } from "../../../modules/recruitment-intelligence/application/reports";
+import {
+  dismissIntelligenceCommentFlag,
+  reviewIntelligenceComment,
+} from "../../../modules/recruitment-intelligence/application/community";
 
 function input(formData: FormData) {
   return {
@@ -75,5 +79,32 @@ export async function moderateIntelligenceAction(formData: FormData) {
   );
   redirect(
     `/admin/intelligence?result=${result.outcome === "changed" || result.outcome === "unchanged" ? "saved" : "error"}`,
+  );
+}
+
+export async function moderateIntelligenceCommentAction(formData: FormData) {
+  const administrator = await requireAdministrator();
+  const state = formData.get("state");
+  if (state !== "published" && state !== "rejected" && state !== "removed")
+    redirect("/admin/intelligence?result=comment-error#discussion-moderation");
+  const result = await reviewIntelligenceComment(
+    administrator.userId,
+    String(formData.get("id")),
+    Number(formData.get("version")),
+    state,
+  );
+  redirect(
+    `/admin/intelligence?result=${result.outcome === "changed" ? "comment-saved" : "comment-error"}#discussion-moderation`,
+  );
+}
+
+export async function dismissIntelligenceCommentFlagAction(formData: FormData) {
+  const administrator = await requireAdministrator();
+  const result = await dismissIntelligenceCommentFlag(
+    administrator.userId,
+    String(formData.get("flagId")),
+  );
+  redirect(
+    `/admin/intelligence?result=${result.outcome === "changed" ? "comment-saved" : "comment-error"}#discussion-moderation`,
   );
 }

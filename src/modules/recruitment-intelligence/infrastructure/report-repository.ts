@@ -6,6 +6,7 @@ type Row = Readonly<{
   approximate_date: Date | string;
   assessed_skills: string[];
   company_name: string;
+  comment_count?: number | string;
   format_summary: string;
   id: string;
   industry: string | null;
@@ -31,6 +32,7 @@ export type IntelligenceReport = Readonly<{
   approximateDate: string;
   assessedSkills: readonly string[];
   companyName: string;
+  commentCount: number;
   formatSummary: string;
   id: string;
   industry: string | null;
@@ -61,6 +63,7 @@ const map = (row: Row, owner: string | null): IntelligenceReport => ({
   approximateDate: date(row.approximate_date),
   assessedSkills: row.assessed_skills,
   companyName: row.company_name,
+  commentCount: Number(row.comment_count ?? 0),
   formatSummary: row.format_summary,
   id: row.id,
   industry: row.industry,
@@ -87,13 +90,16 @@ export async function listPublishedReports(
   owner: string | null,
   filters: ReportFilters,
 ) {
-  const rows = await db<Row[]>`select * from app.recruitment_intelligence_report
-    where moderation_state='published'
-      and (${filters.query}='' or search_document @@ websearch_to_tsquery('english',${filters.query}))
-      and (${filters.stage ?? null}::text is null or recruitment_stage=${filters.stage ?? null})
-      and (${filters.industry ?? null}::text is null or industry=${filters.industry ?? null})
-      and (${filters.cycle ?? null}::text is null or recruitment_cycle=${filters.cycle ?? null})
-    order by approximate_date desc,company_name,role_title,id limit 100`;
+  const rows = await db<Row[]>`select r.*,(select count(*)::int
+      from app.recruitment_intelligence_comment c
+      where c.report_id=r.id and c.moderation_state='published') comment_count
+    from app.recruitment_intelligence_report r
+    where r.moderation_state='published'
+      and (${filters.query}='' or r.search_document @@ websearch_to_tsquery('english',${filters.query}))
+      and (${filters.stage ?? null}::text is null or r.recruitment_stage=${filters.stage ?? null})
+      and (${filters.industry ?? null}::text is null or r.industry=${filters.industry ?? null})
+      and (${filters.cycle ?? null}::text is null or r.recruitment_cycle=${filters.cycle ?? null})
+    order by r.approximate_date desc,r.company_name,r.role_title,r.id limit 100`;
   return rows.map((row) => map(row, owner));
 }
 
@@ -104,8 +110,11 @@ export async function listOwnerReports(db: TransactionSql, owner: string) {
 }
 
 export async function findReportBySlug(db: TransactionSql, slug: string, owner: string | null) {
-  const rows = await db<Row[]>`select * from app.recruitment_intelligence_report
-    where slug=${slug} and (moderation_state='published' or owner_user_id=${owner}::uuid) limit 1`;
+  const rows = await db<Row[]>`select r.*,(select count(*)::int
+      from app.recruitment_intelligence_comment c
+      where c.report_id=r.id and c.moderation_state='published') comment_count
+    from app.recruitment_intelligence_report r
+    where r.slug=${slug} and (r.moderation_state='published' or r.owner_user_id=${owner}::uuid) limit 1`;
   return rows[0] ? map(rows[0], owner) : null;
 }
 

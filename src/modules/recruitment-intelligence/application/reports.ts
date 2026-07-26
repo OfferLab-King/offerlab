@@ -3,6 +3,7 @@ import { withApplicationUser } from "../../../infrastructure/database/runtime-co
 import { withApplicationRole } from "../../../infrastructure/database/runtime-connections";
 import { parseReport, type ReportFilters } from "../domain/report";
 import * as repository from "../infrastructure/report-repository";
+import { acceptCurrentCommunityAgreement } from "../infrastructure/community-repository";
 
 export const readIntelligenceReports = (owner: string, filters: ReportFilters) =>
   withApplicationUser(owner, (database) =>
@@ -29,9 +30,10 @@ export async function submitIntelligenceReport(owner: string, input: unknown) {
   const parsed = parseReport(input);
   if (!parsed.ok) return parsed;
   return {
-    item: await withApplicationUser(owner, (database) =>
-      repository.createReport(database, owner, parsed.value),
-    ),
+    item: await withApplicationUser(owner, async (database) => {
+      await acceptCurrentCommunityAgreement(database, owner);
+      return repository.createReport(database, owner, parsed.value);
+    }),
     ok: true,
   } as const;
 }

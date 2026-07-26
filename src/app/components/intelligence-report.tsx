@@ -39,6 +39,7 @@ export function IntelligenceReportCard({
         <span>{recruitmentStageLabel(report.recruitmentStage)}</span>
         {report.location && <span>{report.location}</span>}
         {report.moderationConfidence && <span>{report.moderationConfidence} confidence</span>}
+        {report.commentCount > 0 && <span>{report.commentCount} comments</span>}
       </div>
       <p>{report.formatSummary}</p>
       <Link className="intelligence-card-link" href={href as never}>

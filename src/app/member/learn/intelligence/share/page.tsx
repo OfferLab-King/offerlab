@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { recruitmentStages } from "../../../../../modules/applications/domain/application";
 import { requireMember } from "../../../../../modules/identity-access/application/authorization";
+import { communityTermsVersion } from "../../../../../modules/recruitment-intelligence/domain/community";
 import { industries } from "../../../../../modules/taxonomy/domain/industries";
 import { opportunityTypes } from "../../../../../modules/taxonomy/domain/opportunity-types";
 import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
@@ -152,7 +153,8 @@ export default async function ShareIntelligencePage({
           <span>
             I confirm this report is my experience, contains no restricted or confidential material,
             and does not identify another person. I understand OfferLab may edit or reject it for
-            clarity, safety or usefulness.
+            clarity, safety or usefulness, and I accept community rules version{" "}
+            {communityTermsVersion}.
           </span>
         </label>
         <div className="form-actions">
