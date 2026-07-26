@@ -90,7 +90,11 @@ export default async function Page({
                 <button name="intent" value="save">
                   Save
                 </button>
-                <button name="intent" value={row.archivedAt ? "restore" : "archive"}>
+                <button
+                  className="button-secondary"
+                  name="intent"
+                  value={row.archivedAt ? "restore" : "archive"}
+                >
                   {row.archivedAt ? "Restore" : "Archive"}
                 </button>
               </div>

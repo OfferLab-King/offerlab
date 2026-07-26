@@ -88,8 +88,14 @@ export default async function Page({
             <option value="article">Articles</option>
           </select>
         </label>
-        <button>Apply filters</button>
-        {(search || query.state || query.type) && <Link href="/admin/content">Clear</Link>}
+        <div className="cms-filter-actions">
+          <button>Apply filters</button>
+          {(search || query.state || query.type) && (
+            <Link className="button-secondary button-link" href="/admin/content">
+              Clear
+            </Link>
+          )}
+        </div>
       </form>
       <div className="cms-content-list">
         {resources.length ? (
@@ -100,12 +106,14 @@ export default async function Page({
                   <span className={`cms-status cms-status-${resource.publicationState}`}>
                     {resource.publicationState}
                   </span>
-                  <span>
+                  <span className="cms-meta">
                     {resource.resourceType === "coaching_case"
-                      ? "coaching case"
-                      : resource.resourceType}
+                      ? "Coaching case"
+                      : resource.resourceType.replaceAll("_", " ")}
                   </span>
-                  <span>{resource.accessLevel}</span>
+                  <span className="cms-meta">
+                    {resource.accessLevel === "member" ? "Members only" : "Public"}
+                  </span>
                 </div>
                 <h2>{resource.title || "Untitled content"}</h2>
                 <p>{resource.shortDescription || "No summary yet."}</p>

@@ -2568,13 +2568,26 @@ progress {
   border-radius: var(--radius-card);
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: minmax(14rem, 2fr) repeat(2, minmax(9rem, 1fr)) auto;
+  grid-template-columns: minmax(14rem, 2fr) repeat(2, minmax(9rem, 1fr)) max-content;
   margin-bottom: 1rem;
   padding: 1rem;
 }
 
 .cms-filter-bar label {
+  display: grid;
+  gap: 0.35rem;
   margin: 0;
+  min-width: 0;
+}
+
+.cms-filter-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cms-filter-actions > * {
+  min-height: 44px;
 }
 
 .cms-content-list,
@@ -2613,6 +2626,20 @@ progress {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+
+.cms-meta {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.24rem 0.5rem;
+  text-transform: capitalize;
+}
+
+.cms-row-actions {
+  flex: 0 0 auto;
 }
 
 .cms-status,
@@ -2721,7 +2748,7 @@ progress {
 .cms-choice-grid {
   display: grid;
   gap: 0.55rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
 
 .cms-choice-grid-wide {
@@ -2730,14 +2757,16 @@ progress {
 
 .cms-check-card,
 .cms-confirmation {
-  align-items: flex-start;
+  align-items: center;
   border: 1px solid var(--border);
   border-radius: 0.65rem;
+  box-sizing: border-box;
   cursor: pointer;
   display: flex;
   gap: 0.6rem;
   margin: 0;
-  padding: 0.72rem;
+  min-height: 46px;
+  padding: 0.6rem 0.75rem;
 }
 
 .cms-check-card:has(input:checked) {
@@ -2748,7 +2777,11 @@ progress {
 .cms-check-card input,
 .cms-confirmation input {
   flex: 0 0 auto;
-  margin-top: 0.2rem;
+  height: 1.1rem;
+  margin: 0;
+  min-height: 1.1rem;
+  padding: 0;
+  width: 1.1rem;
 }
 
 .cms-editor-card summary {
@@ -2894,6 +2927,24 @@ progress {
   display: grid;
   gap: 0.7rem;
   padding: 1rem 0;
+}
+
+.cms-taxonomy-create > label,
+.cms-taxonomy-row > label {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0;
+  min-width: 0;
+}
+
+.cms-taxonomy-create input,
+.cms-taxonomy-row input:not([type="hidden"]),
+.cms-taxonomy-row textarea {
+  width: 100%;
+}
+
+.cms-taxonomy-row .form-actions {
+  margin-top: 0.25rem;
 }
 
 .cms-taxonomy-row:first-of-type {
@@ -3042,6 +3093,17 @@ progress {
   .cms-taxonomy-layout {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .cms-filter-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .cms-filter-actions > * {
+    box-sizing: border-box;
+    flex: 1;
+    text-align: center;
   }
 
   .cms-taxonomy-create {

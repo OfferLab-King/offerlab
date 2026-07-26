@@ -114,6 +114,8 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.waitForURL(/\/admin\/content\/[0-9a-f-]+$/);
     resourceId = page.url().split("/").at(-1);
     if (!categoryId || !resourceId || !tagId) throw new Error("Created CMS identifier missing.");
+    const tagChoice = await page.getByLabel(tagName).locator("..").boundingBox();
+    expect(tagChoice?.height).toBeLessThanOrEqual(60);
     await page.getByLabel(tagName).check();
     await page.getByRole("checkbox", { name: "video interview", exact: true }).check();
     await page.getByRole("checkbox", { name: "graduate scheme", exact: true }).check();
