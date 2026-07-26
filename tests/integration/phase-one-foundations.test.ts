@@ -10,7 +10,7 @@ import {
 } from "../../src/modules/practice-services/infrastructure/service-repository";
 import {
   createReport,
-  listReports,
+  listPublishedReports,
   listReportsForAdmin,
   moderateReport,
 } from "../../src/modules/recruitment-intelligence/infrastructure/report-repository";
@@ -53,12 +53,18 @@ afterAll(async () => {
 const report = {
   approximateDate: "2026-07-20",
   assessedSkills: ["Communication", "Prioritisation"],
+  companyName: "Example employer",
   formatSummary: "Timed group discussion",
   industry: "consulting" as const,
+  location: "London",
   opportunityType: "graduate_scheme" as const,
+  outcome: null,
+  preparationAdvice: "Practise comparing options against explicit criteria.",
   recruitmentCycle: "2026/27",
   recruitmentStage: "assessment_centre" as const,
   reflection: "State criteria early and include quieter contributors.",
+  roleTitle: "Graduate consulting programme",
+  sourceKind: "member" as const,
   themes: "Prioritisation, trade-offs and a group recommendation.",
 };
 
@@ -69,13 +75,19 @@ describe("Phase 1 moderated and manually operated foundations", () => {
     expect(
       await as(administrator, (database) => listReportsForAdmin(database, administrator)),
     ).toHaveLength(1);
-    expect(await as(administrator, (database) => listReports(database, administrator))).toEqual([]);
+    expect(
+      await as(administrator, (database) =>
+        listPublishedReports(database, administrator, { query: "" }),
+      ),
+    ).toEqual([]);
     expect(
       await as(administrator, (database) =>
         moderateReport(database, administrator, created.id, 1, "published", "medium"),
       ),
     ).toEqual({ outcome: "changed" });
-    const visible = await as(administrator, (database) => listReports(database, administrator));
+    const visible = await as(administrator, (database) =>
+      listPublishedReports(database, administrator, { query: "" }),
+    );
     expect(visible).toEqual([
       expect.objectContaining({ moderationState: "published", version: 2 }),
     ]);
@@ -89,6 +101,18 @@ describe("Phase 1 moderated and manually operated foundations", () => {
     >`select metadata from app.audit_event where entity_id=${created.id}::uuid`;
     expect(audits).toHaveLength(2);
     expect(audits.every((event) => JSON.stringify(event.metadata) === "{}")).toBe(true);
+  });
+
+  it("enforces visible member and coach-curated provenance", async () => {
+    await expect(
+      as(member, (database) =>
+        createReport(database, member, { ...report, sourceKind: "coach_curated" }),
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+    const curated = await as(administrator, (database) =>
+      createReport(database, administrator, { ...report, sourceKind: "coach_curated" }),
+    );
+    expect(curated).toMatchObject({ sourceKind: "coach_curated", moderationState: "pending" });
   });
 
   it("supports a privacy-minimal service request and administrator status update", async () => {

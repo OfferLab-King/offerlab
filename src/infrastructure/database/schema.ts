@@ -426,10 +426,16 @@ export const recruitmentIntelligenceReports = appSchema.table(
   {
     approximateDate: date("approximate_date").notNull(),
     assessedSkills: text("assessed_skills").array().default([]).notNull(),
+    companyName: text("company_name").notNull(),
+    confidentialityConfirmedAt: timestamp("confidentiality_confirmed_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
     formatSummary: text("format_summary").notNull(),
     id: uuid("id").defaultRandom().primaryKey(),
     industry: text("industry"),
+    location: text("location"),
     moderatedAt: timestamp("moderated_at", { mode: "date", withTimezone: true }),
     moderatedByUserId: uuid("moderated_by_user_id").references(() => appUsers.id, {
       onDelete: "restrict",
@@ -437,12 +443,17 @@ export const recruitmentIntelligenceReports = appSchema.table(
     moderationConfidence: text("moderation_confidence"),
     moderationState: text("moderation_state").default("pending").notNull(),
     opportunityType: text("opportunity_type"),
+    outcome: text("outcome"),
     ownerUserId: uuid("owner_user_id")
       .notNull()
       .references(() => appUsers.id, { onDelete: "restrict" }),
     recruitmentCycle: text("recruitment_cycle").notNull(),
     recruitmentStage: text("recruitment_stage").notNull(),
+    preparationAdvice: text("preparation_advice").notNull(),
     reflection: text("reflection").notNull(),
+    roleTitle: text("role_title").notNull(),
+    slug: text("slug").notNull().unique(),
+    sourceKind: text("source_kind").notNull(),
     themes: text("themes").notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
     version: integer("version").default(1).notNull(),

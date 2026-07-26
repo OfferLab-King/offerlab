@@ -28,11 +28,19 @@ export default async function AdministratorPage() {
             <strong>Open CMS →</strong>
           </div>
         </Link>
+        <Link className="admin-home-card" href="/admin/intelligence">
+          <span className="admin-home-icon">I</span>
+          <div>
+            <h2>Recruitment Intelligence</h2>
+            <p>Create coach-curated reports and moderate confidential member submissions.</p>
+            <strong>Manage reports →</strong>
+          </div>
+        </Link>
         <Link className="admin-home-card" href="/admin/operations">
           <span className="admin-home-icon">O</span>
           <div>
             <h2>Operations</h2>
-            <p>Moderate recruitment intelligence and manually managed pilot requests.</p>
+            <p>Manage availability and requests for manually operated practice services.</p>
             <strong>Open operations →</strong>
           </div>
         </Link>

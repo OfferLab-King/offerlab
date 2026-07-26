@@ -3,13 +3,7 @@ import {
   readServiceOfferingsForAdmin,
   readServiceRequestsForAdmin,
 } from "../../../modules/practice-services/application/services";
-import { readIntelligenceReportsForAdmin } from "../../../modules/recruitment-intelligence/application/reports";
-import { recruitmentStageLabel } from "../../../modules/taxonomy/domain/display-labels";
-import {
-  moderateReportAction,
-  updateServiceOfferingAction,
-  updateServiceRequestAction,
-} from "./actions";
+import { updateServiceOfferingAction, updateServiceRequestAction } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,8 +14,7 @@ export default async function OperationsPage({
   searchParams: Promise<{ result?: string }>;
 }) {
   const administrator = await requireAdministrator();
-  const [reports, requests, offerings, query] = await Promise.all([
-    readIntelligenceReportsForAdmin(administrator.userId),
+  const [requests, offerings, query] = await Promise.all([
     readServiceRequestsForAdmin(administrator.userId),
     readServiceOfferingsForAdmin(administrator.userId),
     searchParams,
@@ -45,59 +38,6 @@ export default async function OperationsPage({
           That update could not be saved. Reload and try again.
         </p>
       )}
-      <section className="cms-operations-section" aria-labelledby="report-moderation">
-        <div className="cms-section-heading">
-          <div>
-            <h2 id="report-moderation">Recruitment intelligence</h2>
-            <p>
-              Check confidentiality, identifying information, usefulness and cycle relevance before
-              publishing.
-            </p>
-          </div>
-        </div>
-        <div className="item-list">
-          {reports.map((report) => (
-            <article className="cms-operation-card" key={report.id}>
-              <span className="status-badge">{report.moderationState}</span>
-              <h3>{report.formatSummary}</h3>
-              <p>
-                {recruitmentStageLabel(report.recruitmentStage)} · {report.recruitmentCycle} ·{" "}
-                {report.approximateDate}
-              </p>
-              <p>
-                <strong>Themes:</strong> {report.themes}
-              </p>
-              <p>
-                <strong>Assessed skills:</strong> {report.assessedSkills.join(", ")}
-              </p>
-              <p>
-                <strong>Reflection:</strong> {report.reflection}
-              </p>
-              <form action={moderateReportAction} className="cms-moderation-form">
-                <input name="id" type="hidden" value={report.id} />
-                <input name="version" type="hidden" value={report.version} />
-                <label>
-                  Confidence
-                  <select name="confidence" defaultValue={report.moderationConfidence ?? "medium"}>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </label>
-                <div className="form-actions cms-operation-actions">
-                  <button name="state" value="published" type="submit">
-                    Publish
-                  </button>
-                  <button className="button-secondary" name="state" value="rejected" type="submit">
-                    Reject
-                  </button>
-                </div>
-              </form>
-            </article>
-          ))}
-          {!reports.length && <p className="cms-empty-inline">No reports to moderate.</p>}
-        </div>
-      </section>
       <section className="cms-operations-section" aria-labelledby="pilot-requests">
         <div className="cms-section-heading">
           <div>

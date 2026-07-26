@@ -178,39 +178,54 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       .getByRole("navigation", { name: "Prepare" })
       .getByRole("link", { name: "Intelligence" })
       .click();
-    await page.getByText("Share a recent experience").click();
+    await page.getByRole("link", { name: "Share an experience" }).click();
+    await page.getByLabel("Employer").fill("Example employer");
+    await page.getByLabel("Role or programme").fill("Audit graduate programme");
     await page.getByLabel("Recruitment cycle").fill("2026/27");
     await page.getByLabel("Approximate date").fill("2026-07-20");
     await page.getByLabel("Recruitment stage").selectOption("assessment_centre");
     await page.getByLabel("Format summary").fill("Timed group discussion and recommendation");
     await page
-      .getByLabel("Themes (not exact questions)")
+      .getByLabel("General themes—not exact questions")
       .fill("Prioritisation, trade-offs and inclusive discussion.");
+    await page.getByLabel("Skills assessed").fill("Communication, Prioritisation");
     await page
-      .getByLabel("Skills assessed (comma-separated)")
-      .fill("Communication, Prioritisation");
+      .getByLabel("Your reflection")
+      .fill("The strongest contributions made comparison criteria explicit.");
     await page
-      .getByLabel("What would help another candidate prepare?")
+      .getByLabel("What would help someone prepare?")
       .fill("Practise stating criteria early and making space for quieter contributors.");
+    await page.getByLabel(/I confirm this report is my experience/).check();
     await page.getByRole("button", { name: "Submit for moderation" }).click();
     await expect(page.getByText("Report submitted for moderation")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your reports" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your submissions" })).toBeVisible();
 
-    await page.goto("/admin/operations");
+    await page.goto("/admin/intelligence");
     await expect(
       page
         .getByRole("navigation", { name: "Content management" })
-        .getByRole("link", { name: "Operations" }),
+        .getByRole("link", { name: "Intelligence" }),
     ).toHaveAttribute("aria-current", "page");
     const reportCard = page
       .locator("article")
       .filter({ hasText: "Timed group discussion and recommendation" });
     await reportCard.getByRole("button", { name: "Publish" }).click();
-    await expect(page.getByText("Update saved")).toBeVisible();
-    await page.goto("/member/learn/intelligence");
+    await expect(page.getByText("Report status updated")).toBeVisible();
+    const publicHref = await page
+      .locator("article")
+      .filter({ hasText: "Timed group discussion and recommendation" })
+      .getByRole("link", { name: "Public preview" })
+      .getAttribute("href");
+    expect(publicHref).toMatch(/^\/intelligence\//);
+    await page.goto(publicHref!);
     await expect(
-      page.getByRole("heading", { name: "Timed group discussion and recommendation" }),
+      page.getByRole("heading", { name: /Example employer.*Assessment centre/ }),
     ).toBeVisible();
+    await expect(
+      page.getByText("See assessed skills, reflection and preparation advice"),
+    ).toBeVisible();
+    await page.goto("/member/learn/intelligence");
+    await expect(page.getByRole("heading", { name: "Example employer" })).toBeVisible();
 
     expect(
       await page.evaluate(
