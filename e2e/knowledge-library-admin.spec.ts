@@ -104,6 +104,10 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await editor
       .getByLabel("Short description (required to publish)")
       .fill("Browser-tested summary.");
+    const summaryField = await editor
+      .getByLabel("Short description (required to publish)")
+      .boundingBox();
+    expect(summaryField?.height).toBeLessThanOrEqual(100);
     await editor.getByLabel("Primary category").selectOption({ label: categoryName });
     await editor.getByLabel("Markdown body").fill("## Browser-tested body\n\n- safe item");
     await editor.getByLabel("Slug (required)").press("Enter");

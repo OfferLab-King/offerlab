@@ -200,7 +200,7 @@ export function ContentFields({
             maxLength={500}
             name="shortDescription"
             placeholder="Tell members what they will learn or be able to do."
-            rows={3}
+            rows={2}
           />
         </label>
       </section>
