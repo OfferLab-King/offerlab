@@ -154,6 +154,8 @@ test("open registration authentication and recovery journey", async ({ page }, t
   test.setTimeout(90_000);
   const suffix = `${testInfo.project.name.replaceAll(/\W/g, "-")}-${Date.now()}`;
   const email = `invited-${suffix}@example.com`;
+  const uninvitedEmail = `uninvited-${suffix}@example.com`;
+  const unverifiedEmail = `unverified-${suffix}@example.com`;
   const password = "StrongPassword123!";
   const newPassword = "NewStrongPassword456!";
   const database = postgres(databaseUrl, { max: 2, prepare: false });
@@ -375,7 +377,9 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await page.goto("/member");
     await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await page.goto("/admin");
-    await expect(page.getByRole("heading", { name: "OfferLab administration" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "What would you like to manage?" }),
+    ).toBeVisible();
     await database`
       update app.beta_entitlement
       set status = 'revoked', revoked_at = now(), updated_at = now()
@@ -435,7 +439,6 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
     await signOutAndVerify(page);
 
-    const uninvitedEmail = `uninvited-${suffix}@example.com`;
     await page.goto("/register");
     await page.getByLabel("Email").fill(uninvitedEmail);
     await page.getByLabel("Create password").fill(password);
@@ -455,7 +458,6 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await expect(page.getByRole("heading", { name: "Access denied" })).toBeVisible();
     await signOutAndVerify(page);
 
-    const unverifiedEmail = `unverified-${suffix}@example.com`;
     const unverifiedInvitation = await createInvitation(database, {
       email: unverifiedEmail,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
@@ -477,6 +479,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     `;
     expect(unlinked[0]?.count).toBe(0);
   } finally {
+    await cleanUpEndpointMembers(database, [email, uninvitedEmail, unverifiedEmail]);
     await database`delete from app.auth_rate_limit`;
     await database.end();
   }
@@ -491,6 +494,8 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
   const database = postgres(databaseUrl, { max: 2, prepare: false });
   const suffix = `direct-${Date.now()}`;
   const password = "StrongPassword123!";
+  const ownerEmail = `owner-${suffix}@example.com`;
+  const secondEmail = `second-${suffix}@example.com`;
 
   async function registerAndSignIn(email: string): Promise<void> {
     const invitation = await createInvitation(database, {
@@ -509,7 +514,6 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
   }
 
   try {
-    const ownerEmail = `owner-${suffix}@example.com`;
     await registerAndSignIn(ownerEmail);
     const payload = {
       confidence: null,
@@ -558,7 +562,6 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
 
     await page.goto("/member");
     await signOutAndVerify(page);
-    const secondEmail = `second-${suffix}@example.com`;
     await registerAndSignIn(secondEmail);
     const crossUserAttempt = await page.evaluate(async (firstOwnerId) => {
       const read = await fetch(`/api/member/onboarding?userId=${encodeURIComponent(firstOwnerId)}`);
@@ -596,6 +599,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
     `;
     expect(ownerStillIsolated).toEqual([{ count: 1 }]);
   } finally {
+    await cleanUpEndpointMembers(database, [ownerEmail, secondEmail]);
     await database`delete from app.auth_rate_limit where action = 'registration'`;
     await database.end();
   }

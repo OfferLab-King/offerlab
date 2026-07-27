@@ -12,7 +12,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
   const suffix = `${testInfo.project.name.replaceAll(/\W/g, "-")}-${Date.now()}`;
   const email = `content-admin-${suffix}@example.com`,
     categoryName = `E2E category ${suffix}`,
-    tagName = `E2E tag ${suffix}`,
+    tagName = `E2E ${Date.now().toString(36).slice(-6)}`,
     resourceTitle = `E2E resource ${suffix}`;
   const categorySlug = `e2e-category-${Date.now()}`,
     tagSlug = `e2e-tag-${Date.now()}`,
@@ -206,6 +206,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.waitForURL(/\/admin\/content\/[0-9a-f-]+$/);
     resourceId = page.url().split("/").at(-1);
     if (!categoryId || !resourceId || !tagId) throw new Error("Created CMS identifier missing.");
+    const persistedResourceId = resourceId;
     const tagChoice = await page.getByLabel(tagName).locator("..").boundingBox();
     expect(tagChoice?.height).toBeLessThanOrEqual(60);
     await page.getByLabel(tagName).check();
@@ -225,6 +226,14 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     const memberUpdatedTitle = `${resourceTitle} updated`;
     await editor.getByLabel("Title (required to publish)").fill(memberUpdatedTitle);
     await page.getByRole("button", { name: "Save and update members", exact: true }).click();
+    await expect
+      .poll(async () => {
+        const rows = await database`
+            select title from app.preparation_resource where id=${persistedResourceId}::uuid
+          `;
+        return rows[0]?.title as string | undefined;
+      })
+      .toBe(memberUpdatedTitle);
     await page.goto(`/member/learn/${resourceSlug}`);
     await expect(page.getByRole("heading", { name: memberUpdatedTitle, level: 1 })).toBeVisible();
     await page.goto(`/admin/content/${resourceId}`);
@@ -419,18 +428,31 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await restoredCategory.getByRole("button", { name: "Restore" }).click();
     await expect(page.getByRole("status")).toContainText("changed");
   } finally {
-    if (ownerId) await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
-    if (resourceId)
-      await database`delete from app.preparation_resource where id=${resourceId}::uuid`;
-    await database`delete from app.content_tag where slug=${tagSlug}`;
-    await database`delete from app.content_category where slug=${categorySlug}`;
-    if (ownerId) {
-      await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
-      await database`delete from app.onboarding_profile where user_id=${ownerId}::uuid`;
-      await database`delete from app.beta_entitlement where user_id=${ownerId}::uuid`;
-      await database`delete from app."user" where id=${ownerId}::uuid`;
+    try {
+      if (ownerId) await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
+      const fixtureCategories = await database<{ id: string }[]>`
+        select id from app.content_category where slug=${categorySlug}
+      `;
+      const fixtureCategoryIds = fixtureCategories.map(({ id }) => id);
+      if (fixtureCategoryIds.length > 0) {
+        await database`
+          delete from app.preparation_resource
+          where primary_category_id=any(${fixtureCategoryIds}::uuid[])
+        `;
+      } else if (resourceId) {
+        await database`delete from app.preparation_resource where id=${resourceId}::uuid`;
+      }
+      await database`delete from app.content_tag where slug=${tagSlug}`;
+      await database`delete from app.content_category where slug=${categorySlug}`;
+    } finally {
+      if (ownerId) {
+        await database`delete from app.audit_event where actor_user_id=${ownerId}::uuid`;
+        await database`delete from app.onboarding_profile where user_id=${ownerId}::uuid`;
+        await database`delete from app.beta_entitlement where user_id=${ownerId}::uuid`;
+        await database`delete from app."user" where id=${ownerId}::uuid`;
+      }
+      if (authId) await database`delete from auth.users where id=${authId}::uuid`;
+      await database.end();
     }
-    if (authId) await database`delete from auth.users where id=${authId}::uuid`;
-    await database.end();
   }
 });

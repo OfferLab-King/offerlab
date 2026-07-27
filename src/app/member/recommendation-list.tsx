@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import type { MemberRecommendation } from "../../modules/recommendations/application/recommendations";
@@ -32,7 +31,6 @@ export function RecommendationList({
   showApplicationLinks = false,
   showSecondary = false,
 }: Props) {
-  const router = useRouter();
   const [items, setItems] = useState(recommendations);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmingDismiss, setConfirmingDismiss] = useState<string | null>(null);
@@ -111,7 +109,6 @@ export function RecommendationList({
             : `“${recommendation.title}” was marked ${stateLabel(targetState).toLowerCase()}.`,
       );
       setFocusRequest((current) => current + 1);
-      router.refresh();
     } catch {
       setMessage("We could not update this recommendation. Please try again.");
       setFocusRequest((current) => current + 1);
