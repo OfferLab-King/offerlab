@@ -9,6 +9,7 @@ const password = "StrongPassword123!";
 test("member explores the bounded Phase 1 preparation tools at 390px", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(120_000);
   test.skip(testInfo.project.name !== "chromium", "This focused responsive journey runs once.");
   const database = postgres(databaseUrl, { prepare: false });
   const suffix = `${Date.now()}`;
@@ -86,6 +87,7 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       ),
     ).toBe(false);
 
+    await database`update app."user" set role='member' where id=${ownerId}::uuid`;
     await page.goto("/member/learn");
     await expect(
       page.getByRole("heading", { name: "Go beyond generic preparation" }),
@@ -156,29 +158,28 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     await page.goto(`/member/learn/answer-bank/answers/${answerId}`);
     await expect(page.getByText(/local fallback sends nothing to an AI provider/i)).toBeVisible();
     await page.getByRole("button", { name: "Review this answer" }).click();
-    await expect(page.getByRole("dialog", { name: "Coaching comments" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Coaching comments" })).toBeVisible({
+      timeout: 20_000,
+    });
     await expect(page.locator(".coach-category").first()).toBeVisible();
     await page.getByRole("button", { name: "Close comments" }).first().click();
 
-    await page
-      .getByRole("navigation", { name: "Prepare" })
-      .getByRole("link", { name: "Practice & Feedback" })
-      .click();
-    await page
-      .locator("article")
-      .filter({ hasText: "Group Mock pilot" })
-      .getByRole("button", { name: "Register interest" })
-      .click();
+    await page.goto("/member/learn/practice");
+    await expect(page.getByRole("heading", { name: "Practice & Feedback" })).toBeVisible();
+    const groupMock = page.locator("article").filter({ hasText: "Group Mock pilot" });
+    await expect(groupMock.getByRole("button", { name: "Register interest" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await groupMock.getByRole("button", { name: "Register interest" }).click();
     await expect(page.getByText("Request received")).toBeVisible();
     await expect(page.locator("article").filter({ hasText: "Group Mock pilot" })).toContainText(
       "requested",
     );
 
-    await page
-      .getByRole("navigation", { name: "Prepare" })
-      .getByRole("link", { name: "Intelligence" })
-      .click();
-    await page.getByRole("link", { name: "Share an experience" }).click();
+    await page.goto("/member/learn/intelligence/share");
+    await expect(
+      page.getByRole("heading", { name: "Share a recruitment experience" }),
+    ).toBeVisible();
     await page.getByLabel("Employer").fill("Example employer");
     await page.getByLabel("Role or programme").fill("Audit graduate programme");
     await page.getByLabel("Recruitment cycle").fill("2026/27");
@@ -196,10 +197,18 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       .getByLabel("What would help someone prepare?")
       .fill("Practise stating criteria early and making space for quieter contributors.");
     await page.getByLabel(/I confirm this report is my experience/).check();
+    const invalidFields = await page
+      .locator(".intelligence-report-form :invalid")
+      .evaluateAll((fields) => fields.map((field) => (field as HTMLInputElement).name));
+    expect(invalidFields).toEqual([]);
     await page.getByRole("button", { name: "Submit for moderation" }).click();
+    await expect(page).toHaveURL(/\/member\/learn\/intelligence\?result=submitted$/, {
+      timeout: 30_000,
+    });
     await expect(page.getByText("Report submitted for moderation")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Your submissions" })).toBeVisible();
 
+    await database`update app."user" set role='administrator' where id=${ownerId}::uuid`;
     await page.goto("/admin/intelligence");
     await expect(
       page

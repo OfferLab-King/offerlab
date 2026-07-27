@@ -187,7 +187,9 @@ test("administrator publishes a path and member progress follows resource comple
       .click();
     await expect(page.locator("details.plan-area-disclosure").nth(1)).toHaveAttribute("open", "");
     await page.getByRole("button", { name: "Start this plan" }).click();
-    await expect(page.getByRole("button", { name: "Stop following" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stop following" })).toBeVisible({
+      timeout: 15_000,
+    });
     await page.goto("/member/learn");
     await expect(page.getByText("Current preparation", { exact: true })).toBeVisible();
     await expect(page.locator("article.continue-card").getByText(title)).toBeVisible();

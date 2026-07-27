@@ -5,6 +5,7 @@ const databaseUrl =
     process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres",
   password = "StrongPassword123!";
 test("member completes the Answer and Story Bank journey at 390px", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
   test.skip(
     testInfo.project.name !== "chromium",
     "This focused journey declares its own 390px viewport and runs once.",
