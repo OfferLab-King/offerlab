@@ -45,10 +45,10 @@ export function PathEditor({
     return next;
   };
   return (
-    <form action={action} className="application-form path-editor">
+    <form action={action} className="application-form path-editor cms-resource-form">
       <input name="expectedVersion" type="hidden" value={version ?? 1} />
       <input name="sections" type="hidden" value={JSON.stringify(sections)} />
-      <fieldset className="card">
+      <fieldset className="cms-editor-card">
         <legend>Path details</legend>
         <label>
           Title
@@ -94,8 +94,8 @@ export function PathEditor({
           </select>
         </label>
       </fieldset>
-      <section aria-labelledby="structure-heading">
-        <div className="section-heading">
+      <section aria-labelledby="structure-heading" className="cms-editor-card">
+        <div className="cms-section-heading">
           <h2 id="structure-heading">Sections and resources</h2>
           <button
             className="button-secondary"
@@ -109,7 +109,7 @@ export function PathEditor({
           <p className="status">Drafts may be incomplete. Add a section before publishing.</p>
         )}
         {sections.map((section, sectionIndex) => (
-          <fieldset className="card path-editor-section" key={sectionIndex}>
+          <fieldset className="cms-link-row path-editor-section" key={sectionIndex}>
             <legend>Section {sectionIndex + 1}</legend>
             <div className="move-controls">
               <button
@@ -298,7 +298,7 @@ export function PathEditor({
           </fieldset>
         ))}
       </section>
-      <div className="form-actions">
+      <div className="form-actions cms-sticky-actions">
         {publicationState !== "archived" && (
           <button name="intent" value="save">
             Save {publicationState === "published" ? "changes" : "draft"}

@@ -12,6 +12,7 @@ import {
 } from "../../../../modules/learning-paths/application/learning-paths";
 import { LearnNavigation } from "../learn-navigation";
 import { resourcePlanContext } from "../learn-presenters";
+import { CoachingCaseView } from "../coaching-case-view";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export default async function Page({
@@ -39,7 +40,7 @@ export default async function Page({
       ? `${backToPlanHref}?completed=1`
       : undefined;
   return (
-    <main className="applications-shell">
+    <main className="applications-shell resource-detail-page">
       <MemberApplicationsHeader />
       <LearnNavigation active={context ? "paths" : "resources"} />
       {context && (
@@ -52,6 +53,9 @@ export default async function Page({
         </nav>
       )}
       <ResourceContent resource={r} />
+      {r.resourceType === "coaching_case" && r.coachingCase && (
+        <CoachingCaseView detail={r.coachingCase} />
+      )}
       <ResourceStateControls
         {...(backToPlanHref ? { backToPlanHref } : {})}
         completed={!!r.completedAt}

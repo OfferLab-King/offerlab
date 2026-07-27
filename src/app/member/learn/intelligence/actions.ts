@@ -11,13 +11,23 @@ export async function submitReportAction(formData: FormData) {
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean),
+    companyName: formData.get("companyName"),
+    confidentialityConfirmed: formData.get("confidentialityConfirmed") === "yes",
     formatSummary: formData.get("formatSummary"),
     industry: formData.get("industry") || null,
+    location: formData.get("location") || null,
     opportunityType: formData.get("opportunityType") || null,
+    outcome: formData.get("outcome") || null,
+    preparationAdvice: formData.get("preparationAdvice"),
     recruitmentCycle: formData.get("recruitmentCycle"),
     recruitmentStage: formData.get("recruitmentStage"),
     reflection: formData.get("reflection"),
+    roleTitle: formData.get("roleTitle"),
     themes: formData.get("themes"),
   });
-  redirect(`/member/learn/intelligence?result=${result.ok ? "submitted" : "invalid"}`);
+  redirect(
+    result.ok
+      ? "/member/learn/intelligence?result=submitted"
+      : "/member/learn/intelligence/share?result=invalid",
+  );
 }

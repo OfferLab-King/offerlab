@@ -5,6 +5,7 @@ import "./styles.css";
 
 export const metadata: Metadata = {
   description: "Structured preparation for UK graduate recruitment.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000"),
   title: "OfferLab",
 };
 

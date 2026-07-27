@@ -10,6 +10,7 @@ import {
   resourceDraftSchema,
   slugSchema,
 } from "../domain/resource";
+import { coachingCaseDetailSchema, type CoachingCaseDetail } from "../domain/coaching-case";
 
 export type TaxonomyRecord = Readonly<{
   archivedAt: Date | null;
@@ -45,12 +46,16 @@ export type AdminResource = Readonly<{
   title: string;
   version: number;
   youtubeVideoId: string | null;
+  coachingCaseDetail: CoachingCaseDetail | null;
+  coachingCaseSourceKind: "synthetic" | "anonymised_approved" | null;
 }>;
 
 const resourceSelect = `select r.id,r.slug,r.title,r.publication_state "publicationState",r.access_level "accessLevel",
  r.resource_type "resourceType",r.version,r.short_description "shortDescription",r.markdown_body "markdownBody",
  r.primary_category_id "primaryCategoryId",r.estimated_minutes "estimatedMinutes",r.youtube_video_id "youtubeVideoId",
  r.first_published_at "firstPublishedAt",
+ (select jsonb_build_object('question',d.question_text,'originalAnswer',d.original_answer,'improvedAnswer',d.improved_answer,'changes',d.changes,'keyWeaknesses',to_jsonb(d.key_weaknesses),'whyStronger',d.why_stronger,'practicePrompt',d.practice_prompt) from app.coaching_case_detail d where d.resource_id=r.id) "coachingCaseDetail",
+ (select d.source_kind from app.coaching_case_detail d where d.resource_id=r.id) "coachingCaseSourceKind",
  coalesce((select array_agg(x.tag_id::text order by x.tag_id) from app.preparation_resource_tag x where x.resource_id=r.id),'{}') "tagIds",
  coalesce((select array_agg(x.stage order by x.stage) from app.preparation_resource_stage x where x.resource_id=r.id),'{}') stages,
  coalesce((select array_agg(x.opportunity_type order by x.opportunity_type) from app.preparation_resource_opportunity_type x where x.resource_id=r.id),'{}') "opportunityTypes",
@@ -210,6 +215,9 @@ const allowedFields = new Set([
   "title",
   "youtubeVideo",
   "controlledLinks",
+  "coachingCaseDetail",
+  "coachingCaseSourceKind",
+  "anonymisationConfirmed",
   "expectedVersion",
   "intent",
 ]);
@@ -240,6 +248,19 @@ function draft(input: FormData) {
     return { ok: false as const, error: "Controlled links must be valid JSON." };
   }
   const parsedLinks = z.array(controlledLinkSchema).max(20).safeParse(links);
+  let coachingCaseDetail: unknown = null;
+  try {
+    coachingCaseDetail = value(input, "coachingCaseDetail")
+      ? JSON.parse(value(input, "coachingCaseDetail"))
+      : null;
+  } catch {
+    return { ok: false as const, error: "Coaching case detail must be valid JSON." };
+  }
+  const parsedCase = coachingCaseDetail
+    ? coachingCaseDetailSchema.safeParse(coachingCaseDetail)
+    : { success: true as const, data: null };
+  const sourceKind = value(input, "coachingCaseSourceKind") || "synthetic";
+  const confirmed = value(input, "anonymisationConfirmed") === "yes";
   const tagIds = strings(input, "tagIds"),
     stages = strings(input, "stages"),
     opportunities = strings(input, "opportunityTypes"),
@@ -247,6 +268,11 @@ function draft(input: FormData) {
   if (
     !parsed.success ||
     !parsedLinks.success ||
+    !parsedCase.success ||
+    !["synthetic", "anonymised_approved"].includes(sourceKind) ||
+    (sourceKind === "anonymised_approved" && !confirmed) ||
+    (parsed.success && parsed.data.resourceType === "coaching_case" && !parsedCase.data) ||
+    (parsed.success && parsed.data.resourceType !== "coaching_case" && !!parsedCase.data) ||
     !unique(tagIds) ||
     !unique(stages) ||
     !unique(opportunities) ||
@@ -268,6 +294,9 @@ function draft(input: FormData) {
       stages,
       opportunityTypes: opportunities,
       relatedResourceIds: related,
+      coachingCaseDetail: parsedCase.data,
+      coachingCaseSourceKind: sourceKind as "synthetic" | "anonymised_approved",
+      anonymisationConfirmed: confirmed,
     },
   };
 }
@@ -283,6 +312,7 @@ export async function createDraft(adminId: string, input: FormData) {
       { id: string }[]
     >`insert into app.preparation_resource(resource_key,slug,title,short_description,resource_type,access_level,markdown_body,primary_category_id,estimated_minutes,youtube_video_id) values(${key},${parsed.data.slug},${parsed.data.title},${parsed.data.shortDescription},${parsed.data.resourceType},${parsed.data.accessLevel},${parsed.data.markdownBody},${parsed.data.primaryCategoryId}::uuid,${parsed.data.estimatedMinutes},${parsed.data.youtubeVideoId}) returning id`;
     await replaceAssociations(db, rows[0]!.id, parsed.data);
+    await replaceCoachingCaseDetail(db, rows[0]!.id, adminId, parsed.data);
     await db`insert into app.audit_event(actor_user_id,action,entity_type,entity_id,metadata) values(${adminId}::uuid,'content.created','preparation_resource',${rows[0]!.id}::uuid,'{}')`;
     return { ok: true as const, id: rows[0]!.id };
   });
@@ -297,6 +327,9 @@ type DraftData = z.output<typeof resourceDraftSchema> &
     stages: string[];
     tagIds: string[];
     youtubeVideoId: string | null;
+    coachingCaseDetail: CoachingCaseDetail | null;
+    coachingCaseSourceKind: "synthetic" | "anonymised_approved";
+    anonymisationConfirmed: boolean;
   }>;
 async function validateAssociations(
   db: Db,
@@ -313,6 +346,7 @@ async function validateAssociations(
     : [];
   if (data.primaryCategoryId && !category[0]) return false;
   if (publishing && (!category[0]?.active || !data.markdownBody)) return false;
+  if (publishing && data.resourceType === "coaching_case" && !data.coachingCaseDetail) return false;
   if (data.tagIds.length) {
     const tags = await db<
       { id: string; active: boolean }[]
@@ -347,6 +381,19 @@ async function replaceAssociations(db: Db, id: string, data: DraftData) {
   await db`delete from app.preparation_resource_link where resource_id=${id}::uuid`;
   for (const [index, link] of data.links.entries())
     await db`insert into app.preparation_resource_link(resource_id,link_type,label,url,position) values(${id}::uuid,${link.type},${link.label},${link.url},${index + 1})`;
+}
+
+async function replaceCoachingCaseDetail(db: Db, id: string, adminId: string, data: DraftData) {
+  if (data.resourceType !== "coaching_case" || !data.coachingCaseDetail) {
+    await db`delete from app.coaching_case_detail where resource_id=${id}::uuid`;
+    return;
+  }
+  const detail = data.coachingCaseDetail;
+  const confirmedAt = data.coachingCaseSourceKind === "anonymised_approved" ? new Date() : null;
+  const confirmedBy = data.coachingCaseSourceKind === "anonymised_approved" ? adminId : null;
+  await db`insert into app.coaching_case_detail(resource_id,question_text,original_answer,improved_answer,changes,key_weaknesses,why_stronger,practice_prompt,source_kind,anonymisation_confirmed_at,anonymisation_confirmed_by_user_id)
+    values(${id}::uuid,${detail.question},${detail.originalAnswer},${detail.improvedAnswer},${db.json(detail.changes)},${detail.keyWeaknesses},${detail.whyStronger},${detail.practicePrompt},${data.coachingCaseSourceKind},${confirmedAt},${confirmedBy}::uuid)
+    on conflict(resource_id) do update set question_text=excluded.question_text,original_answer=excluded.original_answer,improved_answer=excluded.improved_answer,changes=excluded.changes,key_weaknesses=excluded.key_weaknesses,why_stronger=excluded.why_stronger,practice_prompt=excluded.practice_prompt,source_kind=excluded.source_kind,anonymisation_confirmed_at=excluded.anonymisation_confirmed_at,anonymisation_confirmed_by_user_id=excluded.anonymisation_confirmed_by_user_id,updated_at=clock_timestamp()`;
 }
 
 export async function updateResource(
@@ -394,6 +441,12 @@ export async function updateResource(
       current.slug === parsed.data.slug &&
       current.title === parsed.data.title &&
       current.youtubeVideoId === parsed.data.youtubeVideoId &&
+      JSON.stringify(current.coachingCaseDetail) ===
+        JSON.stringify(parsed.data.coachingCaseDetail) &&
+      current.coachingCaseSourceKind ===
+        (parsed.data.resourceType === "coaching_case"
+          ? parsed.data.coachingCaseSourceKind
+          : null) &&
       sameArray(current.opportunityTypes, [...parsed.data.opportunityTypes].sort()) &&
       sameArray(current.stages, [...parsed.data.stages].sort()) &&
       sameArray(current.tagIds, [...parsed.data.tagIds].sort()) &&
@@ -411,6 +464,7 @@ export async function updateResource(
     >`update app.preparation_resource set slug=${parsed.data.slug},title=${parsed.data.title},short_description=${parsed.data.shortDescription},resource_type=${parsed.data.resourceType},access_level=${parsed.data.accessLevel},markdown_body=${parsed.data.markdownBody},primary_category_id=${parsed.data.primaryCategoryId}::uuid,estimated_minutes=${parsed.data.estimatedMinutes},youtube_video_id=${parsed.data.youtubeVideoId},publication_state=${state},published_at=case when ${state}='published' then clock_timestamp() else null end,first_published_at=case when ${state}='published' then coalesce(first_published_at,clock_timestamp()) else first_published_at end,archived_at=case when ${state}='archived' then clock_timestamp() else null end where id=${id}::uuid and version=${expectedVersion} returning version`;
     if (!rows[0]) return { ok: false as const, conflict: true as const };
     await replaceAssociations(db, id, parsed.data);
+    await replaceCoachingCaseDetail(db, id, adminId, parsed.data);
     const action =
       intent === "publish"
         ? "content.published"

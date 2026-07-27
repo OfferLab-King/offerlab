@@ -1,16 +1,41 @@
 import { z } from "zod";
 
-const note = z.object({ detail: z.string().max(500), heading: z.string().max(120) }).strict();
-export const answerCoachReviewSchema = z
+export const answerCoachCategories = [
+  "Evidence",
+  "Reasoning",
+  "Relevance",
+  "Structure",
+  "Reflection",
+] as const;
+
+export const answerCoachCommentSchema = z
   .object({
-    coachingQuestions: z.array(z.string().max(300)).max(3),
-    priorities: z.array(note).max(3),
-    strengths: z.array(note).max(3),
-    summary: z.string().max(500),
+    anchor: z
+      .object({
+        end: z.number().int().nonnegative(),
+        quote: z.string().min(1).max(500),
+        start: z.number().int().nonnegative(),
+      })
+      .strict(),
+    category: z.enum(answerCoachCategories),
+    coachingQuestion: z.string().min(1).max(300),
+    observation: z.string().min(1).max(500),
+    optionalRevision: z.string().min(1).max(500).nullable(),
   })
   .strict();
-export type AnswerCoachReview = z.infer<typeof answerCoachReviewSchema>;
 
+export const answerCoachReviewSchema = z
+  .object({
+    comments: z.array(answerCoachCommentSchema).min(1).max(8),
+    followUpQuestions: z.array(z.string().min(1).max(300)).max(3),
+    strengths: z.array(z.string().min(1).max(300)).max(2),
+    summary: z.string().min(1).max(300),
+    unsupportedClaimsDetected: z.array(z.string().min(1).max(300)).max(3),
+  })
+  .strict();
+
+export type AnswerCoachReview = z.infer<typeof answerCoachReviewSchema>;
+export type AnswerCoachComment = z.infer<typeof answerCoachCommentSchema>;
 export type CoachStory = Readonly<{
   actions: string;
   reasoning: string;
@@ -27,6 +52,17 @@ export type AnswerCoachInput = Readonly<{
 }>;
 
 export interface AnswerCoachProvider {
-  readonly mode: "local_prototype" | "provider";
-  review(input: AnswerCoachInput): Promise<AnswerCoachReview>;
+  readonly id: string;
+  readonly mode: "local_rubric" | "model";
+  review(input: AnswerCoachInput): Promise<unknown>;
+}
+
+export function validateProviderReview(value: unknown, answer: string): AnswerCoachReview {
+  const review = answerCoachReviewSchema.parse(value);
+  for (const comment of review.comments) {
+    const { start, end, quote } = comment.anchor;
+    if (end <= start || end > answer.length || answer.slice(start, end) !== quote)
+      throw new Error("answer_coach_invalid_anchor");
+  }
+  return review;
 }

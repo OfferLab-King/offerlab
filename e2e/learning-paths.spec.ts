@@ -136,9 +136,9 @@ test("administrator publishes a path and member progress follows resource comple
     await page.goto("/admin/content/paths");
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
     await page.goto(`/admin/content/paths/${pathId}`);
-    await expect(page.getByRole("heading", { name: "Edit learning path" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
     await page.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(page.getByText("Administrator CMS · published", { exact: true })).toBeVisible();
+    await expect(page.getByText("Preparation paths · published", { exact: true })).toBeVisible();
     await page.goto("/member/learn");
     await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "What are you preparing for?" })).toBeVisible();

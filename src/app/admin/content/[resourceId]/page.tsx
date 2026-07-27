@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { ResourceContent } from "../../../components/resource-content";
+import Link from "next/link";
 import { requireAdministrator } from "../../../../modules/identity-access/application/authorization";
 import {
   findAdminResource,
@@ -40,21 +40,27 @@ export default async function Page({
           : `/admin/content/${id}?status=${result.outcome}`,
     );
   }
-  const previewResource = {
-    ...r,
-    categoryName: categories.find((c) => c.id === r.primaryCategoryId)?.name ?? "Uncategorised",
-    completedAt: null,
-    savedAt: null,
-    resourceKey: "preview",
-    relatedResources: resources
-      .filter((item) => r.relatedResourceIds.includes(item.id))
-      .map((item) => ({ accessLevel: item.accessLevel, slug: item.slug, title: item.title })),
-    stages: [],
-  } as const;
   return (
-    <main>
-      <p className="eyebrow">Administrator CMS · {r.publicationState}</p>
-      <h1>Edit resource</h1>
+    <main className="cms-page cms-editor-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Content editor · {r.publicationState}</p>
+          <h1>{r.title || "Untitled content"}</h1>
+          <p>
+            Version {r.version} · /{r.slug}
+          </p>
+        </div>
+        {r.publicationState === "published" && (
+          <Link
+            className="button-secondary button-link"
+            href={`/member/learn/${r.slug}`}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open member view
+          </Link>
+        )}
+      </header>
       {query.error === "conflict" ? (
         <ConflictAlert reloadHref="?" />
       ) : query.error ? (
@@ -67,29 +73,42 @@ export default async function Page({
           {query.status === "unchanged" ? "No changes were needed." : "Resource updated."}
         </p>
       )}
-      <form action={save} className="application-form">
+      <form action={save} className="application-form cms-resource-form">
         <input name="expectedVersion" type="hidden" value={r.version} />
         <ContentFields categories={categories} resource={r} resources={resources} tags={tags} />
-        <div className="form-actions">
-          <button name="intent" value="save">
-            Save
-          </button>
-          <button name="intent" value="publish">
-            Publish
-          </button>
-          <button name="intent" value="unpublish">
-            Unpublish
-          </button>
-          <button name="intent" value="archive">
-            Archive
-          </button>
-          <button name="intent" value="restore">
-            Restore to draft
-          </button>
+        <div className="form-actions cms-sticky-actions">
+          <span className={`cms-status cms-status-${r.publicationState}`}>
+            {r.publicationState}
+          </span>
+          <div className="cms-sticky-action-buttons">
+            {r.publicationState !== "archived" && (
+              <button name="intent" value="save">
+                {r.publicationState === "published" ? "Save and update members" : "Save draft"}
+              </button>
+            )}
+            {r.publicationState === "draft" && (
+              <button name="intent" value="publish">
+                Publish
+              </button>
+            )}
+            {r.publicationState === "published" && (
+              <button className="button-secondary" name="intent" value="unpublish">
+                Unpublish
+              </button>
+            )}
+            {r.publicationState !== "archived" && (
+              <button className="button-secondary" name="intent" value="archive">
+                Archive
+              </button>
+            )}
+            {r.publicationState === "archived" && (
+              <button className="button-secondary" name="intent" value="restore">
+                Restore to draft
+              </button>
+            )}
+          </div>
         </div>
       </form>
-      <h2>Private preview</h2>
-      <ResourceContent resource={previewResource} />
     </main>
   );
 }

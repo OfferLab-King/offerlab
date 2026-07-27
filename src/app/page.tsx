@@ -41,7 +41,8 @@ const distinctiveExperiences = [
       "Practise the group exercises you cannot rehearse alone, with a clear format and structured feedback.",
   },
   {
-    availability: "Pilot planned",
+    availability: "Available",
+    href: "/intelligence",
     title: "Current recruitment intelligence",
     description:
       "Search moderated, cycle-dated candidate reports by stage, format and assessed skill without sharing restricted questions.",
@@ -56,6 +57,7 @@ export default function FoundationPage() {
           OfferLab
         </Link>
         <div>
+          <Link href="/intelligence">Recruitment Intelligence</Link>
           <Link href="/sign-in">Sign in</Link>
           <Link className="button-link compact-button" href="/register">
             Create free account
@@ -137,6 +139,9 @@ export default function FoundationPage() {
               <span className="availability-label">{experience.availability}</span>
               <h3>{experience.title}</h3>
               <p>{experience.description}</p>
+              {"href" in experience && experience.href && (
+                <Link href={experience.href as never}>Browse current reports →</Link>
+              )}
             </article>
           ))}
         </div>
@@ -158,6 +163,7 @@ export default function FoundationPage() {
           OfferLab
         </Link>
         <p>Practical preparation for UK graduate recruitment.</p>
+        <Link href="/intelligence">Recruitment Intelligence</Link>
         <Link href="/sign-in">Member sign in</Link>
       </footer>
     </main>

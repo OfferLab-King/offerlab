@@ -32,4 +32,15 @@ Offerings are administrator-curated descriptions of manually operated pilots. Av
 
 ## Answer Coach prototype
 
-The review is generated on explicit request, returned as validated structured output and not persisted. The local prototype derives only generic rubric observations. No model provider receives content. Moving to a production AI provider requires the privacy, provider, evaluation, cost, rate-limit and release controls in `ai-product-strategy.md`.
+- `answer_coach_review` stores an immutable snapshot of the reviewed answer version, prompt/provider identifiers, bounded summary fields and timestamps. It is private, owner scoped and recoverable.
+- `answer_coach_comment` stores up to eight validated comments with exact character anchors, one of the five controlled categories (`Evidence`, `Reasoning`, `Relevance`, `Structure`, `Reflection`) and member-controlled `open`, `addressed` or `dismissed` state.
+- Review records never update `member_answer`. Running **Review again** creates another review rather than replacing the previous result.
+- The local pilot permits five reviews per rolling ten minutes and twenty per calendar month per owner. `ANSWER_COACH_ENABLED=false` is the operational kill switch.
+
+The review is generated only on explicit request and returned as validated structured output. The local prototype derives only generic rubric observations. No model provider receives content. Moving to a production AI provider requires the privacy, provider, evaluation, cost, rate-limit and release controls in `ai-product-strategy.md`.
+
+## Structured annotated coaching cases
+
+`coaching_case_detail` attaches an editorial teaching record to an existing `coaching_case` preparation resource. It stores the canonical or displayed question, anonymised original answer, improved answer, bounded exact-range changes, controlled comment categories, common weaknesses, improvement reasoning and a practice prompt. Change ranges must be ordered, non-overlapping and reproduce the improved answer exactly under application validation.
+
+Cases use the existing content catalogue, access level, publication state, category, tags and saving controls. Members can read only details whose parent resource is published; only administrators can write details. Synthetic examples are the default. Previous-student material requires the `anonymised_approved` source state plus a confirming administrator and timestamp before it satisfies the database constraint. No real previous-student content is seeded.

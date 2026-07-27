@@ -357,15 +357,85 @@ export const memberAnswers = appSchema.table("member_answer", {
   version: integer("version").default(1).notNull(),
 });
 
+export const answerCoachReviews = appSchema.table(
+  "answer_coach_review",
+  {
+    answerId: uuid("answer_id").notNull(),
+    answerSnapshot: text("answer_snapshot").notNull(),
+    answerVersion: integer("answer_version").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    followUpQuestions: jsonb("follow_up_questions").$type<string[]>().default([]).notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    promptId: text("prompt_id").default("answer_coach").notNull(),
+    promptVersion: integer("prompt_version").default(1).notNull(),
+    providerId: text("provider_id").notNull(),
+    providerMode: text("provider_mode").notNull(),
+    strengths: jsonb("strengths").$type<string[]>().default([]).notNull(),
+    summary: text("summary").notNull(),
+    unsupportedClaims: jsonb("unsupported_claims").$type<string[]>().default([]).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.ownerUserId, table.answerId],
+      foreignColumns: [memberAnswers.ownerUserId, memberAnswers.id],
+      name: "answer_coach_review_answer_fk",
+    }).onDelete("restrict"),
+    unique("answer_coach_review_owner_id_unique").on(table.ownerUserId, table.id),
+    index("answer_coach_review_owner_answer_created_idx").on(
+      table.ownerUserId,
+      table.answerId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const answerCoachComments = appSchema.table(
+  "answer_coach_comment",
+  {
+    anchorEnd: integer("anchor_end").notNull(),
+    anchorQuote: text("anchor_quote").notNull(),
+    anchorStart: integer("anchor_start").notNull(),
+    category: text("category").notNull(),
+    coachingQuestion: text("coaching_question").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    observation: text("observation").notNull(),
+    optionalRevision: text("optional_revision"),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    position: integer("position").notNull(),
+    reviewId: uuid("review_id").notNull(),
+    state: text("state").default("open").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.ownerUserId, table.reviewId],
+      foreignColumns: [answerCoachReviews.ownerUserId, answerCoachReviews.id],
+      name: "answer_coach_comment_review_fk",
+    }).onDelete("cascade"),
+    unique("answer_coach_comment_review_position_unique").on(table.reviewId, table.position),
+  ],
+);
+
 export const recruitmentIntelligenceReports = appSchema.table(
   "recruitment_intelligence_report",
   {
     approximateDate: date("approximate_date").notNull(),
     assessedSkills: text("assessed_skills").array().default([]).notNull(),
+    companyName: text("company_name").notNull(),
+    confidentialityConfirmedAt: timestamp("confidentiality_confirmed_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
     formatSummary: text("format_summary").notNull(),
     id: uuid("id").defaultRandom().primaryKey(),
     industry: text("industry"),
+    location: text("location"),
     moderatedAt: timestamp("moderated_at", { mode: "date", withTimezone: true }),
     moderatedByUserId: uuid("moderated_by_user_id").references(() => appUsers.id, {
       onDelete: "restrict",
@@ -373,17 +443,88 @@ export const recruitmentIntelligenceReports = appSchema.table(
     moderationConfidence: text("moderation_confidence"),
     moderationState: text("moderation_state").default("pending").notNull(),
     opportunityType: text("opportunity_type"),
+    outcome: text("outcome"),
     ownerUserId: uuid("owner_user_id")
       .notNull()
       .references(() => appUsers.id, { onDelete: "restrict" }),
     recruitmentCycle: text("recruitment_cycle").notNull(),
     recruitmentStage: text("recruitment_stage").notNull(),
+    preparationAdvice: text("preparation_advice").notNull(),
     reflection: text("reflection").notNull(),
+    roleTitle: text("role_title").notNull(),
+    slug: text("slug").notNull().unique(),
+    sourceKind: text("source_kind").notNull(),
     themes: text("themes").notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
     version: integer("version").default(1).notNull(),
   },
   (table) => [unique("recruitment_intelligence_owner_id_unique").on(table.ownerUserId, table.id)],
+);
+
+export const memberCommunityAgreements = appSchema.table("member_community_agreement", {
+  acceptedAt: timestamp("accepted_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  ownerUserId: uuid("owner_user_id")
+    .primaryKey()
+    .references(() => appUsers.id, { onDelete: "cascade" }),
+  termsVersion: text("terms_version").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+});
+
+export const recruitmentIntelligenceComments = appSchema.table(
+  "recruitment_intelligence_comment",
+  {
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    moderatedAt: timestamp("moderated_at", { mode: "date", withTimezone: true }),
+    moderatedByUserId: uuid("moderated_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    moderationState: text("moderation_state").default("pending").notNull(),
+    moderatorNote: text("moderator_note"),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    parentCommentId: uuid("parent_comment_id"),
+    reportId: uuid("report_id")
+      .notNull()
+      .references(() => recruitmentIntelligenceReports.id, { onDelete: "cascade" }),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    index("recruitment_intelligence_comment_report_idx").on(
+      table.reportId,
+      table.moderationState,
+      table.createdAt,
+      table.id,
+    ),
+    unique("recruitment_intelligence_comment_report_id_unique").on(table.reportId, table.id),
+    unique("recruitment_intelligence_comment_owner_id_unique").on(table.ownerUserId, table.id),
+  ],
+);
+
+export const recruitmentIntelligenceCommentFlags = appSchema.table(
+  "recruitment_intelligence_comment_flag",
+  {
+    commentId: uuid("comment_id")
+      .notNull()
+      .references(() => recruitmentIntelligenceComments.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    resolution: text("resolution"),
+    resolvedAt: timestamp("resolved_at", { mode: "date", withTimezone: true }),
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+  },
+  (table) => [
+    unique("recruitment_intelligence_comment_flag_unique").on(table.commentId, table.ownerUserId),
+  ],
 );
 
 export const serviceOfferings = appSchema.table("service_offering", {

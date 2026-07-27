@@ -8,9 +8,14 @@ export default async function Page() {
   const admin = await requireAdministrator();
   const options = await readPathEditorOptions(admin.userId);
   return (
-    <main>
-      <p className="eyebrow">Administrator CMS</p>
-      <h1>Create learning path</h1>
+    <main className="cms-editor-page">
+      <header className="cms-page-header">
+        <div>
+          <p className="eyebrow">Preparation paths</p>
+          <h1>Create learning path</h1>
+          <p>Start with the path details, then add sections and order their resources.</p>
+        </div>
+      </header>
       <PathEditor
         action={createPathAction}
         categories={options.categories}

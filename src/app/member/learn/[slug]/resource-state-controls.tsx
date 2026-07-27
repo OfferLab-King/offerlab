@@ -44,22 +44,24 @@ export function ResourceStateControls({
       className={`resource-actions${inPlan ? " resource-actions-plan" : ""}`}
       aria-label="Resource actions"
     >
-      {inPlan && backToPlanHref && <a href={backToPlanHref}>Back to plan</a>}
-      <button
-        className="button-secondary"
-        disabled={busy}
-        onClick={() => void act(saved ? "unsave" : "save")}
-      >
-        {saved ? "Unsave" : "Save resource"}
-      </button>
-      <button
-        className={completed ? "button-secondary" : undefined}
-        disabled={busy}
-        onClick={() => void act(completed ? "incomplete" : "complete")}
-      >
-        {completed ? "Mark incomplete" : inPlan ? "Mark complete and continue" : "Mark complete"}
-      </button>
-      {completed && <strong className="resource-completed">✓ Completed</strong>}
+      <div className="resource-action-controls">
+        {inPlan && backToPlanHref && <a href={backToPlanHref}>Back to plan</a>}
+        <button
+          className="button-secondary"
+          disabled={busy}
+          onClick={() => void act(saved ? "unsave" : "save")}
+        >
+          {saved ? "Unsave" : "Save resource"}
+        </button>
+        <button
+          className={completed ? "button-secondary" : undefined}
+          disabled={busy}
+          onClick={() => void act(completed ? "incomplete" : "complete")}
+        >
+          {completed ? "Mark incomplete" : inPlan ? "Mark complete and continue" : "Mark complete"}
+        </button>
+        {completed && <strong className="resource-completed">✓ Completed</strong>}
+      </div>
       <p aria-live="polite" className="resource-action-message">
         {message}
       </p>

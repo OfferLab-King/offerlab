@@ -58,6 +58,8 @@ test("a member registers openly, verifies, onboards and opens Prepare", async ({
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByRole("heading", { name: "Tell us where you’re heading" })).toBeVisible();
+    const undergraduateChoice = await page.getByLabel("Undergraduate").locator("..").boundingBox();
+    expect(undergraduateChoice?.height).toBeLessThanOrEqual(52);
     await page.getByLabel("Undergraduate").check();
     await page.getByLabel("Graduate scheme").check();
     await page.getByLabel("Consulting").check();

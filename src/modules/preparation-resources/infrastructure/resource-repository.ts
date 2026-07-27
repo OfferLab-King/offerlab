@@ -1,9 +1,11 @@
 import type { TransactionSql } from "postgres";
 import { LIBRARY_PAGE_SIZE } from "../domain/resource";
+import { coachingCaseDetailSchema, type CoachingCaseDetail } from "../domain/coaching-case";
 
 export type ResourceRecord = Readonly<{
   accessLevel: "public" | "member";
   categoryName: string;
+  coachingCase?: CoachingCaseDetail | null;
   completedAt: Date | null;
   estimatedMinutes: number | null;
   id: string;
@@ -49,6 +51,7 @@ type Row = Omit<
 > & {
   access_level: ResourceRecord["accessLevel"];
   category_name: string;
+  coaching_case: unknown | null;
   completed_at: Date | null;
   estimated_minutes: number | null;
   markdown_body: string;
@@ -63,9 +66,11 @@ type Row = Omit<
 };
 
 function map(row: Row): ResourceRecord {
+  const coachingCase = row.coaching_case ? coachingCaseDetailSchema.parse(row.coaching_case) : null;
   return {
     accessLevel: row.access_level,
     categoryName: row.category_name,
+    coachingCase,
     completedAt: row.completed_at,
     estimatedMinutes: row.estimated_minutes,
     id: row.id,
@@ -108,6 +113,7 @@ export async function listPublishedResources(
   const rows = await database<Row[]>`
     select r.id,r.resource_key,r.slug,r.title,r.short_description,r.resource_type,r.access_level,r.publication_state,
       r.markdown_body,r.estimated_minutes,r.youtube_video_id,r.version,c.name category_name,
+      (select jsonb_build_object('question',d.question_text,'originalAnswer',d.original_answer,'improvedAnswer',d.improved_answer,'changes',d.changes,'keyWeaknesses',to_jsonb(d.key_weaknesses),'whyStronger',d.why_stronger,'practicePrompt',d.practice_prompt) from app.coaching_case_detail d where d.resource_id=r.id) coaching_case,
       coalesce((select jsonb_agg(jsonb_build_object('type',l.link_type,'label',l.label,'url',l.url) order by l.position) from app.preparation_resource_link l where l.resource_id=r.id),'[]') links,
       coalesce((select jsonb_agg(jsonb_build_object('accessLevel',rr.access_level,'slug',rr.slug,'title',rr.title) order by rel.position) from app.preparation_resource_relation rel join app.preparation_resource rr on rr.id=rel.related_resource_id join app.content_category rc on rc.id=rr.primary_category_id and rc.archived_at is null where rel.resource_id=r.id and rr.publication_state='published' and (${ownerId}::uuid is not null or rr.access_level='public')),'[]') related_resources,
       coalesce(array_agg(distinct rs.stage) filter(where rs.stage is not null),'{}') stages,
@@ -151,6 +157,7 @@ export async function findPublishedResource(
   const rows = await database<Row[]>`
     select r.id,r.resource_key,r.slug,r.title,r.short_description,r.resource_type,r.access_level,r.publication_state,
       r.markdown_body,r.estimated_minutes,r.youtube_video_id,r.version,c.name category_name,
+      (select jsonb_build_object('question',d.question_text,'originalAnswer',d.original_answer,'improvedAnswer',d.improved_answer,'changes',d.changes,'keyWeaknesses',to_jsonb(d.key_weaknesses),'whyStronger',d.why_stronger,'practicePrompt',d.practice_prompt) from app.coaching_case_detail d where d.resource_id=r.id) coaching_case,
       coalesce((select jsonb_agg(jsonb_build_object('type',l.link_type,'label',l.label,'url',l.url) order by l.position) from app.preparation_resource_link l where l.resource_id=r.id),'[]') links,
       coalesce((select jsonb_agg(jsonb_build_object('accessLevel',rr.access_level,'slug',rr.slug,'title',rr.title) order by rel.position) from app.preparation_resource_relation rel join app.preparation_resource rr on rr.id=rel.related_resource_id join app.content_category rc on rc.id=rr.primary_category_id and rc.archived_at is null where rel.resource_id=r.id and rr.publication_state='published' and (${ownerId}::uuid is not null or rr.access_level='public')),'[]') related_resources,
       coalesce(array_agg(distinct rs.stage) filter(where rs.stage is not null),'{}') stages,ms.saved_at,ms.completed_at

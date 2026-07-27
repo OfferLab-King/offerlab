@@ -1,12 +1,15 @@
+import Link from "next/link";
 import { recruitmentStages } from "../../../../modules/applications/domain/application";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
-import { readIntelligenceReports } from "../../../../modules/recruitment-intelligence/application/reports";
+import {
+  readIntelligenceReports,
+  readMyIntelligenceReports,
+} from "../../../../modules/recruitment-intelligence/application/reports";
+import { parseReportFilters } from "../../../../modules/recruitment-intelligence/domain/report";
 import { industries } from "../../../../modules/taxonomy/domain/industries";
-import { opportunityTypes } from "../../../../modules/taxonomy/domain/opportunity-types";
-import { recruitmentStageLabel } from "../../../../modules/taxonomy/domain/display-labels";
+import { IntelligenceReportCard } from "../../../components/intelligence-report";
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
-import { submitReportAction } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,145 +17,117 @@ export const dynamic = "force-dynamic";
 export default async function IntelligencePage({
   searchParams,
 }: {
-  searchParams: Promise<{ result?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { userId } = await requireMember();
-  const [reports, query] = await Promise.all([readIntelligenceReports(userId), searchParams]);
-  const published = reports.filter((report) => report.moderationState === "published");
-  const mine = reports.filter((report) => report.mine);
+  const raw = await searchParams;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(raw))
+    if (typeof value === "string") params.set(key, value);
+  const filters = parseReportFilters(params);
+  const [reports, mine] = await Promise.all([
+    readIntelligenceReports(userId, filters),
+    readMyIntelligenceReports(userId),
+  ]);
+  const hasFilters = Boolean(filters.query || filters.stage || filters.industry || filters.cycle);
   return (
-    <main className="applications-shell">
+    <main className="applications-shell intelligence-library-page">
       <MemberApplicationsHeader />
       <LearnNavigation active="intelligence" />
-      <section className="applications-heading">
+      <section className="applications-heading intelligence-heading">
         <div>
-          <p className="eyebrow">Community intelligence</p>
+          <p className="eyebrow">Current, moderated candidate experience</p>
           <h1>Recruitment Intelligence</h1>
           <p className="intro">
-            Learn from cycle-dated, moderated candidate reports about formats, themes and assessed
-            skills. Reports are directional—not guaranteed previews of an employer process.
+            Find recent reports by employer, role, stage and cycle. Every report is reviewed for
+            usefulness, anonymity and confidentiality before publication.
           </p>
         </div>
+        <Link className="button-link" href="/member/learn/intelligence/share">
+          Share an experience
+        </Link>
       </section>
-      {query.result === "submitted" && (
+      {raw.result === "submitted" && (
         <p className="success-summary" role="status">
-          Report submitted for moderation. Thank you for keeping it useful and confidential.
+          Report submitted for moderation. Your identity will not appear on the published report.
         </p>
       )}
-      {query.result === "invalid" && (
-        <p className="error-summary" role="alert">
-          We could not submit that report. Check every required field and try again.
-        </p>
-      )}
+      <form className="intelligence-filters" method="get" role="search">
+        <label>
+          Employer or role
+          <input defaultValue={filters.query} name="q" placeholder="e.g. EY audit" type="search" />
+        </label>
+        <label>
+          Stage
+          <select defaultValue={filters.stage ?? ""} name="stage">
+            <option value="">All stages</option>
+            {Object.entries(recruitmentStages).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Industry
+          <select defaultValue={filters.industry ?? ""} name="industry">
+            <option value="">All industries</option>
+            {Object.entries(industries).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Cycle
+          <input defaultValue={filters.cycle ?? ""} name="cycle" placeholder="2026/27" />
+        </label>
+        <div className="intelligence-filter-actions">
+          <button type="submit">Search reports</button>
+          {hasFilters && <Link href="/member/learn/intelligence">Clear</Link>}
+        </div>
+      </form>
       <section className="learn-section" aria-labelledby="published-intelligence">
-        <p className="eyebrow">Moderated reports</p>
-        <h2 id="published-intelligence">What candidates encountered</h2>
-        {published.length ? (
-          <div className="resource-grid">
-            {published.map((report) => (
-              <article className="card compact-card" key={report.id}>
-                <div className="resource-card-meta">
-                  <span>{recruitmentStageLabel(report.recruitmentStage)}</span>
-                  <span>{report.recruitmentCycle} cycle</span>
-                  <span>{report.moderationConfidence} confidence</span>
-                </div>
-                <h3>{report.formatSummary}</h3>
-                <p>{report.themes}</p>
-                <p>
-                  <strong>Skills assessed:</strong> {report.assessedSkills.join(", ")}
-                </p>
-                <p>
-                  <strong>Candidate reflection:</strong> {report.reflection}
-                </p>
-                <small>Approximate date: {report.approximateDate}</small>
-              </article>
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Moderated reports</p>
+            <h2 id="published-intelligence">
+              {reports.length} {reports.length === 1 ? "experience" : "experiences"}
+            </h2>
+          </div>
+        </div>
+        {reports.length ? (
+          <div className="intelligence-grid">
+            {reports.map((report) => (
+              <IntelligenceReportCard
+                href={`/member/learn/intelligence/${report.slug}`}
+                key={report.id}
+                report={report}
+              />
             ))}
           </div>
         ) : (
-          <p>No reports have completed moderation yet.</p>
+          <section className="card empty-state intelligence-empty-state">
+            <h2>No exact report yet</h2>
+            <p>
+              Try a broader employer or stage search. If you attend this process, you can help the
+              next candidate by submitting a structured, confidential report.
+            </p>
+            <Link href="/member/learn/intelligence/share">Share an experience</Link>
+          </section>
         )}
       </section>
-      <details className="card guided-form intelligence-submission">
-        <summary>Share a recent experience</summary>
-        <form action={submitReportAction}>
-          <p>
-            Do not share exact private questions, employer-confidential material, names, contact
-            details or identifying information. Describe the format and skills at a useful level.
-          </p>
-          <label>
-            Recruitment cycle
-            <input
-              name="recruitmentCycle"
-              placeholder="2026/27"
-              pattern="[0-9]{4}/[0-9]{2}"
-              required
-            />
-          </label>
-          <label>
-            Approximate date
-            <input name="approximateDate" type="date" required />
-          </label>
-          <label>
-            Recruitment stage
-            <select name="recruitmentStage" required defaultValue="">
-              <option disabled value="">
-                Choose a stage
-              </option>
-              {Object.entries(recruitmentStages).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Opportunity type (optional)
-            <select name="opportunityType" defaultValue="">
-              <option value="">Not specified</option>
-              {Object.entries(opportunityTypes).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Industry (optional)
-            <select name="industry" defaultValue="">
-              <option value="">Not specified</option>
-              {Object.entries(industries).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Format summary
-            <input name="formatSummary" maxLength={200} required />
-          </label>
-          <label>
-            Themes (not exact questions)
-            <textarea name="themes" maxLength={1000} rows={5} required />
-          </label>
-          <label>
-            Skills assessed (comma-separated)
-            <input name="assessedSkills" maxLength={500} required />
-          </label>
-          <label>
-            What would help another candidate prepare?
-            <textarea name="reflection" maxLength={1500} rows={5} required />
-          </label>
-          <button type="submit">Submit for moderation</button>
-        </form>
-      </details>
       {mine.length > 0 && (
-        <section className="learn-section" aria-labelledby="your-reports">
-          <h2 id="your-reports">Your reports</h2>
+        <section className="learn-section intelligence-submissions" aria-labelledby="your-reports">
+          <h2 id="your-reports">Your submissions</h2>
           <ul>
             {mine.map((report) => (
               <li key={report.id}>
-                {report.formatSummary} — {report.moderationState}
+                <span>
+                  <strong>{report.companyName}</strong> · {report.roleTitle}
+                </span>
+                <span className="status-badge">{report.moderationState}</span>
               </li>
             ))}
           </ul>
