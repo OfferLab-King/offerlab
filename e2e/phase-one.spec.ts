@@ -14,7 +14,6 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
   const database = postgres(databaseUrl, { prepare: false });
   const suffix = `${Date.now()}`;
   const email = `phase-one-${suffix}@example.com`;
-  const questionKey = `phase_one_question_${suffix}`;
   let authId = "";
   let ownerId = "";
   let questionId = "";
@@ -38,7 +37,7 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
     questionId = (
       await database<
         { id: string }[]
-      >`insert into app.interview_question(stable_key,question_family,prompt,guidance,position) values(${questionKey},'competency_and_behavioural','Describe a time you helped a team decide.','Use a specific example.',990001) returning id`
+      >`select id from app.interview_question where stable_key='teamwork' and active=true`
     )[0]!.id;
     const storyId = (
       await database<
@@ -148,12 +147,11 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       .getByRole("navigation", { name: "Prepare" })
       .getByRole("link", { name: "Answer Bank" })
       .click();
-    await page.getByRole("link", { name: "Questions" }).click();
-    await expect(page.getByRole("heading", { name: "Top 10 interview questions" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Competency collection" })).toHaveAttribute(
-      "href",
-      "?family=competency_and_behavioural",
-    );
+    await expect(
+      page.getByRole("heading", { name: "Prepare your interview answers" }),
+    ).toBeVisible();
+    await expect(page.locator(".simple-question")).toHaveCount(14);
+    await expect(page.getByRole("heading", { name: "10 competency questions" })).toBeVisible();
 
     await page.goto(`/member/learn/answer-bank/answers/${answerId}`);
     await expect(page.getByText(/local fallback sends nothing to an AI provider/i)).toBeVisible();
@@ -166,15 +164,8 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
 
     await page.goto("/member/learn/practice");
     await expect(page.getByRole("heading", { name: "Practice & Feedback" })).toBeVisible();
-    const groupMock = page.locator("article").filter({ hasText: "Group Mock pilot" });
-    await expect(groupMock.getByRole("button", { name: "Register interest" })).toBeVisible({
-      timeout: 15_000,
-    });
-    await groupMock.getByRole("button", { name: "Register interest" }).click();
-    await expect(page.getByText("Request received")).toBeVisible();
-    await expect(page.locator("article").filter({ hasText: "Group Mock pilot" })).toContainText(
-      "requested",
-    );
+    await expect(page.getByRole("heading", { name: "Choose a practice room" })).toBeVisible();
+    await expect(page.getByText("No rooms are scheduled yet")).toBeVisible();
 
     await page.goto("/member/learn/intelligence/share");
     await expect(
@@ -290,7 +281,6 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
       await database`delete from app.beta_entitlement where user_id=${ownerId}::uuid`;
       await database`delete from app."user" where id=${ownerId}::uuid`;
     }
-    if (questionId) await database`delete from app.interview_question where id=${questionId}::uuid`;
     if (authId) await database`delete from auth.users where id=${authId}::uuid`;
     await database.end();
   }

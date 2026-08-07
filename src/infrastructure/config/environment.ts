@@ -8,6 +8,11 @@ export const environmentKeys = [
   "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   "AUTH_RATE_LIMIT_SECRET",
   "ANSWER_COACH_ENABLED",
+  "ANSWER_COACH_PROVIDER",
+  "ANSWER_COACH_MODEL_DATA_APPROVED",
+  "DEEPSEEK_API_KEY",
+  "DEEPSEEK_BASE_URL",
+  "DEEPSEEK_MODEL",
   "DATABASE_URL",
   "IDENTITY_SYNC_DATABASE_URL",
   "LOG_LEVEL",
@@ -23,8 +28,13 @@ const serverEnvironmentSchema = z
   .object({
     APP_ENV: z.enum(["local", "test", "staging", "production"]),
     ANSWER_COACH_ENABLED: z.enum(["true", "false"]).optional(),
+    ANSWER_COACH_MODEL_DATA_APPROVED: z.enum(["true", "false"]).optional(),
+    ANSWER_COACH_PROVIDER: z.enum(["local", "deepseek"]).optional(),
     AUTH_RATE_LIMIT_SECRET: optionalString,
     DATABASE_URL: optionalString,
+    DEEPSEEK_API_KEY: optionalString,
+    DEEPSEEK_BASE_URL: optionalUrl,
+    DEEPSEEK_MODEL: optionalString,
     IDENTITY_SYNC_DATABASE_URL: optionalString,
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     NEXT_PUBLIC_APP_URL: z.url(),
@@ -46,6 +56,22 @@ const serverEnvironmentSchema = z
             path: [key],
           });
         }
+      }
+      if (
+        environment.ANSWER_COACH_PROVIDER === "deepseek" &&
+        environment.ANSWER_COACH_MODEL_DATA_APPROVED !== "true"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "ANSWER_COACH_MODEL_DATA_APPROVED=true is required for DeepSeek in production",
+          path: ["ANSWER_COACH_MODEL_DATA_APPROVED"],
+        });
+      }
+    }
+    if (environment.ANSWER_COACH_PROVIDER === "deepseek") {
+      for (const key of ["DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL"] as const) {
+        if (!environment[key])
+          context.addIssue({ code: "custom", message: `${key} is required`, path: [key] });
       }
     }
   });

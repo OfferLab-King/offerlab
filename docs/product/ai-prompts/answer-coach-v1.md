@@ -1,6 +1,6 @@
 # Answer Coach prompt pack v1
 
-**Status:** Design contract; not yet wired to a production model
+**Status:** Implemented pilot contract; production member-data approval pending
 
 **Prompt ID:** `answer_coach`
 
@@ -53,15 +53,13 @@ Assess only what the supplied evidence supports:
 ```json
 {
   "summary": "string, maximum 45 words",
-  "strengths": [
+  "strengths": ["string"],
+  "suggestedAnswer": "grounded complete revision or null",
+  "comments": [
     {
-      "section": "situation | task | actions | reasoning | result | reflection | overall",
-      "observation": "string"
-    }
-  ],
-  "priorities": [
-    {
-      "section": "situation | task | actions | reasoning | result | reflection | overall",
+      "anchorQuote": "exact contiguous substring of the draft answer",
+      "anchorOccurrence": "1-based integer",
+      "category": "Evidence | Reasoning | Relevance | Structure | Reflection",
       "observation": "string",
       "coachingQuestion": "string",
       "optionalRevision": "string or null"
@@ -72,7 +70,7 @@ Assess only what the supplied evidence supports:
 }
 ```
 
-Limits: at most two strengths, three priorities and three follow-up questions. An optional revision must alter only wording supported by the supplied evidence.
+Limits: at most two strengths, five comments in the provider prompt, eight at the validation boundary, and three follow-up questions. The application derives offsets from the exact quote and occurrence, then validates the resulting anchor against the answer snapshot. An optional revision or complete suggested answer may only reorder, shorten or clarify wording supported by the supplied evidence. It must be null when a safe grounded revision is not possible. Copying a suggestion into a draft and saving it are separate explicit member actions.
 
 ## Runtime envelope
 

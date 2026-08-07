@@ -117,11 +117,6 @@ export function parseStory(
   return Object.keys(e).length ? { ok: false, errors: e } : { ok: true, value };
 }
 
-const storyRequiredFamilies = new Set<QuestionFamily>([
-  "competency_and_behavioural",
-  "self_awareness",
-  "situational",
-]);
 export function parseAnswer(
   input: unknown,
 ): { ok: true; value: AnswerValues } | { ok: false; errors: FieldErrors } {
@@ -158,10 +153,6 @@ export function parseAnswer(
     add(e, "storyIds", "Choose each story only once.");
   if (value.applicationId && !uuid.test(value.applicationId))
     add(e, "applicationId", "Choose a valid application.");
-  if (value.ready && !value.keyPoints && !value.storyIds.length)
-    add(e, "keyPoints", "Add a key point or link an evidence story before marking Ready.");
-  if (value.ready && storyRequiredFamilies.has(family) && !value.storyIds.length)
-    add(e, "storyIds", "Link an evidence story for this question family before marking Ready.");
   return Object.keys(e).length ? { ok: false, errors: e } : { ok: true, value };
 }
 

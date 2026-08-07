@@ -26,9 +26,28 @@
 
 Published reports are stable-ordered by approximate date and identifier. A moderation decision is always human. Private submission text is never placed in logs, analytics or audit metadata.
 
+## Recruitment Intelligence discussion pilot
+
+- `member_community_agreement` records only the owner, accepted rules version and timestamps. Acceptance is required before contributing, not before reading a report.
+- `recruitment_intelligence_comment` belongs to one published report and one owner. Comments are pending until human moderation, support at most one reply level and remain unavailable on public report pages.
+- `recruitment_intelligence_comment_flag` lets a different member flag a published comment once using a controlled reason. Administrators resolve flags separately from comment authorship.
+- Comment bodies, moderation notes and report content never enter audit metadata, analytics or logs. Audits identify the action and entity with empty metadata.
+- Forced RLS and owner-scoped application operations protect pending comments and agreements. Published comment reads remain authenticated member operations; administrator moderation does not create a general member-data bypass.
+
+This is supporting context beneath structured reports, not a general post feed. Direct messages, profiles, followers, reactions, popularity ranking, unrestricted threads and automatic publication are excluded.
+
 ## `service_offering` and `service_request`
 
 Offerings are administrator-curated descriptions of manually operated pilots. Availability distinguishes interest collection, open services, scheduled sessions and paused services. A request stores only owner, offering, status, version and timestamps. It contains no member free text, payment details, provider matching, chat or private answer content.
+
+## Group Mock room pilot
+
+- `group_mock_material` stores a fictional OfferLab candidate brief, flexible Markdown case pack, working instructions, required output, facilitator guide and debrief questions. Stable metadata covers ten industries, ten problem archetypes, exercise format, difficulty, capability tags, group size and preparation/discussion/follow-up timing. The deterministic seed contains exactly 100 synthetic cases. Administrator-created originals require confirmation that they contain no copied assessment, leaked question, employer-confidential information or identifying student data.
+- Authenticated members can search, filter and open published cases without booking a room. Drafts and archived cases remain administrator-only; saving a published case updates its member view.
+- group_mock_session schedules one fixed Europe/London room against a published material pack. Capacity is three to eight and minimum attendance cannot exceed capacity. Access is membership-included or a manually reconciled external payment; no payment record or card data is stored.
+- group_mock_booking stores one owner/session seat with 18+ and versioned participation-rule confirmations. A locked database transition assigns confirmed, payment-pending or waitlisted state. Cancellation of an occupied seat promotes the earliest waitlisted member.
+- group_mock_session_meeting isolates the provider and HTTPS join URL. RLS exposes it only to administrators or a confirmed member from 15 minutes before the start until the end. Provider account credentials and host passwords are never stored.
+- The pilot has no recording, chat, contact exchange, automatic matching, member-created instant rooms or coach access. Exercise and meeting content never enters audit metadata, analytics or logs.
 
 ## Answer Coach prototype
 

@@ -14,6 +14,7 @@ const primaryLinks = [
   { href: "/admin/content/categories", label: "Categories", section: "categories" },
   { href: "/admin/content/tags", label: "Tags", section: "tags" },
   { href: "/admin/intelligence", label: "Intelligence", section: "intelligence" },
+  { href: "/admin/group-mock", label: "Group Mock", section: "group-mock" },
   { href: "/admin/operations", label: "Operations", section: "operations" },
 ] as const;
 
@@ -22,6 +23,7 @@ function getActiveSection(pathname: string, type: string | null) {
   if (pathname === "/admin/content/categories") return "categories";
   if (pathname === "/admin/content/tags") return "tags";
   if (pathname.startsWith("/admin/intelligence")) return "intelligence";
+  if (pathname.startsWith("/admin/group-mock")) return "group-mock";
   if (pathname === "/admin/operations") return "operations";
   if (pathname === "/admin/content" && type === "coaching_case") return "coaching";
   if (pathname.startsWith("/admin/content")) return "content";

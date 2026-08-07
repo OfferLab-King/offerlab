@@ -2,15 +2,32 @@ import "server-only";
 import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
 import { readAnswer, readStories } from "../../answer-bank/application/answer-bank";
 import { validateProviderReview } from "../domain/review";
-import { localRubricProvider } from "../infrastructure/local-rubric-provider";
+import {
+  answerCoachNoticeVersion,
+  readAnswerCoachRuntime,
+} from "../infrastructure/provider-runtime";
 import * as repo from "../infrastructure/review-repository";
+import { reviewWithLocalFallback } from "../infrastructure/review-provider";
+import { answerCoachPromptVersion } from "../infrastructure/deepseek-provider";
 
-const provider = localRubricProvider;
 export const readAnswerReviews = (owner: string, answerId: string) =>
   withApplicationUser(owner, (db) => repo.listReviews(db, owner, answerId));
+export const readAnswerCoachUsage = (owner: string) =>
+  withApplicationUser(owner, (db) => repo.readUsage(db, owner));
+export function readAnswerCoachConfiguration() {
+  const runtime = readAnswerCoachRuntime();
+  return { modelAvailable: runtime.modelAvailable };
+}
 
-export async function reviewMemberAnswer(owner: string, answerId: string) {
+export async function reviewMemberAnswer(
+  owner: string,
+  answerId: string,
+  options: Readonly<{ modelConsent: boolean }> = { modelConsent: false },
+) {
   if (process.env.ANSWER_COACH_ENABLED === "false") throw new Error("answer_coach_disabled");
+  const runtime = readAnswerCoachRuntime();
+  if (runtime.modelAvailable && !options.modelConsent)
+    throw new Error("answer_coach_consent_required");
   const [answer, stories] = await Promise.all([readAnswer(owner, answerId), readStories(owner)]);
   if (!answer || answer.archivedAt) return null;
   const draft = answer.draftAnswer.trim();
@@ -32,23 +49,38 @@ export async function reviewMemberAnswer(owner: string, answerId: string) {
   });
   return withApplicationUser(owner, async (db) => {
     await repo.assertUsageAllowed(db, owner);
-    const raw = await provider.review({
+    const input = {
       draftAnswer: draft,
       keyPoints: answer.keyPoints.slice(0, 2000),
       question: answer.question.slice(0, 1000),
+      questionFamily: answer.questionFamily,
       stories: linkedStories,
-    });
-    const review = validateProviderReview(raw, draft);
-    return repo.saveReview(
+    };
+    const run = await reviewWithLocalFallback(runtime.provider, input);
+    const selectedProvider = run.provider;
+    const providerResult = run.result;
+    const review = validateProviderReview(providerResult.review, draft);
+    const storedReview = await repo.saveReview(
       db,
       owner,
       answerId,
       answer.version,
       draft,
-      provider.id,
-      provider.mode,
+      selectedProvider.id,
+      selectedProvider.mode,
       review,
+      {
+        modelRequested: runtime.modelAvailable,
+        promptVersion: selectedProvider.mode === "model" ? answerCoachPromptVersion : 1,
+        providerNoticeVersion: runtime.modelAvailable ? answerCoachNoticeVersion : null,
+        usage: providerResult.usage,
+      },
     );
+    return {
+      fallbackUsed: run.fallbackUsed,
+      review: storedReview,
+      usage: await repo.readUsage(db, owner),
+    };
   });
 }
 

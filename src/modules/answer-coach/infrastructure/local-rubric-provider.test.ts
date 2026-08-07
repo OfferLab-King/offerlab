@@ -8,7 +8,7 @@ describe("local Answer Coach fallback", () => {
     "returns valid grounded output for $id",
     async ({ input }) => {
       const raw = await localRubricProvider.review(input);
-      const review = validateProviderReview(raw, input.draftAnswer.trim());
+      const review = validateProviderReview(raw.review, input.draftAnswer.trim());
       expect(review.comments.length).toBeGreaterThan(0);
       expect(review.comments.length).toBeLessThanOrEqual(8);
       expect(
@@ -33,11 +33,26 @@ describe("local Answer Coach fallback", () => {
           ],
           followUpQuestions: [],
           strengths: [],
+          suggestedAnswer: null,
           summary: "Review.",
           unsupportedClaimsDetected: [],
         },
         "Right answer",
       ),
     ).toThrow("answer_coach_invalid_anchor");
+  });
+
+  it("uses distinct deterministic highlights when a longer answer has several issues", async () => {
+    const draftAnswer =
+      "I am currently studying finance. I completed several modules. I worked in a group and we finished the task. I want a role where I can learn. This is the best company.";
+    const result = await localRubricProvider.review({
+      draftAnswer,
+      keyPoints: "",
+      question: "Why do you want to work for this organisation?",
+      questionFamily: "motivation_and_fit",
+      stories: [],
+    });
+    const review = validateProviderReview(result.review, draftAnswer);
+    expect(new Set(review.comments.map((comment) => comment.anchor.start)).size).toBeGreaterThan(1);
   });
 });

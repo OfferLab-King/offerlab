@@ -21,11 +21,13 @@ There is no separate backend deployment. Route handlers and server actions are a
 - **Identity and access:** Supabase identity linkage, internal user UUIDs, beta entitlement, sessions, roles, and authorization.
 - **Member profile:** onboarding answers and completion. No application stages or deadlines belong here.
 - **Applications:** private application lifecycle, stage and deadlines. All repository operations require owner ID.
+- **Answer Bank:** private reusable stories, curated-question answers and explicit story-to-answer relationships. All member records are owner scoped.
 - **Taxonomy:** stable education, opportunity, industry, priority, and recruitment-stage keys.
 - **Preparation resources:** canonical safe-Markdown library content, publication/access lifecycle, search, taxonomy associations, and owner-private save/completion state.
+- **Learning paths:** ordered collections of canonical preparation resources and owner-private progress derived from resource completion.
 - **Recruitment intelligence:** cycle-dated candidate reports, controlled context, human moderation, publication confidence and privacy-safe contribution status.
 - **Practice services:** curated pilot availability and privacy-minimal member requests. It does not perform payments, matching, messaging or marketplace discovery.
-- **Answer coaching:** a provider-neutral review contract and bounded structured output. The initial member prototype uses a deterministic local rubric; a model provider remains behind the AI privacy and evaluation gate.
+- **Answer Coach:** a provider-neutral review contract, strict structured output, recoverable review snapshots and anchored comment state. The initial member prototype uses a deterministic local rubric; a model provider remains behind the AI privacy and evaluation gate.
 - **Recommendations:** pure deterministic matching, ordering, deduplication, limits, and explanations.
 - **Dashboard:** composes applications, deadlines, and recommendations without owning their rules.
 - **Administration:** explicit administrative use cases; no general private-note access.

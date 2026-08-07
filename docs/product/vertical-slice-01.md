@@ -1,9 +1,12 @@
 # OfferLab Vertical Slice 01
 
+> **Document status:** Implemented historical baseline. This document records the original onboarding, application and recommendation slice. It is not the current product scope boundary and its exclusions do not reverse capabilities approved or implemented later. Use `current-product-contract.md` for current scope.
+>
 > **Experience implementation:** Apply `experience-principles.md`. This scope does not require wizard-like sequencing, a next-action-led dashboard or progress metrics beyond those that support a concrete member decision.
 
 **Document version:** 0.1  
-**Status:** Ready for architecture review  
+**Status:** Implemented historical baseline
+**Last reviewed:** 2026-07-27
 **Slice name:** Stage-Based Application Guidance  
 **Related documents:** `mvp-brief.md`, `critical-user-journey.md`, `screen-map.md`
 

@@ -47,6 +47,8 @@ const story = {
 };
 beforeEach(async () => {
   await migration`delete from app.audit_event where entity_type in ('member_story','member_answer')`;
+  await migration`delete from app.answer_coach_comment`;
+  await migration`delete from app.answer_coach_review`;
   await migration`delete from app.member_answer_story`;
   await migration`delete from app.member_answer`;
   await migration`delete from app.member_story_competency`;
@@ -60,11 +62,47 @@ beforeEach(async () => {
   await migration`insert into app.interview_question_stage(question_id,recruitment_stage) values(${questionId}::uuid,'interview')`;
 });
 afterAll(async () => {
-  await migration`delete from app.member_answer where question_id=${questionId}::uuid`;
+  if (questionId)
+    await migration`delete from app.member_answer where question_id=${questionId}::uuid`;
   await migration`delete from app.interview_question where stable_key=${questionKey}`;
   await Promise.all([migration.end(), runtime.end()]);
 });
 describe("private Answer and Story Bank", () => {
+  it("publishes the 14-question founder catalogue in the question-first order", async () => {
+    const questions = await as(one, (db) => listQuestions(db, one));
+    const catalogue = questions.filter((question) => question.id !== questionId);
+    expect(catalogue).toHaveLength(14);
+    expect(catalogue.slice(0, 4).map((question) => question.prompt)).toEqual([
+      "Tell me about yourself.",
+      "Why do you want to work for this organisation?",
+      "Why are you interested in this role?",
+      "Why should we select you?",
+    ]);
+    expect(
+      catalogue.filter((question) => question.family === "competency_and_behavioural"),
+    ).toHaveLength(10);
+  });
+
+  it("marks a competency answer ready without requiring a separate story", async () => {
+    const answer = await as(one, (db) =>
+      createAnswer(db, one, {
+        applicationId: null,
+        customQuestion: null,
+        draftAnswer:
+          "I clarified the deadline, assigned owners and checked progress. We submitted on time.",
+        keyPoints: "",
+        questionFamily,
+        questionId,
+        ready: true,
+        recruitmentStage: null,
+        storyIds: [],
+        title: "Teamwork question",
+      }),
+    );
+    expect(answer).toMatchObject({ ready: true, storyIds: [] });
+    expect(await as(two, (db) => findAnswer(db, two, answer.id))).toBeNull();
+  });
+
   it("creates, updates, maps competencies, archives and restores a story with safe audit", async () => {
     const made = await as(one, (db) => createStory(db, one, story));
     expect(made).toMatchObject({

@@ -1,5 +1,13 @@
 import type { TransactionSql } from "postgres";
-import type { AnswerCoachReview } from "../domain/review";
+import type { AnswerCoachProviderUsage, AnswerCoachReview } from "../domain/review";
+
+export const answerCoachUsageLimits = { monthly: 20, recent: 5 } as const;
+export type AnswerCoachUsage = Readonly<{
+  monthlyLimit: number;
+  monthlyUsed: number;
+  recentLimit: number;
+  recentUsed: number;
+}>;
 
 export type StoredComment = AnswerCoachReview["comments"][number] & {
   id: string;
@@ -11,6 +19,9 @@ export type StoredReview = Omit<AnswerCoachReview, "comments"> & {
   comments: StoredComment[];
   createdAt: Date;
   id: string;
+  modelRequested: boolean;
+  promptVersion: number;
+  providerId: string;
   providerMode: "local_rubric" | "model";
 };
 
@@ -20,8 +31,12 @@ type ReviewRow = {
   created_at: Date;
   follow_up_questions: string[];
   id: string;
+  model_requested: boolean;
+  prompt_version: number;
+  provider_id: string;
   provider_mode: StoredReview["providerMode"];
   strengths: string[];
+  suggested_answer: string | null;
   summary: string;
   unsupported_claims: string[];
 };
@@ -52,8 +67,12 @@ const mapReview = (row: ReviewRow, comments: CommentRow[]): StoredReview => ({
   createdAt: row.created_at,
   followUpQuestions: row.follow_up_questions,
   id: row.id,
+  modelRequested: row.model_requested,
+  promptVersion: row.prompt_version,
+  providerId: row.provider_id,
   providerMode: row.provider_mode,
   strengths: row.strengths,
+  suggestedAnswer: row.suggested_answer,
   summary: row.summary,
   unsupportedClaimsDetected: row.unsupported_claims,
 });
@@ -61,7 +80,7 @@ const mapReview = (row: ReviewRow, comments: CommentRow[]): StoredReview => ({
 export async function listReviews(db: TransactionSql, owner: string, answerId: string) {
   const rows = await db<
     ReviewRow[]
-  >`select id,answer_version,answer_snapshot,provider_mode,summary,strengths,follow_up_questions,unsupported_claims,created_at from app.answer_coach_review where owner_user_id=${owner}::uuid and answer_id=${answerId}::uuid order by created_at desc`;
+  >`select id,answer_version,answer_snapshot,provider_id,provider_mode,model_requested,prompt_version,summary,strengths,suggested_answer,follow_up_questions,unsupported_claims,created_at from app.answer_coach_review where owner_user_id=${owner}::uuid and answer_id=${answerId}::uuid order by created_at desc`;
   const result: StoredReview[] = [];
   for (const row of rows) {
     const comments = await db<
@@ -77,8 +96,22 @@ export async function assertUsageAllowed(db: TransactionSql, owner: string) {
   const [counts] = await db<
     { monthly: number; recent: number }[]
   >`select count(*) filter(where created_at>=date_trunc('month',now()))::int monthly,count(*) filter(where created_at>=now()-interval '10 minutes')::int recent from app.answer_coach_review where owner_user_id=${owner}::uuid`;
-  if ((counts?.recent ?? 0) >= 5) throw new Error("answer_coach_rate_limited");
-  if ((counts?.monthly ?? 0) >= 20) throw new Error("answer_coach_usage_capped");
+  if ((counts?.recent ?? 0) >= answerCoachUsageLimits.recent)
+    throw new Error("answer_coach_rate_limited");
+  if ((counts?.monthly ?? 0) >= answerCoachUsageLimits.monthly)
+    throw new Error("answer_coach_usage_capped");
+}
+
+export async function readUsage(db: TransactionSql, owner: string): Promise<AnswerCoachUsage> {
+  const [counts] = await db<
+    { monthly: number; recent: number }[]
+  >`select count(*) filter(where created_at>=date_trunc('month',now()))::int monthly,count(*) filter(where created_at>=now()-interval '10 minutes')::int recent from app.answer_coach_review where owner_user_id=${owner}::uuid`;
+  return {
+    monthlyLimit: answerCoachUsageLimits.monthly,
+    monthlyUsed: counts?.monthly ?? 0,
+    recentLimit: answerCoachUsageLimits.recent,
+    recentUsed: counts?.recent ?? 0,
+  };
 }
 
 export async function saveReview(
@@ -90,10 +123,16 @@ export async function saveReview(
   providerId: string,
   providerMode: StoredReview["providerMode"],
   review: AnswerCoachReview,
+  metadata?: Readonly<{
+    modelRequested: boolean;
+    promptVersion?: number;
+    providerNoticeVersion: string | null;
+    usage: AnswerCoachProviderUsage | null;
+  }>,
 ) {
   const [row] = await db<
     ReviewRow[]
-  >`insert into app.answer_coach_review(owner_user_id,answer_id,answer_version,answer_snapshot,provider_id,provider_mode,summary,strengths,follow_up_questions,unsupported_claims) values(${owner}::uuid,${answerId}::uuid,${answerVersion},${answerSnapshot},${providerId},${providerMode},${review.summary},${db.json(review.strengths)},${db.json(review.followUpQuestions)},${db.json(review.unsupportedClaimsDetected)}) returning id,answer_version,answer_snapshot,provider_mode,summary,strengths,follow_up_questions,unsupported_claims,created_at`;
+  >`insert into app.answer_coach_review(owner_user_id,answer_id,answer_version,answer_snapshot,provider_id,provider_mode,model_requested,prompt_version,provider_notice_version,input_tokens,output_tokens,latency_ms,summary,strengths,suggested_answer,follow_up_questions,unsupported_claims) values(${owner}::uuid,${answerId}::uuid,${answerVersion},${answerSnapshot},${providerId},${providerMode},${metadata?.modelRequested ?? false},${metadata?.promptVersion ?? 1},${metadata?.providerNoticeVersion ?? null},${metadata?.usage?.inputTokens ?? null},${metadata?.usage?.outputTokens ?? null},${metadata?.usage?.latencyMs ?? null},${review.summary},${db.json(review.strengths)},${review.suggestedAnswer},${db.json(review.followUpQuestions)},${db.json(review.unsupportedClaimsDetected)}) returning id,answer_version,answer_snapshot,provider_id,provider_mode,model_requested,prompt_version,summary,strengths,suggested_answer,follow_up_questions,unsupported_claims,created_at`;
   for (let index = 0; index < review.comments.length; index++) {
     const comment = review.comments[index]!;
     await db`insert into app.answer_coach_comment(owner_user_id,review_id,position,category,anchor_start,anchor_end,anchor_quote,observation,coaching_question,optional_revision) values(${owner}::uuid,${row!.id}::uuid,${index + 1},${comment.category},${comment.anchor.start},${comment.anchor.end},${comment.anchor.quote},${comment.observation},${comment.coachingQuestion},${comment.optionalRevision})`;

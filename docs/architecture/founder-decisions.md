@@ -2,7 +2,8 @@
 
 **Status:** Approved  
 **Date:** 2026-07-19  
-**Authority:** These decisions clarify the draft product documents and govern Vertical Slice 01 implementation.
+**Last reviewed:** 2026-08-06
+**Authority:** Highest product authority. These decisions govern current implementation; references to Vertical Slice 01 describe the original foundation unless a paragraph explicitly limits itself to that slice.
 
 ## Product experience
 
@@ -12,6 +13,28 @@
 
 `docs/product/ai-product-strategy.md` governs permitted AI product use. OfferLab may introduce bounded, evidence-grounded AI early when it passes the defined product, privacy, evaluation and cost gates. AI should express OfferLab's coaching method and member evidence, not reproduce a generic chatbot.
 
+### DeepSeek Answer Coach pilot
+
+**Approved:** 6 August 2026
+
+Add DeepSeek as the first hosted-model adapter for the bounded Answer Coach. A member must explicitly accept the current provider data notice before each model review request. Send only the selected answer, its question and key points, and no more than three member-linked evidence stories. The model diagnoses and asks coaching questions. Under the later Question-first Answer Bank decision below it may also return one fact-grounded suggested revision for explicit member acceptance; it must never silently edit source records or add an open-ended chatbot.
+
+Keep the provider-neutral boundary, exact source anchoring, strict structured-output validation, one bounded repair attempt for malformed output, deterministic local-rubric fallback, immutable previous reviews, rate limits, monthly caps and the operational kill switch. Persist only non-content operational metadata such as provider identifier, token counts and latency; never log prompts, outputs or member evidence.
+
+This approval permits local development and synthetic evaluation. Production use with real member content remains blocked until the provider's business/API terms, retention, training use, deletion, subprocessor, security and international-transfer position have completed the privacy gate. Production configuration must require an explicit operational approval flag.
+
+### Question-first Answer Bank
+
+**Approved:** 6 August 2026
+
+Replace the primary multi-tab Answer and Story Bank journey with one question-first workspace. Present, in order, a personal introduction, the three motivation questions (“why this organisation”, “why this role” and “why you”), then ten stable competency questions. Each question expands directly into one plain answer field. Show Prepared, Draft or Not started beside the question so the page also serves as the member's stored answer bank.
+
+Do not require a separate evidence story, application, recruitment stage, key-points field or answer title before a member can prepare an answer. Retain existing typed records and owner scope underneath the simpler interface; evidence stories remain optional supporting records rather than the navigation model.
+
+Make Answer Coach visible inside the question editor. A member may explicitly save a draft and request review in one action. AI may return a complete suggested revision only when every fact is grounded in the member's answer, key points or selected stories. Display original and suggestion side by side. Copying either a whole suggestion or a small wording change into the draft requires a clear member action and does not save or mark the answer prepared. The member must check accuracy and save explicitly.
+
+Coach by question type: natural present–past–future structure for introductions, credible specificity for motivation, and STAR with first-person action and reasoning for competency answers. Flag generic or machine-like language, inflated claims, unnatural polish, and answers that are materially too short, too long or difficult to say aloud. Do not show the model brand as product positioning; keep provider identity in the required data notice.
+
 ### Recruitment Intelligence discussion pilot
 
 **Approved:** 27 July 2026
@@ -19,6 +42,16 @@
 Recruitment Intelligence remains a structured, searchable and moderated report database. Add a bounded member discussion layer beneath published reports so members can ask focused questions and add corroborating context. Reports remain the system of record and public SEO surface; comments are supporting, member-only context.
 
 For the pilot, reports and comments require moderation before other members can see them. Allow one reply level, content reporting and administrator removal. Require acceptance of versioned community and confidentiality rules before contributing. Do not add general social posts, direct messages, public member profiles, follower graphs, popularity feeds, unrestricted nested threads or automatic publication. Public pages must not expose member comments. Preserve honest provenance between community reports, coach-curated material and OfferLab-authored guidance.
+
+### Group Mock room pilot
+
+**Approved:** 27 July 2026
+
+Validate Group Mock as scheduled, fixed-duration OfferLab rooms for verified members aged 18 or over. Administrators create original OfferLab exercise packs, publish sessions and control capacity. Members reserve one owner-scoped seat or join a deterministic waitlist; they do not create instant rooms, receive shared provider credentials or match automatically. A cancellation may promote the earliest waitlisted member.
+
+The pilot may use manually created external meeting links and external payment links. Meeting access is limited to confirmed participants in a short join window. External payment is reconciled manually and does not create an in-product payment, refund or entitlement system. Do not record sessions. Do not add participant messaging, public profiles, contact exchange, coach accounts or a tutor marketplace. A separate decision remains required for embedded video, recording, in-product payments and coach access to member records.
+
+Exercise packs must be original OfferLab simulations. Do not reproduce leaked questions, copied assessment material, employer-confidential documents or identifying student information.
 
 ## Architecture
 

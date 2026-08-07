@@ -1,7 +1,9 @@
 # OfferLab MVP Screen Map
 
+> **Document status:** Historical capability inventory; non-binding. Generic community, membership and payment screens listed below are not approved current requirements. Use `current-product-contract.md` and implemented route/data contracts for the current product.
+
 **Document version:** 0.1  
-**Status:** Draft for architecture and UX review  
+**Status:** Historical draft; non-binding
 **Related documents:** `mvp-brief.md`, `critical-user-journey.md`
 
 > **Current UX authority:** `experience-principles.md` governs implementation. This draft inventory describes possible capabilities, not a requirement for large instructional screens, fixed progression, central next-action panels or progress displays without practical decision value.
@@ -12,7 +14,7 @@
 
 ## 1. Purpose
 
-This document lists the screens required for the OfferLab MVP.
+This document records the screens proposed for an earlier OfferLab MVP.
 
 For every screen, it defines:
 

@@ -9,16 +9,22 @@ import {
 import { AnswerBankShell } from "../../shell";
 import { AnswerForm } from "../answer-form";
 import { AnswerCoachPanel } from "./answer-coach-panel";
-import { readAnswerReviews } from "../../../../../../modules/answer-coach/application/review-answer";
+import {
+  readAnswerCoachConfiguration,
+  readAnswerCoachUsage,
+  readAnswerReviews,
+} from "../../../../../../modules/answer-coach/application/review-answer";
 export default async function Page({ params }: { params: Promise<{ answerId: string }> }) {
   const { userId } = await requireMember(),
     id = (await params).answerId;
-  const [answer, questions, stories, apps, reviews] = await Promise.all([
+  const answerCoachConfiguration = readAnswerCoachConfiguration();
+  const [answer, questions, stories, apps, reviews, usage] = await Promise.all([
     readAnswer(userId, id),
     readQuestions(userId),
     readStories(userId),
     readApplications(userId),
     readAnswerReviews(userId, id),
+    readAnswerCoachUsage(userId),
   ]);
   if (!answer) notFound();
   return (
@@ -30,7 +36,14 @@ export default async function Page({ params }: { params: Promise<{ answerId: str
         </div>
       </header>
       <AnswerForm initial={answer} questions={questions} stories={stories} applications={apps} />
-      {!answer.archivedAt && <AnswerCoachPanel answerId={answer.id} initialReviews={reviews} />}
+      {!answer.archivedAt && (
+        <AnswerCoachPanel
+          answerId={answer.id}
+          configuration={answerCoachConfiguration}
+          initialReviews={reviews}
+          initialUsage={usage}
+        />
+      )}
     </AnswerBankShell>
   );
 }
