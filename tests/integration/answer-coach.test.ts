@@ -36,6 +36,7 @@ const output = {
   ],
   followUpQuestions: ["What changed?"],
   strengths: ["Clear first-person opening."],
+  suggestedAnswer: "I led the team through a tight deadline.",
   summary: "Add one concrete action.",
   unsupportedClaimsDetected: [],
 };
@@ -95,5 +96,51 @@ describe("Answer Coach PostgreSQL persistence", () => {
     >`select relrowsecurity,relforcerowsecurity from pg_class where oid in ('app.answer_coach_review'::regclass,'app.answer_coach_comment'::regclass)`;
     expect(rows).toHaveLength(2);
     expect(rows.every((row) => row.relrowsecurity && row.relforcerowsecurity)).toBe(true);
+  });
+
+  it("persists model provenance, notice acceptance and content-free operational metadata", async () => {
+    const saved = await as(one, (db) =>
+      saveReview(
+        db,
+        one,
+        answerId,
+        1,
+        "I led a team through a deadline.",
+        "deepseek-v4-flash",
+        "model",
+        output,
+        {
+          modelRequested: true,
+          promptVersion: 2,
+          providerNoticeVersion: "answer-coach-deepseek-2026-08-06",
+          usage: { inputTokens: 120, latencyMs: 350, outputTokens: 42 },
+        },
+      ),
+    );
+    expect(saved).toMatchObject({
+      modelRequested: true,
+      providerId: "deepseek-v4-flash",
+      providerMode: "model",
+      promptVersion: 2,
+      suggestedAnswer: "I led the team through a tight deadline.",
+    });
+    const [metadata] = await admin<
+      {
+        input_tokens: number;
+        latency_ms: number;
+        output_tokens: number;
+        provider_notice_version: string;
+        prompt_version: number;
+        suggested_answer: string | null;
+      }[]
+    >`select input_tokens,output_tokens,latency_ms,prompt_version,provider_notice_version,suggested_answer from app.answer_coach_review where id=${saved.id}::uuid`;
+    expect(metadata).toEqual({
+      input_tokens: 120,
+      latency_ms: 350,
+      output_tokens: 42,
+      provider_notice_version: "answer-coach-deepseek-2026-08-06",
+      prompt_version: 2,
+      suggested_answer: "I led the team through a tight deadline.",
+    });
   });
 });

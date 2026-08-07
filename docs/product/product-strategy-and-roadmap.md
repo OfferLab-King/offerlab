@@ -2,7 +2,10 @@
 
 **Status:** Approved product direction
 **Date:** 2026-07-23
+**Last reviewed:** 2026-07-27
 **Authority:** Defines product positioning, differentiation and priority. Read with `experience-principles.md`, which governs how each feature should behave.
+
+> **Current implementation boundary:** See `current-product-contract.md`. Delivery phases express validation order; they are not evidence that an already implemented pilot is unavailable, nor approval to add payments, coach access or marketplace infrastructure without the required decisions.
 
 ## Product thesis
 

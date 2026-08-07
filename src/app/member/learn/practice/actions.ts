@@ -5,6 +5,35 @@ import {
   cancelServiceRequest,
   requestService,
 } from "../../../../modules/practice-services/application/services";
+import {
+  cancelGroupMockSeat,
+  reserveGroupMockSeat,
+} from "../../../../modules/practice-services/application/group-mock";
+
+export async function reserveGroupMockAction(formData: FormData) {
+  const { userId } = await requireMember();
+  const result = await reserveGroupMockSeat(userId, {
+    ageConfirmed: formData.get("ageConfirmed") === "yes",
+    rulesConfirmed: formData.get("rulesConfirmed") === "yes",
+    sessionId: formData.get("sessionId"),
+  });
+  const status = "status" in result ? result.status : null;
+  redirect(
+    `/member/learn/practice?result=${result.outcome === "invalid" || result.outcome === "not_found" ? "error" : status === "waitlisted" ? "waitlisted" : status === "payment_pending" ? "payment-pending" : "reserved"}`,
+  );
+}
+
+export async function cancelGroupMockAction(formData: FormData) {
+  const { userId } = await requireMember();
+  const result = await cancelGroupMockSeat(
+    userId,
+    String(formData.get("bookingId")),
+    Number(formData.get("version")),
+  );
+  redirect(
+    `/member/learn/practice?result=${result.outcome === "changed" ? "seat-cancelled" : "error"}`,
+  );
+}
 
 export async function requestServiceAction(formData: FormData) {
   const { userId } = await requireMember();

@@ -1,7 +1,9 @@
 # OfferLab MVP Product Brief
 
+> **Document status:** Historical product hypothesis; non-binding. This document is retained for capability context and does not define current scope, payments, community structure or implementation requirements. Use `current-product-contract.md`, `product-strategy-and-roadmap.md` and `../architecture/founder-decisions.md` for current decisions.
+
 **Document version:** 0.1  
-**Status:** Draft source of truth  
+**Status:** Historical draft; non-binding
 **Primary owner:** Founder / Product
 
 > **Current experience direction:** This draft predates `experience-principles.md`. Its scope and research context remain useful, but guided journeys, fixed pathways, central next-action UX and progress-led defaults are superseded by the approved workspace-first principles.

@@ -26,7 +26,7 @@ describe("answer bank rules", () => {
         ready: true,
       }),
     ).toMatchObject({ ok: true }));
-  it("applies family-aware Ready validation", () => {
+  it("allows a complete answer to be prepared without a separate evidence story", () => {
     expect(
       parseAnswer({
         customQuestion: "Why us?",
@@ -48,7 +48,7 @@ describe("answer bank rules", () => {
         storyIds: [],
         ready: true,
       }),
-    ).toMatchObject({ ok: false });
+    ).toMatchObject({ ok: true });
   });
   it("rejects duplicate stories", () => {
     const id = "20000000-0000-4000-8000-000000000001";

@@ -10,3 +10,5 @@ Promote the first administrator through a confirmed one-time command using an ex
 ## Consequences
 
 No user-editable metadata or silent multi-admin path exists. General multi-admin management is deferred and requires an approved design.
+
+This role is not a substitute for a future coach/reviewer role. Vetted coach access requires a separate decision covering assignment, consent, least privilege and audit; coaches must not be promoted to administrator merely to read or review member content.

@@ -366,6 +366,9 @@ export const answerCoachReviews = appSchema.table(
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
     followUpQuestions: jsonb("follow_up_questions").$type<string[]>().default([]).notNull(),
     id: uuid("id").defaultRandom().primaryKey(),
+    inputTokens: integer("input_tokens"),
+    latencyMs: integer("latency_ms"),
+    modelRequested: boolean("model_requested").default(false).notNull(),
     ownerUserId: uuid("owner_user_id")
       .notNull()
       .references(() => appUsers.id, { onDelete: "restrict" }),
@@ -373,7 +376,10 @@ export const answerCoachReviews = appSchema.table(
     promptVersion: integer("prompt_version").default(1).notNull(),
     providerId: text("provider_id").notNull(),
     providerMode: text("provider_mode").notNull(),
+    providerNoticeVersion: text("provider_notice_version"),
+    outputTokens: integer("output_tokens"),
     strengths: jsonb("strengths").$type<string[]>().default([]).notNull(),
+    suggestedAnswer: text("suggested_answer"),
     summary: text("summary").notNull(),
     unsupportedClaims: jsonb("unsupported_claims").$type<string[]>().default([]).notNull(),
   },
@@ -562,3 +568,94 @@ export const serviceRequests = appSchema.table(
   },
   (table) => [unique("service_request_identity_unique").on(table.ownerUserId, table.offeringId)],
 );
+
+export const groupMockMaterials = appSchema.table("group_mock_material", {
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  debriefQuestions: text("debrief_questions").array().notNull(),
+  deliverable: text("deliverable").notNull(),
+  difficulty: text("difficulty").notNull(),
+  exerciseType: text("exercise_type").notNull(),
+  followUpMinutes: integer("follow_up_minutes").notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  informationPack: text("information_pack").notNull(),
+  observerRubric: text("observer_rubric").notNull(),
+  originalityConfirmedAt: timestamp("originality_confirmed_at", {
+    mode: "date",
+    withTimezone: true,
+  }).notNull(),
+  originalityConfirmedByUserId: uuid("originality_confirmed_by_user_id").references(
+    () => appUsers.id,
+    { onDelete: "restrict" },
+  ),
+  participantInstructions: text("participant_instructions").notNull(),
+  preparationMinutes: integer("preparation_minutes").notNull(),
+  problemType: text("problem_type").notNull(),
+  publicationState: text("publication_state").default("draft").notNull(),
+  recommendedGroupSize: integer("recommended_group_size").notNull(),
+  recommendedMinutes: integer("recommended_minutes").notNull(),
+  scenario: text("scenario").notNull(),
+  sector: text("sector").notNull(),
+  skills: text("skills").array().notNull(),
+  sourceKind: text("source_kind").default("offerlab_original").notNull(),
+  stableKey: text("stable_key").notNull().unique(),
+  summary: text("summary").notNull(),
+  title: text("title").notNull(),
+  discussionMinutes: integer("discussion_minutes").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export const groupMockSessions = appSchema.table("group_mock_session", {
+  accessMode: text("access_mode").notNull(),
+  capacity: integer("capacity").notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  endsAt: timestamp("ends_at", { mode: "date", withTimezone: true }).notNull(),
+  facilitatorMode: text("facilitator_mode").default("offerlab").notNull(),
+  id: uuid("id").defaultRandom().primaryKey(),
+  materialId: uuid("material_id")
+    .notNull()
+    .references(() => groupMockMaterials.id, { onDelete: "restrict" }),
+  minimumParticipants: integer("minimum_participants").notNull(),
+  paymentUrl: text("payment_url"),
+  pricePence: integer("price_pence"),
+  startsAt: timestamp("starts_at", { mode: "date", withTimezone: true }).notNull(),
+  state: text("state").default("draft").notNull(),
+  title: text("title").notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});
+
+export const groupMockBookings = appSchema.table(
+  "group_mock_booking",
+  {
+    ageEligibilityConfirmedAt: timestamp("age_eligibility_confirmed_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    participationRulesVersion: text("participation_rules_version").notNull(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => groupMockSessions.id, { onDelete: "restrict" }),
+    status: text("status").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [unique("group_mock_booking_identity_unique").on(table.ownerUserId, table.sessionId)],
+);
+
+export const groupMockSessionMeetings = appSchema.table("group_mock_session_meeting", {
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  joinUrl: text("join_url").notNull(),
+  joiningInstructions: text("joining_instructions"),
+  provider: text("provider").notNull(),
+  sessionId: uuid("session_id")
+    .primaryKey()
+    .references(() => groupMockSessions.id, { onDelete: "cascade" }),
+  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+  version: integer("version").default(1).notNull(),
+});

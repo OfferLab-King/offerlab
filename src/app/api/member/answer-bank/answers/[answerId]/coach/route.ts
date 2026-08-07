@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import {
+  readAnswerCoachConfiguration,
+  readAnswerCoachUsage,
   readAnswerReviews,
   reviewMemberAnswer,
   updateAnswerReviewComment,
@@ -12,7 +15,9 @@ export async function GET(_: Request, context: { params: Promise<{ answerId: str
   const access = await owner();
   if ("response" in access) return access.response;
   return NextResponse.json({
+    configuration: readAnswerCoachConfiguration(),
     reviews: await readAnswerReviews(access.ownerId, (await context.params).answerId),
+    usage: await readAnswerCoachUsage(access.ownerId),
   });
 }
 export async function POST(request: Request, context: { params: Promise<{ answerId: string }> }) {
@@ -20,10 +25,13 @@ export async function POST(request: Request, context: { params: Promise<{ answer
   const access = await owner();
   if ("response" in access) return access.response;
   try {
-    const result = await reviewMemberAnswer(access.ownerId, (await context.params).answerId);
-    return result
-      ? NextResponse.json({ review: result })
-      : NextResponse.json(generic, { status: 404 });
+    const text = await request.text();
+    const body = z
+      .object({ modelConsent: z.boolean().optional().default(false) })
+      .strict()
+      .parse(text ? JSON.parse(text) : {});
+    const result = await reviewMemberAnswer(access.ownerId, (await context.params).answerId, body);
+    return result ? NextResponse.json(result) : NextResponse.json(generic, { status: 404 });
   } catch (error) {
     const code = error instanceof Error ? error.message : "";
     if (code === "answer_coach_disabled")
@@ -40,6 +48,11 @@ export async function POST(request: Request, context: { params: Promise<{ answer
       return NextResponse.json(
         { message: "You have reached this month's Answer Coach pilot limit." },
         { status: 429 },
+      );
+    if (code === "answer_coach_consent_required")
+      return NextResponse.json(
+        { message: "Confirm the AI data notice before requesting this review." },
+        { status: 422 },
       );
     return NextResponse.json(generic, { status: 422 });
   }

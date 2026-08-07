@@ -29,6 +29,7 @@ export const answerCoachReviewSchema = z
     comments: z.array(answerCoachCommentSchema).min(1).max(8),
     followUpQuestions: z.array(z.string().min(1).max(300)).max(3),
     strengths: z.array(z.string().min(1).max(300)).max(2),
+    suggestedAnswer: z.string().min(1).max(8000).nullable(),
     summary: z.string().min(1).max(300),
     unsupportedClaimsDetected: z.array(z.string().min(1).max(300)).max(3),
   })
@@ -48,13 +49,25 @@ export type AnswerCoachInput = Readonly<{
   draftAnswer: string;
   keyPoints: string;
   question: string;
+  questionFamily: string;
   stories: readonly CoachStory[];
+}>;
+
+export type AnswerCoachProviderUsage = Readonly<{
+  inputTokens: number;
+  latencyMs: number;
+  outputTokens: number;
+}>;
+
+export type AnswerCoachProviderResult = Readonly<{
+  review: unknown;
+  usage: AnswerCoachProviderUsage | null;
 }>;
 
 export interface AnswerCoachProvider {
   readonly id: string;
   readonly mode: "local_rubric" | "model";
-  review(input: AnswerCoachInput): Promise<unknown>;
+  review(input: AnswerCoachInput): Promise<AnswerCoachProviderResult>;
 }
 
 export function validateProviderReview(value: unknown, answer: string): AnswerCoachReview {

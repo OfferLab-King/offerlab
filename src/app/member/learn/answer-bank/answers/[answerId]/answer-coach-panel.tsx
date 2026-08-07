@@ -1,6 +1,9 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
-import type { StoredReview } from "../../../../../../modules/answer-coach/infrastructure/review-repository";
+import type {
+  AnswerCoachUsage,
+  StoredReview,
+} from "../../../../../../modules/answer-coach/infrastructure/review-repository";
 
 function HighlightedAnswer({
   review,
@@ -51,13 +54,20 @@ function HighlightedAnswer({
 
 export function AnswerCoachPanel({
   answerId,
+  configuration,
   initialReviews,
+  initialUsage,
 }: {
   answerId: string;
+  configuration: Readonly<{ modelAvailable: boolean }>;
   initialReviews: StoredReview[];
+  initialUsage: AnswerCoachUsage;
 }) {
   const [pending, setPending] = useState(false),
     [error, setError] = useState(""),
+    [status, setStatus] = useState(""),
+    [modelConsent, setModelConsent] = useState(false),
+    [usage, setUsage] = useState(initialUsage),
     [reviews, setReviews] = useState(initialReviews);
   const [reviewIndex, setReviewIndex] = useState(0),
     [selected, setSelected] = useState<string | null>(initialReviews[0]?.comments[0]?.id ?? null),
@@ -67,8 +77,11 @@ export function AnswerCoachPanel({
   async function runReview() {
     setPending(true);
     setError("");
+    setStatus("");
     try {
       const response = await fetch(`/api/member/answer-bank/answers/${answerId}/coach`, {
+        body: JSON.stringify({ modelConsent }),
+        headers: { "content-type": "application/json" },
         method: "POST",
       });
       const result = await response.json();
@@ -77,6 +90,12 @@ export function AnswerCoachPanel({
       setReviews((current) => [result.review, ...current]);
       setReviewIndex(0);
       setSelected(result.review.comments[0]?.id ?? null);
+      setUsage(result.usage);
+      setStatus(
+        result.fallbackUsed
+          ? "The AI service was unavailable, so this review used the local rubric instead."
+          : "Review saved. Your source answer was not changed.",
+      );
       setMobileOpen(true);
     } catch (caught) {
       setError(
@@ -125,7 +144,9 @@ export function AnswerCoachPanel({
     <section aria-labelledby="answer-coach-title" className="answer-coach-review-mode">
       <header className="coach-toolbar">
         <div>
-          <p className="eyebrow">Answer Coach · local rubric pilot</p>
+          <p className="eyebrow">
+            Answer Coach · {configuration.modelAvailable ? "AI review pilot" : "local rubric pilot"}
+          </p>
           <h2 id="answer-coach-title">Review mode</h2>
         </div>
         <div className="coach-toolbar-actions">
@@ -149,8 +170,20 @@ export function AnswerCoachPanel({
               </select>
             </label>
           )}
-          <button disabled={pending} onClick={() => void runReview()} type="button">
-            {pending ? "Reviewing…" : review ? "Review again" : "Review this answer"}
+          <button
+            disabled={pending || (configuration.modelAvailable && !modelConsent)}
+            onClick={() => void runReview()}
+            type="button"
+          >
+            {pending
+              ? "Reviewing…"
+              : review
+                ? configuration.modelAvailable
+                  ? "Review again with AI"
+                  : "Review again"
+                : configuration.modelAvailable
+                  ? "Review with AI"
+                  : "Review this answer"}
           </button>
           {review && (
             <button
@@ -163,11 +196,38 @@ export function AnswerCoachPanel({
           )}
         </div>
       </header>
-      <p className="coach-privacy-note">
-        Uses only this answer and up to three linked stories. The local fallback sends nothing to an
-        AI provider. Reviews are saved; your answer is never edited automatically.
-      </p>
+      <div className="coach-privacy-note">
+        {configuration.modelAvailable ? (
+          <label className="coach-consent">
+            <input
+              checked={modelConsent}
+              onChange={(event) => setModelConsent(event.target.checked)}
+              type="checkbox"
+            />
+            <span>
+              I agree to send this answer, its question and key points, and up to three linked
+              stories to OfferLab’s AI provider for this review. I have removed confidential or
+              identifying information.
+            </span>
+          </label>
+        ) : (
+          <p>
+            Uses only this answer and up to three linked stories. The local fallback sends nothing
+            to an AI provider.
+          </p>
+        )}
+        <p>
+          This is automated coaching, not a human review. Reviews are saved; your answer is never
+          edited automatically. {usage.monthlyLimit - usage.monthlyUsed} of {usage.monthlyLimit}{" "}
+          pilot reviews remain this month.
+        </p>
+      </div>
       {error && <p role="alert">{error}</p>}
+      {status && (
+        <p className="coach-status" role="status">
+          {status}
+        </p>
+      )}
       {!review ? (
         <div className="coach-empty">
           <h3>Focused comments, anchored to your draft</h3>
@@ -193,7 +253,12 @@ export function AnswerCoachPanel({
               />
               <footer>
                 Answer version {review.answerVersion} · reviewed{" "}
-                {new Date(review.createdAt).toLocaleString("en-GB")}
+                {new Date(review.createdAt).toLocaleString("en-GB")} ·{" "}
+                {review.providerMode === "model"
+                  ? "AI review"
+                  : review.modelRequested
+                    ? "Local fallback review"
+                    : "Local rubric review"}
               </footer>
             </div>
           </article>

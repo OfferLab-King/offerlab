@@ -1,6 +1,8 @@
 # OfferLab development foundation
 
-This repository contains the approved technical foundation for the OfferLab modular monolith. Product behavior from Vertical Slice 01 has not yet been implemented.
+This repository contains the OfferLab modular monolith and its implemented preparation workspace. Current capabilities include authentication and onboarding, applications, the Answer and Story Bank, preparation resources and paths, annotated coaching cases, moderated Recruitment Intelligence, manually operated practice/feedback pilots, and a bounded Answer Coach review mode.
+
+Read `docs/product/current-product-contract.md` for the current goal, approved capability boundary and explicit restrictions. Vertical Slice 01 is retained as an implemented historical foundation rather than the current scope limit.
 
 ## Prerequisites
 
@@ -94,4 +96,4 @@ Legacy invitation schema is retained but inactive; registration does not read or
 - **Staging:** separate Vercel and Supabase projects in London; synthetic data only.
 - **Production:** Vercel Node compute and Supabase Pro in London; no staging or local credentials.
 
-See `docs/architecture/founder-decisions.md`, `docs/product/product-strategy-and-roadmap.md`, `docs/product/experience-principles.md`, `docs/product/ai-product-strategy.md`, `docs/architecture/overview.md`, and `docs/operations/` before implementing product behavior.
+See `docs/architecture/founder-decisions.md`, `docs/product/current-product-contract.md`, `docs/product/product-strategy-and-roadmap.md`, `docs/product/experience-principles.md`, `docs/product/ai-product-strategy.md`, `docs/architecture/overview.md`, and `docs/operations/` before implementing product behavior.

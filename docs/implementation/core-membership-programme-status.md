@@ -1,6 +1,6 @@
 # Core membership programme status
 
-> **Historical implementation ledger:** This is not the current product roadmap. Use `../product/product-strategy-and-roadmap.md` for current priorities. Increment numbering here belongs to an earlier programme and must not be used to infer the status or priority of later Answer Bank work.
+> **Frozen historical implementation ledger (22 July 2026):** This table records what was true at that checkpoint and is intentionally not updated as later capabilities ship. “Not started” below does not describe the current repository. Do not use this file for current scope or implementation status; use `../product/current-product-contract.md`, current data dictionaries and the codebase.
 
 This ledger records local implementation progress for Increments 6–12. It contains no credentials, personal content, provider identifiers, or generated request payloads.
 

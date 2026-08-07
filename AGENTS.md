@@ -2,21 +2,21 @@
 
 ## Product context
 
-OfferLab is a responsive preparation workspace for UK graduate applicants. It provides clean structures for applications, evidence, answers and resources; it is not a course or wizard. The first delivery scope is Vertical Slice 01. The technical foundation must remain a modular monolith. Bounded AI is permitted under `docs/product/ai-product-strategy.md`; core records, navigation and deterministic recommendations must remain available without it.
+OfferLab is a responsive preparation workspace for UK graduate applicants. It provides clean structures for applications, evidence, answers and resources; it is not a course or wizard. The current approved capability boundary is summarised in `docs/product/current-product-contract.md`; Vertical Slice 01 is an implemented historical baseline, not the current scope limit. The technical foundation must remain a modular monolith. Bounded AI is permitted under `docs/product/ai-product-strategy.md`; core records, navigation and deterministic recommendations must remain available without it.
 
 ## Sources of truth
 
 Read these before changing behavior:
 
 1. `docs/architecture/founder-decisions.md` — approved clarifications; highest product authority for implementation.
-2. `docs/product/product-strategy-and-roadmap.md` — binding product positioning and priority.
-3. `docs/product/experience-principles.md` — binding product and UX defaults.
-4. `docs/product/ui-ux-design-system.md` — binding visual consistency and accessibility standard.
-5. `docs/product/ai-product-strategy.md` — binding AI product, privacy, evaluation and cost policy.
-6. `docs/product/vertical-slice-01.md` — binding first implementation scope.
-7. `docs/product/mvp-brief.md` — broader product direction, subject to the current product policies.
-8. `docs/product/critical-user-journey.md` and `docs/product/screen-map.md` — capability and screen context, not mandatory sequences.
-9. `docs/architecture/decisions/` — accepted technical decisions.
+2. `docs/product/current-product-contract.md` — consolidated current goal, capability boundary and restrictions; it records, but cannot create, founder decisions.
+3. `docs/product/product-strategy-and-roadmap.md` — binding product positioning and priority.
+4. `docs/product/experience-principles.md` — binding product and UX defaults.
+5. `docs/product/ui-ux-design-system.md` — binding visual consistency and accessibility standard.
+6. `docs/product/ai-product-strategy.md` — binding AI product, privacy, evaluation and cost policy.
+7. `docs/architecture/decisions/` and current data dictionaries — accepted technical and implemented-domain contracts.
+8. `docs/product/vertical-slice-01.md` — implemented historical foundation; not the current scope boundary.
+9. `docs/product/mvp-brief.md`, `docs/product/critical-user-journey.md`, and `docs/product/screen-map.md` — historical hypotheses and capability context only.
 
 If sources conflict, do not guess. Apply the precedence above, document the conflict, and ask the founder when it materially affects behavior, privacy, security, schema, or scope.
 
@@ -33,7 +33,7 @@ If sources conflict, do not guess. Apply the precedence above, document the conf
 
 Module contracts are described in `docs/architecture/overview.md`. Route handlers and React components must not contain domain rules or issue ad hoc database queries.
 
-The declared modules are identity and access, member profile, applications, taxonomy, preparation resources, recommendations, dashboard, administration, audit, analytics, and observability. Modules may use shared primitives and declared public module APIs, but must not import another module's internal persistence implementation.
+The declared modules are identity and access, member profile, applications, Answer Bank, taxonomy, preparation resources, learning paths, recommendations, practice services, Recruitment Intelligence, Answer Coach, dashboard, administration, audit, analytics, and observability. Modules may use shared primitives and declared public module APIs, but must not import another module's internal persistence implementation.
 
 ## Toolchain
 
@@ -75,7 +75,7 @@ pnpm security:audit
 
 ## Test users
 
-The seed creates two deterministic, non-login identities for database isolation tests. They use the reserved `.invalid` domain and have no passwords. Until authentication UI is implemented, create a login-capable local identity through Supabase Studio at `http://127.0.0.1:55323`; never reuse real credentials. Internal user linking must be performed by the application flow added in Vertical Slice 01, not by manually copying production data.
+The seed creates deterministic, non-login identities for database isolation tests. They use the reserved `.invalid` domain and have no passwords. Create login-capable local identities through the application registration flow; Supabase Studio at `http://127.0.0.1:55323` may be used to inspect local-only authentication state. Never reuse real credentials or manually copy production data.
 
 ## Environment variables
 
@@ -104,7 +104,7 @@ The seed creates two deterministic, non-login identities for database isolation 
 
 - Do not perform unrelated refactoring.
 - Do not introduce microservices, Kubernetes, queues, caches, a separate API deployment, AI infrastructure, or speculative abstractions.
-- Do not implement features outside the approved vertical slice.
+- Do not implement features outside the capability boundary and decision requirements in `docs/product/current-product-contract.md`.
 - Update tests whenever behavior changes.
 - Record significant architectural changes as an ADR before relying on them.
 - Preserve stable internal keys; display labels are not identifiers.

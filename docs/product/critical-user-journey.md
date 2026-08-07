@@ -1,23 +1,25 @@
 # OfferLab Critical User Journey
 
+> **Document status:** Historical journey hypothesis; non-binding. Purchase, community-access and mandatory sequence language below does not describe the current implementation. Use `current-product-contract.md` and the approved founder decisions for current access, contribution and commercial boundaries.
+
 **Document version:** 0.1  
 **Experience status:** Capability context only. `experience-principles.md` supersedes any implication that this sequence is mandatory or should dictate a wizard-like interface. Members may enter and use workspace areas directly.
 **Priority status:** `product-strategy-and-roadmap.md` governs current sequencing and validation priorities.
-**Status:** Draft for architecture review  
+**Status:** Historical draft; non-binding
 **Primary owner:** Founder / Product  
-**Related source of truth:** `mvp-brief.md`
+**Related historical context:** `mvp-brief.md`
 
 ---
 
 ## 1. Purpose
 
-This document defines the primary end-to-end journey that the OfferLab MVP must support.
+This document records an earlier primary end-to-end journey hypothesis for the OfferLab MVP.
 
 It is intentionally focused on one core outcome:
 
 > A graduate applicant joins OfferLab, records an active application, receives stage-relevant preparation guidance, uses premium learning resources, reads current community intelligence, and later contributes a structured recruitment report.
 
-This journey should guide:
+This journey was originally intended to guide:
 
 - UX design
 - architecture decisions

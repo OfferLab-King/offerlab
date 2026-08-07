@@ -1,7 +1,9 @@
 # ADR 0017: Bounded Phase 1 services and coaching prototype
 
-**Status:** Accepted  
+**Status:** Accepted; community consequence partially superseded
 **Date:** 2026-07-24
+
+> The 27 July 2026 Recruitment Intelligence discussion decision in `../founder-decisions.md` supersedes only this ADR's blanket deferral of open community features. It approves a bounded, moderated, member-only comment layer beneath reports while continuing to exclude general social posts and other open-network mechanics.
 
 ## Context
 
@@ -19,4 +21,4 @@ All new member-owned rows are owner-scoped in repositories and protected by forc
 
 ## Consequences
 
-The workflows are usable and measurable without implying automation that does not exist. Operations require administrator moderation and manual follow-up. A production model provider, payments, automated matching, open community features and a tutor marketplace each require a later product and architecture decision.
+The workflows are usable and measurable without implying automation that does not exist. Operations require administrator moderation and manual follow-up. The bounded Recruitment Intelligence discussion layer is governed by the later founder decision. A production model provider, payments, automated matching, broader community features and a tutor marketplace each require a later product and architecture decision.

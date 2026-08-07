@@ -27,9 +27,14 @@ Give members clean structures for applications, evidence, answers and resources.
 
 ### Answer Bank
 
-The Answer Bank is a workspace where members save reusable evidence stories, prepare answers to interview questions and browse common questions. A story may support multiple answers, and an answer may use one or more stories.
+The Answer Bank is one question-first workspace. It opens with a personal introduction, the three
+motivation questions and ten competency questions. Each numbered question expands directly into a
+plain answer field and shows whether it is Not started, Draft or Prepared. The list itself is the
+member's stored answer bank.
 
-Its primary sections are Stories, Answers and Questions. An overview is optional and should exist only when it provides practical value. Coverage and recommended actions are supporting information, not the main structure. Do not force a story → competency → answer → coverage sequence.
+Evidence stories remain optional supporting records. Do not require a story, competency mapping,
+application, stage, answer title or separate overview before someone can write an answer. Avoid
+nested Answer Bank navigation and filter controls for the primary fourteen-question collection.
 
 ### Preparation Plans
 

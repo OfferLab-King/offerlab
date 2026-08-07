@@ -35,4 +35,36 @@ describe("parseServerEnvironment", () => {
       }),
     ).not.toThrow();
   });
+
+  it("requires complete DeepSeek configuration and a separate production data approval", () => {
+    const deepSeek = {
+      ...validEnvironment,
+      ANSWER_COACH_PROVIDER: "deepseek",
+      DEEPSEEK_API_KEY: "test-api-key",
+      DEEPSEEK_BASE_URL: "https://api.deepseek.com",
+      DEEPSEEK_MODEL: "deepseek-v4-flash",
+    };
+    expect(() => parseServerEnvironment(deepSeek)).not.toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...deepSeek,
+        APP_ENV: "production",
+        AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+        DATABASE_URL: "postgresql://runtime.invalid/database",
+        IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("ANSWER_COACH_MODEL_DATA_APPROVED");
+    expect(() =>
+      parseServerEnvironment({
+        ...deepSeek,
+        ANSWER_COACH_MODEL_DATA_APPROVED: "true",
+        APP_ENV: "production",
+        AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+        DATABASE_URL: "postgresql://runtime.invalid/database",
+        IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        NODE_ENV: "production",
+      }),
+    ).not.toThrow();
+  });
 });

@@ -12,8 +12,14 @@ allowBuilds:
 
 # Security override for GHSA-qx2v-qp2m-jg93 in Next.js's pinned PostCSS dependency.
 minimumReleaseAgeExclude:
+  - brace-expansion@1.1.18
+  - brace-expansion@5.0.9
+  - js-yaml@4.3.1
   - postcss@8.5.20
 
 overrides:
+  "brace-expansion@^1.0.0": 1.1.18
+  "brace-expansion@^5.0.0": 5.0.9
+  "js-yaml@^4.0.0": 4.3.1
   postcss: 8.5.20
   sharp: 0.35.0
