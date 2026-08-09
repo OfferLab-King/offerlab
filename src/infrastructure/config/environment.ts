@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isLoopbackUrl } from "./local-development";
 
 export const environmentKeys = [
   "NODE_ENV",
@@ -10,11 +11,24 @@ export const environmentKeys = [
   "ANSWER_COACH_ENABLED",
   "ANSWER_COACH_PROVIDER",
   "ANSWER_COACH_MODEL_DATA_APPROVED",
+  "CAREER_DOCUMENT_AI_ENABLED",
+  "CAREER_DOCUMENT_PROVIDER",
+  "CAREER_DOCUMENT_MODEL_DATA_APPROVED",
+  "CAREER_DOCUMENT_REVIEW_HOSTED_ACCOUNT_MONTHLY_LIMIT",
+  "CAREER_DOCUMENT_REVIEW_MEMBER_DAILY_LIMIT",
+  "CAREER_DOCUMENT_REVIEW_MEMBER_MONTHLY_LIMIT",
   "DEEPSEEK_API_KEY",
   "DEEPSEEK_BASE_URL",
   "DEEPSEEK_MODEL",
   "DATABASE_URL",
   "IDENTITY_SYNC_DATABASE_URL",
+  "JSEARCH_API_KEY",
+  "JSEARCH_ACCOUNT_MONTHLY_LIMIT",
+  "JSEARCH_COMMERCIAL_USE_APPROVED",
+  "JSEARCH_ENABLED",
+  "JSEARCH_MEMBER_DAILY_LIMIT",
+  "JSEARCH_MEMBER_MONTHLY_LIMIT",
+  "LOCAL_AUTH_BYPASS_ENABLED",
   "LOG_LEVEL",
 ] as const;
 
@@ -22,6 +36,13 @@ const optionalUrl = z.preprocess((value) => (value === "" ? undefined : value), 
 const optionalString = z.preprocess(
   (value) => (value === "" ? undefined : value),
   z.string().min(1).optional(),
+);
+const optionalPositiveInteger = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z
+    .string()
+    .regex(/^(?:[1-9]\d{0,4}|100000)$/u)
+    .optional(),
 );
 
 const serverEnvironmentSchema = z
@@ -31,11 +52,24 @@ const serverEnvironmentSchema = z
     ANSWER_COACH_MODEL_DATA_APPROVED: z.enum(["true", "false"]).optional(),
     ANSWER_COACH_PROVIDER: z.enum(["local", "deepseek"]).optional(),
     AUTH_RATE_LIMIT_SECRET: optionalString,
+    CAREER_DOCUMENT_AI_ENABLED: z.enum(["true", "false"]).optional(),
+    CAREER_DOCUMENT_MODEL_DATA_APPROVED: z.enum(["true", "false"]).optional(),
+    CAREER_DOCUMENT_PROVIDER: z.enum(["local", "deepseek"]).optional(),
+    CAREER_DOCUMENT_REVIEW_HOSTED_ACCOUNT_MONTHLY_LIMIT: optionalPositiveInteger,
+    CAREER_DOCUMENT_REVIEW_MEMBER_DAILY_LIMIT: optionalPositiveInteger,
+    CAREER_DOCUMENT_REVIEW_MEMBER_MONTHLY_LIMIT: optionalPositiveInteger,
     DATABASE_URL: optionalString,
     DEEPSEEK_API_KEY: optionalString,
     DEEPSEEK_BASE_URL: optionalUrl,
     DEEPSEEK_MODEL: optionalString,
     IDENTITY_SYNC_DATABASE_URL: optionalString,
+    JSEARCH_ACCOUNT_MONTHLY_LIMIT: optionalPositiveInteger,
+    JSEARCH_API_KEY: optionalString,
+    JSEARCH_COMMERCIAL_USE_APPROVED: z.enum(["true", "false"]).optional(),
+    JSEARCH_ENABLED: z.enum(["true", "false"]).optional(),
+    JSEARCH_MEMBER_DAILY_LIMIT: optionalPositiveInteger,
+    JSEARCH_MEMBER_MONTHLY_LIMIT: optionalPositiveInteger,
+    LOCAL_AUTH_BYPASS_ENABLED: z.enum(["true", "false"]).optional(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     NEXT_PUBLIC_APP_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
@@ -43,6 +77,18 @@ const serverEnvironmentSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]),
   })
   .superRefine((environment, context) => {
+    if (
+      environment.LOCAL_AUTH_BYPASS_ENABLED === "true" &&
+      (environment.APP_ENV !== "local" ||
+        environment.NODE_ENV !== "development" ||
+        !isLoopbackUrl(environment.NEXT_PUBLIC_APP_URL))
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "LOCAL_AUTH_BYPASS_ENABLED=true is allowed only for loopback local development",
+        path: ["LOCAL_AUTH_BYPASS_ENABLED"],
+      });
+    }
     if (environment.APP_ENV === "production") {
       for (const key of [
         "DATABASE_URL",
@@ -67,12 +113,62 @@ const serverEnvironmentSchema = z
           path: ["ANSWER_COACH_MODEL_DATA_APPROVED"],
         });
       }
+      if (
+        environment.CAREER_DOCUMENT_AI_ENABLED !== "false" &&
+        environment.CAREER_DOCUMENT_PROVIDER === "deepseek" &&
+        environment.CAREER_DOCUMENT_MODEL_DATA_APPROVED !== "true"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "CAREER_DOCUMENT_MODEL_DATA_APPROVED=true is required for DeepSeek document review in production",
+          path: ["CAREER_DOCUMENT_MODEL_DATA_APPROVED"],
+        });
+      }
+      if (
+        environment.CAREER_DOCUMENT_AI_ENABLED !== "false" &&
+        environment.CAREER_DOCUMENT_PROVIDER === "deepseek" &&
+        environment.DEEPSEEK_BASE_URL &&
+        new URL(environment.DEEPSEEK_BASE_URL).protocol !== "https:"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "DEEPSEEK_BASE_URL must use HTTPS for production document review",
+          path: ["DEEPSEEK_BASE_URL"],
+        });
+      }
+      if (
+        environment.JSEARCH_ENABLED === "true" &&
+        environment.JSEARCH_COMMERCIAL_USE_APPROVED !== "true"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "JSEARCH_COMMERCIAL_USE_APPROVED=true is required for JSearch in production",
+          path: ["JSEARCH_COMMERCIAL_USE_APPROVED"],
+        });
+      }
     }
     if (environment.ANSWER_COACH_PROVIDER === "deepseek") {
       for (const key of ["DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL"] as const) {
         if (!environment[key])
           context.addIssue({ code: "custom", message: `${key} is required`, path: [key] });
       }
+    }
+    if (
+      environment.CAREER_DOCUMENT_AI_ENABLED !== "false" &&
+      environment.CAREER_DOCUMENT_PROVIDER === "deepseek"
+    ) {
+      for (const key of ["DEEPSEEK_API_KEY", "DEEPSEEK_BASE_URL", "DEEPSEEK_MODEL"] as const) {
+        if (!environment[key])
+          context.addIssue({ code: "custom", message: `${key} is required`, path: [key] });
+      }
+    }
+    if (environment.JSEARCH_ENABLED === "true" && !environment.JSEARCH_API_KEY) {
+      context.addIssue({
+        code: "custom",
+        message: "JSEARCH_API_KEY is required when JSearch is enabled",
+        path: ["JSEARCH_API_KEY"],
+      });
     }
   });
 

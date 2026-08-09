@@ -81,6 +81,7 @@ async function reserveAvailablePort(): Promise<string> {
 
 const e2ePort = await reserveAvailablePort();
 const e2eAnswerCoachProvider = process.env.E2E_ANSWER_COACH_PROVIDER ?? "local";
+const e2eUsesDeepSeek = e2eAnswerCoachProvider === "deepseek";
 const e2eDistDirectory = `.next-e2e-${e2ePort}`;
 const generatedConfigurationFiles = ["next-env.d.ts", "tsconfig.json"].map((path) => ({
   contents: readFileSync(path),
@@ -90,18 +91,17 @@ const environment = {
   ...process.env,
   APP_ENV: process.env.APP_ENV ?? "local",
   ANSWER_COACH_PROVIDER: e2eAnswerCoachProvider,
+  CAREER_DOCUMENT_PROVIDER: "local",
   DATABASE_MIGRATION_URL: process.env.DATABASE_MIGRATION_URL ?? databaseUrl,
   AUTH_RATE_LIMIT_SECRET: process.env.AUTH_RATE_LIMIT_SECRET ?? "local-e2e-rate-limit-secret",
   DATABASE_URL: process.env.DATABASE_URL ?? roleDatabaseUrl("offerlab_runtime_login"),
-  DEEPSEEK_API_KEY:
-    e2eAnswerCoachProvider === "deepseek" ? "e2e-not-a-real-key" : process.env.DEEPSEEK_API_KEY,
-  DEEPSEEK_BASE_URL:
-    e2eAnswerCoachProvider === "deepseek" ? "http://127.0.0.1:9" : process.env.DEEPSEEK_BASE_URL,
-  DEEPSEEK_MODEL:
-    e2eAnswerCoachProvider === "deepseek" ? "deepseek-e2e" : process.env.DEEPSEEK_MODEL,
+  DEEPSEEK_API_KEY: e2eUsesDeepSeek ? "e2e-not-a-real-key" : process.env.DEEPSEEK_API_KEY,
+  DEEPSEEK_BASE_URL: e2eUsesDeepSeek ? "http://127.0.0.1:9" : process.env.DEEPSEEK_BASE_URL,
+  DEEPSEEK_MODEL: e2eUsesDeepSeek ? "deepseek-e2e" : process.env.DEEPSEEK_MODEL,
   IDENTITY_SYNC_DATABASE_URL:
     process.env.IDENTITY_SYNC_DATABASE_URL ?? roleDatabaseUrl("offerlab_identity_sync_login"),
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
+  JSEARCH_ENABLED: "false",
   NEXT_DIST_DIR: e2eDistDirectory,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${e2ePort}`,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:

@@ -1,5 +1,26 @@
 # Authentication operations
 
+## Local test-access bypass
+
+`pnpm dev:bypass` is an explicit developer convenience for local UI testing. It starts the Next.js
+development server on `127.0.0.1`, supplies a dedicated deterministic seed member as the current
+member, and supplies a synthetic completed onboarding profile when that member has no stored profile.
+It does not mint a Supabase session, add a login-capable seed identity, or store a default password.
+
+The bypass fails closed unless all of these conditions hold:
+
+- `LOCAL_AUTH_BYPASS_ENABLED=true`;
+- `APP_ENV=local`;
+- `NODE_ENV=development`;
+- `NEXT_PUBLIC_APP_URL` is loopback; and
+- the request `Host` is loopback.
+
+The environment schema rejects the flag in test, staging and production. Standard `pnpm dev` does
+not enable it. The bypass identity is separate from integration-test identities so test cleanup
+cannot remove local workspace records. Run `pnpm db:reset` before first use so the deterministic
+member exists. Never expose
+the local Supabase stack or bypass development server to an untrusted network.
+
 ## Credential and role boundaries
 
 `DATABASE_MIGRATION_URL` is deploy/CLI-only. The running Next.js application never imports or reads it. `DATABASE_URL` authenticates as a non-owner, non-superuser, non-`BYPASSRLS` login which may assume only `offerlab_app`. `IDENTITY_SYNC_DATABASE_URL` authenticates as a separate non-owner login which may assume only `offerlab_identity_sync`; that group has EXECUTE on the reviewed authentication gateway functions and no direct table or DDL privileges.

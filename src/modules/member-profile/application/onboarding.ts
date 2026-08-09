@@ -1,6 +1,10 @@
 import "server-only";
 
 import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture";
+import {
+  isLocalAuthBypassEnabled,
+  localAuthBypassMember,
+} from "../../../infrastructure/config/local-development";
 import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
 import {
   parseOnboardingInput,
@@ -14,7 +18,27 @@ import {
 } from "../infrastructure/onboarding-repository";
 
 export async function readOnboardingProfile(ownerId: string): Promise<OnboardingProfile | null> {
-  return withApplicationUser(ownerId, (database) => findOnboardingProfile(database, ownerId));
+  const stored = await withApplicationUser(ownerId, (database) =>
+    findOnboardingProfile(database, ownerId),
+  );
+  if (stored || !isLocalAuthBypassEnabled() || ownerId !== localAuthBypassMember.userId) {
+    return stored;
+  }
+  const localDate = new Date("2026-01-01T00:00:00.000Z");
+  return {
+    answers: {
+      confidence: "mixed",
+      educationStage: "recent_graduate",
+      industries: ["technology"],
+      opportunityTypes: ["graduate_scheme"],
+      preparationPriorities: ["application_cv"],
+      supportNeeds: ["feedback"],
+      targetCompanies: [],
+    },
+    completedAt: localDate,
+    createdAt: localDate,
+    updatedAt: localDate,
+  };
 }
 
 export async function updateOnboardingProfile(

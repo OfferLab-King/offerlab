@@ -22,8 +22,9 @@ This bundle contains active product contracts and earlier documents retained as 
 4. `ai-product-strategy.md`
    Defines where AI creates distinctive value and the prompt, model, privacy, evaluation and cost controls required before release.
 
-5. `ai-prompts/answer-coach-v1.md`
-   Defines the first evidence-grounded Answer Coach prompt and evaluation contract.
+5. `ai-prompts/answer-coach-v1.md`, `ai-prompts/cv-review-v1.md` and
+   `ai-prompts/cover-letter-review-v1.md`
+   Define the evidence-grounded Answer Coach and career-document review prompt contracts.
 
 6. `critical-user-journey.md`
    Retains an earlier paid-member journey as a non-binding product hypothesis.
@@ -44,6 +45,10 @@ This bundle contains active product contracts and earlier documents retained as 
     Records the bounded data and privacy contracts for annotated cases, moderated intelligence,
     manually operated practice/feedback pilots and the local Answer Coach prototype.
 
+12. `career-documents-and-job-discovery-data-dictionary.md`
+    Records private CV and cover-letter versions, bounded reviews, saved job targets, synchronous
+    extraction and the gated job-discovery boundary.
+
 ## Suggested repository location
 
 ```text
@@ -54,7 +59,10 @@ offerlab/
         ├── experience-principles.md
         ├── ai-product-strategy.md
         ├── ai-prompts/
-        │   └── answer-coach-v1.md
+        │   ├── answer-coach-v1.md
+        │   ├── cover-letter-review-v1.md
+        │   └── cv-review-v1.md
+        ├── career-documents-and-job-discovery-data-dictionary.md
         ├── mvp-brief.md
         ├── critical-user-journey.md
         ├── screen-map.md

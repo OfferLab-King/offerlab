@@ -33,7 +33,7 @@ If sources conflict, do not guess. Apply the precedence above, document the conf
 
 Module contracts are described in `docs/architecture/overview.md`. Route handlers and React components must not contain domain rules or issue ad hoc database queries.
 
-The declared modules are identity and access, member profile, applications, Answer Bank, taxonomy, preparation resources, learning paths, recommendations, practice services, Recruitment Intelligence, Answer Coach, dashboard, administration, audit, analytics, and observability. Modules may use shared primitives and declared public module APIs, but must not import another module's internal persistence implementation.
+The declared modules are identity and access, member profile, applications, career documents, Job Discovery, Answer Bank, taxonomy, preparation resources, learning paths, recommendations, practice services, Recruitment Intelligence, Answer Coach, dashboard, administration, audit, analytics, and observability. Modules may use shared primitives and declared public module APIs, but must not import another module's internal persistence implementation.
 
 ## Toolchain
 

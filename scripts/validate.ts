@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 
 const steps = [
   "env:example:check",
+  "env:check",
   "format:check",
   "lint",
   "typecheck",

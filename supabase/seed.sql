@@ -51,6 +51,23 @@ values
     '',
     '',
     ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '10000000-0000-4000-8000-000000000003',
+    'authenticated',
+    'authenticated',
+    'local-bypass@test.offerlab.invalid',
+    '',
+    '2026-08-09 00:00:00+00',
+    '{"provider":"email","providers":["email"]}',
+    '{}',
+    '2026-08-09 00:00:00+00',
+    '2026-08-09 00:00:00+00',
+    '',
+    '',
+    '',
+    ''
   )
 on conflict (id) do nothing;
 
@@ -65,5 +82,10 @@ values
     '20000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000002',
     'member-two@test.offerlab.invalid'
+  ),
+  (
+    '20000000-0000-4000-8000-000000000003',
+    '10000000-0000-4000-8000-000000000003',
+    'local-bypass@test.offerlab.invalid'
   )
 on conflict (id) do nothing;

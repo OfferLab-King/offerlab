@@ -16,6 +16,34 @@ describe("parseServerEnvironment", () => {
     expect(parseServerEnvironment(validEnvironment).APP_ENV).toBe("test");
   });
 
+  it("permits authentication bypass only for loopback local development", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        NODE_ENV: "development",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_ENABLED");
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        NEXT_PUBLIC_APP_URL: "https://offerlab.example",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_ENABLED");
+  });
+
   it("requires runtime and identity credentials but not migration credentials in production", () => {
     expect(() =>
       parseServerEnvironment({
@@ -66,5 +94,60 @@ describe("parseServerEnvironment", () => {
         NODE_ENV: "production",
       }),
     ).not.toThrow();
+  });
+
+  it("keeps local career review bootable when hosted document AI is switched off", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+        CAREER_DOCUMENT_AI_ENABLED: "false",
+        CAREER_DOCUMENT_PROVIDER: "deepseek",
+        DATABASE_URL: "postgresql://runtime.invalid/database",
+        IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        NODE_ENV: "production",
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects plaintext hosted document transport in production", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+        CAREER_DOCUMENT_MODEL_DATA_APPROVED: "true",
+        CAREER_DOCUMENT_PROVIDER: "deepseek",
+        DATABASE_URL: "postgresql://runtime.invalid/database",
+        DEEPSEEK_API_KEY: "test-api-key",
+        DEEPSEEK_BASE_URL: "http://api.deepseek.example",
+        DEEPSEEK_MODEL: "deepseek-v4-flash",
+        IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("DEEPSEEK_BASE_URL");
+  });
+
+  it("accepts usage ceilings through 100000 and rejects larger values", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        CAREER_DOCUMENT_REVIEW_HOSTED_ACCOUNT_MONTHLY_LIMIT: "100000",
+        JSEARCH_ACCOUNT_MONTHLY_LIMIT: "100000",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        CAREER_DOCUMENT_REVIEW_HOSTED_ACCOUNT_MONTHLY_LIMIT: "100001",
+      }),
+    ).toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        JSEARCH_ACCOUNT_MONTHLY_LIMIT: "999999",
+      }),
+    ).toThrow();
   });
 });

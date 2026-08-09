@@ -12,9 +12,15 @@ export type AnswerCoachRuntime = Readonly<{
   providerName: "DeepSeek" | "Local rubric";
 }>;
 
+const applicationEnvironments = new Set(["local", "test", "staging", "production"]);
+
 export function readAnswerCoachRuntime(): AnswerCoachRuntime {
+  const appEnvironment = process.env.APP_ENV;
+  if (!appEnvironment || !applicationEnvironments.has(appEnvironment)) {
+    return { modelAvailable: false, provider: localRubricProvider, providerName: "Local rubric" };
+  }
   const productionDataApproved =
-    process.env.APP_ENV !== "production" || process.env.ANSWER_COACH_MODEL_DATA_APPROVED === "true";
+    appEnvironment !== "production" || process.env.ANSWER_COACH_MODEL_DATA_APPROVED === "true";
   if (
     productionDataApproved &&
     process.env.ANSWER_COACH_PROVIDER === "deepseek" &&

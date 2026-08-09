@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -161,6 +162,162 @@ export const applications = appSchema.table(
       .on(table.ownerUserId, table.archivedAt)
       .where(sql`${table.archivedAt} is not null`),
     unique("application_owner_id_unique").on(table.ownerUserId, table.id),
+  ],
+);
+
+export const careerJobTargets = appSchema.table(
+  "career_job_target",
+  {
+    applyUrl: text("apply_url"),
+    archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+    companyName: text("company_name").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    description: text("description").notNull(),
+    employmentType: text("employment_type"),
+    fetchedAt: timestamp("fetched_at", { mode: "date", withTimezone: true }),
+    id: uuid("id").defaultRandom().primaryKey(),
+    location: text("location"),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    provider: text("provider").default("manual").notNull(),
+    providerJobId: text("provider_job_id"),
+    publishedAt: timestamp("published_at", { mode: "date", withTimezone: true }),
+    roleTitle: text("role_title").notNull(),
+    sourcePublisher: text("source_publisher"),
+    sourceUrl: text("source_url"),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    unique("career_job_target_owner_id_unique").on(table.ownerUserId, table.id),
+    uniqueIndex("career_job_target_provider_identity_unique")
+      .on(table.ownerUserId, table.provider, table.providerJobId)
+      .where(sql`${table.providerJobId} is not null`),
+  ],
+);
+
+export const jobSearchUsage = appSchema.table(
+  "job_search_usage",
+  {
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: bigint("id", { mode: "number" }).generatedAlwaysAsIdentity().primaryKey(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    provider: text("provider").notNull(),
+  },
+  (table) => [
+    index("job_search_usage_owner_created_idx").on(table.ownerUserId, table.createdAt),
+    index("job_search_usage_created_idx").on(table.createdAt),
+    check("job_search_usage_provider_check", sql`${table.provider}='jsearch'`),
+  ],
+);
+
+export const careerDocumentReviewUsage = appSchema.table(
+  "career_document_review_usage",
+  {
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: bigint("id", { mode: "number" }).generatedAlwaysAsIdentity().primaryKey(),
+    modelRequested: boolean("model_requested").notNull(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    index("career_document_review_usage_owner_created_idx").on(table.ownerUserId, table.createdAt),
+    index("career_document_review_usage_hosted_created_idx")
+      .on(table.createdAt)
+      .where(sql`${table.modelRequested}`),
+  ],
+);
+
+export const careerDocuments = appSchema.table(
+  "career_document",
+  {
+    archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    kind: text("kind").notNull(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    title: text("title").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    unique("career_document_owner_id_unique").on(table.ownerUserId, table.id),
+    check("career_document_kind_check", sql`${table.kind} in ('cv','cover_letter')`),
+  ],
+);
+
+export const careerDocumentVersions = appSchema.table(
+  "career_document_version",
+  {
+    contentText: text("content_text").notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    documentId: uuid("document_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    jobDescription: text("job_description").default("").notNull(),
+    label: text("label").notNull(),
+    origin: text("origin").notNull(),
+    ownerUserId: uuid("owner_user_id").notNull(),
+    revision: integer("revision").notNull(),
+    sourceFilename: text("source_filename"),
+    sourceMimeType: text("source_mime_type"),
+    sourceSha256: text("source_sha256"),
+    sourceSizeBytes: integer("source_size_bytes"),
+    targetCompany: text("target_company"),
+    targetJobId: uuid("target_job_id"),
+    targetRole: text("target_role"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.ownerUserId, table.documentId],
+      foreignColumns: [careerDocuments.ownerUserId, careerDocuments.id],
+      name: "career_document_version_document_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.ownerUserId, table.targetJobId],
+      foreignColumns: [careerJobTargets.ownerUserId, careerJobTargets.id],
+      name: "career_document_version_target_fk",
+    }).onDelete("restrict"),
+    unique("career_document_version_owner_id_unique").on(table.ownerUserId, table.id),
+    unique("career_document_version_identity_unique").on(table.documentId, table.revision),
+  ],
+);
+
+export const careerDocumentReviews = appSchema.table(
+  "career_document_review",
+  {
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    documentChecks: jsonb("document_checks").$type<Readonly<Record<string, unknown>>>().notNull(),
+    documentVersionId: uuid("document_version_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    inputTokens: integer("input_tokens"),
+    latencyMs: integer("latency_ms"),
+    matchedRequirements: text("matched_requirements").array().default([]).notNull(),
+    missingRequirements: text("missing_requirements").array().default([]).notNull(),
+    modelRequested: boolean("model_requested").default(false).notNull(),
+    outputTokens: integer("output_tokens"),
+    ownerUserId: uuid("owner_user_id").notNull(),
+    priorityActions: jsonb("priority_actions").$type<readonly unknown[]>().notNull(),
+    promptVersion: integer("prompt_version").notNull(),
+    providerId: text("provider_id").notNull(),
+    providerMode: text("provider_mode").notNull(),
+    providerNoticeVersion: text("provider_notice_version"),
+    strengths: jsonb("strengths").$type<readonly unknown[]>().notNull(),
+    suggestedContent: text("suggested_content"),
+    summary: text("summary").notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.ownerUserId, table.documentVersionId],
+      foreignColumns: [careerDocumentVersions.ownerUserId, careerDocumentVersions.id],
+      name: "career_document_review_version_fk",
+    }).onDelete("restrict"),
+    unique("career_document_review_owner_id_unique").on(table.ownerUserId, table.id),
   ],
 );
 
