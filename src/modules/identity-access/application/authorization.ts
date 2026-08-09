@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 
 import { getIdentitySyncDatabase } from "../../../infrastructure/database/runtime-connections";
 import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture";
+import {
+  isLocalAuthBypassEnabled,
+  isLoopbackRequestHost,
+  localAuthBypassMember,
+} from "../../../infrastructure/config/local-development";
 import { headers } from "next/headers";
 import { requestClientAddress } from "./request-security";
 import { checkAuthRateLimit } from "../infrastructure/rate-limits";
@@ -16,6 +21,8 @@ import {
 } from "../infrastructure/identity-linking";
 
 export async function currentAuthorization(): Promise<AuthorizationState | null> {
+  const localAuthorization = await localDevelopmentAuthorization();
+  if (localAuthorization) return localAuthorization;
   const authUserId = await authenticatedUserId();
   if (!authUserId) return null;
   try {
@@ -36,6 +43,8 @@ export type MemberAccessDecision =
   | Readonly<{ status: "denied" | "unauthenticated" | "unverified" }>;
 
 export async function currentMemberAccess(): Promise<MemberAccessDecision> {
+  const localAuthorization = await localDevelopmentAuthorization();
+  if (localAuthorization) return { authorization: localAuthorization, status: "eligible" };
   const authUserId = await authenticatedUserId();
   if (!authUserId) return { status: "unauthenticated" };
   try {
@@ -87,6 +96,17 @@ export async function requireMember(): Promise<AuthorizationState> {
 
 async function authenticatedUserId(): Promise<string | null> {
   return getAuthenticatedSupabaseUserId();
+}
+
+async function localDevelopmentAuthorization(): Promise<AuthorizationState | null> {
+  if (!isLocalAuthBypassEnabled()) return null;
+  const requestHeaders = await headers();
+  if (!isLoopbackRequestHost(requestHeaders.get("host"))) return null;
+  return {
+    entitlementStatus: "active",
+    role: "member",
+    userId: localAuthBypassMember.userId,
+  };
 }
 
 export async function requireAdministrator(): Promise<AuthorizationState> {

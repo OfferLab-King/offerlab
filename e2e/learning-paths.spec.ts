@@ -225,6 +225,7 @@ test("administrator publishes a path and member progress follows resource comple
     expect(overflow).toBe(false);
     await page.goto(`/admin/content/paths/${pathId}`);
     await page.getByRole("button", { name: "Unpublish", exact: true }).click();
+    await expect(page.getByText("Preparation paths · draft", { exact: true })).toBeVisible();
   } finally {
     try {
       await cleanUpLearningPathFixture(db, { authId, email, ownerId, pathId, pathKey });

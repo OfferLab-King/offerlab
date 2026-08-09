@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { isLocalAuthBypassEnabled } from "../../infrastructure/config/local-development";
 import { AuthShell, StatusMessage } from "../components/auth-shell";
 import { SignInForm } from "./sign-in-form";
 
@@ -18,6 +20,13 @@ export default async function SignInPage({
   return (
     <AuthShell description="Use your verified OfferLab account." title="Sign in">
       <StatusMessage>{error ?? notice}</StatusMessage>
+      {isLocalAuthBypassEnabled() && (
+        <p>
+          <Link className="button-link" href="/member">
+            Open local test workspace
+          </Link>
+        </p>
+      )}
       <SignInForm next={next} />
       <p>
         <a href="/reset-password">Forgot your password?</a>

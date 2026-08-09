@@ -35,6 +35,24 @@ pnpm db:start && pnpm db:reset && pnpm dev
 
 Local Supabase is not hardened and must not be exposed publicly.
 
+### Local test access without sign-in
+
+For rapid local UI testing, including browser work driven by Codex, reset the local database once
+and start the loopback-only bypass server:
+
+```bash
+pnpm db:start
+pnpm db:reset
+pnpm dev:bypass
+```
+
+Open `http://127.0.0.1:3000/member`. This command uses the deterministic, non-login seed member and
+a synthetic completed profile; it does not create or store a password. It binds Next.js to
+`127.0.0.1` and enables bypass only while `APP_ENV=local`, `NODE_ENV=development`, the configured app
+URL is loopback, and `LOCAL_AUTH_BYPASS_ENABLED=true`. Normal `pnpm dev`, tests, staging and production
+continue to require Supabase authentication. Resetting the local database removes records created
+during bypass testing.
+
 ## Validation
 
 Run the complete non-browser validation chain with:
@@ -43,7 +61,7 @@ Run the complete non-browser validation chain with:
 pnpm validate
 ```
 
-This runs environment-template validation, formatting, linting, strict type checking, unit tests, starts Supabase, destroys and rebuilds the **local** database from migrations and seeds, runs real-PostgreSQL integration/security tests, and builds the application.
+This validates the configured server environment and its template, then runs formatting, linting, strict type checking, unit tests, starts Supabase, destroys and rebuilds the **local** database from migrations and seeds, runs real-PostgreSQL integration/security tests, and builds the application. Next.js also repeats server-environment validation when each Node server instance starts, before it accepts requests.
 
 Run Playwright separately:
 

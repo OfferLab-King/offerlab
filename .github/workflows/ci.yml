@@ -32,6 +32,12 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Run canonical validation
         run: pnpm validate
+        env:
+          APP_ENV: test
+          LOG_LEVEL: silent
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-synthetic-publishable-key
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:55321
 
   end-to-end:
     name: End-to-end

@@ -2,7 +2,7 @@
 
 **Status:** Approved product direction
 **Date:** 2026-07-23
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-08-07
 **Authority:** Defines product positioning, differentiation and priority. Read with `experience-principles.md`, which governs how each feature should behave.
 
 > **Current implementation boundary:** See `current-product-contract.md`. Delivery phases express validation order; they are not evidence that an already implemented pilot is unavailable, nor approval to add payments, coach access or marketplace infrastructure without the required decisions.
@@ -11,7 +11,8 @@
 
 OfferLab helps graduates become more employable and perform better in recruitment by combining four forms of value:
 
-1. **Prepare:** organise applications and turn genuine experience into reusable interview evidence.
+1. **Prepare:** organise applications, tailor truthful CVs and cover letters, and turn genuine
+   experience into reusable interview evidence.
 2. **Learn:** study concise skills, frameworks and annotated examples grounded in graduate recruitment.
 3. **Practise:** rehearse interviews, case work and group exercises that cannot be learned through reading alone.
 4. **Connect:** access current candidate intelligence and, when useful, vetted peers or coaches.
@@ -26,6 +27,9 @@ OfferLab should earn attention by demonstrating a small number of concrete, hard
 - **Current recruitment intelligence:** moderated, cycle-dated reports about formats, themes, assessed skills and candidate reflections without confidential materials.
 - **Group Mock:** realistic group-exercise practice, initially delivered as scheduled peer or facilitator-led sessions rather than automated matching.
 - **Answer and Story Bank:** a member-owned store of real evidence that can support multiple answers and applications.
+- **Targeted application documents:** private CV and cover-letter version histories that help a
+  member connect genuine evidence to one role, company and job description without losing a
+  reusable base version.
 - **Curated common questions:** focused top-question collections by question family, stage and, where editorial evidence supports it, industry or role context.
 - **Industry and business cases:** case prompts grouped by industry and topic, with analysis frameworks, worked reasoning and practice variants.
 - **Professional language and skills:** practical communication, group-exercise and workplace skills taught in context, not a generic course catalogue.
@@ -46,7 +50,7 @@ Public pages should lead with evidence of value: an annotated coaching excerpt, 
 
 The signed-in experience should separate:
 
-- **My workspace:** Applications and Answer Bank.
+- **My workspace:** Jobs, Applications, CVs, Cover letters and Answer Bank.
 - **Explore:** Questions, annotated cases, industry cases, skills and resources.
 - **Practise and get feedback:** Group Mock and premium review services.
 - **Intelligence:** current moderated recruitment reports.
@@ -85,6 +89,8 @@ The primary product is a searchable, moderated report database, not a chat feed.
 
 - Open member registration and trusted account access.
 - Applications and deadlines.
+- Private saved job targets, with manual entry always available and optional provider discovery.
+- Multiple CV and cover-letter versions with role-specific targeting and bounded review.
 - Answer and Story Bank.
 - Common-question catalogue foundation.
 - Resource library and optional Preparation Plans.
@@ -136,13 +142,16 @@ Do not require the full marketplace, community or payment vision to exist before
 
 ## Return behaviour
 
-OfferLab should aim for timely repeat use, not artificial daily engagement. Natural return triggers include a deadline, stage change, interview invitation, new relevant intelligence, scheduled practice, feedback delivery and post-interview reflection. Notifications must be opt-in, concise and tied to one useful action.
+OfferLab should aim for timely repeat use, not artificial daily engagement. Natural return triggers include a newly found role, a document that needs tailoring, a deadline, stage change, interview invitation, new relevant intelligence, scheduled practice, feedback delivery and post-interview reflection. Notifications must be opt-in, concise and tied to one useful action.
 
 ## Evidence required before expansion
 
 Prioritisation should follow observed behaviour and interviews. Track privacy-safe evidence such as:
 
 - first useful artefact created;
+- a base CV or cover letter turned into a truthful role-specific version;
+- a saved job target reused while preparing an application document;
+- a bounded document review leading to an explicit member edit rather than an automatic rewrite;
 - a story reused in an answer;
 - a question opened and answer drafted;
 - an annotated case viewed deeply enough to reach the reasoning;

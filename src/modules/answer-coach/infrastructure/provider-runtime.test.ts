@@ -18,6 +18,20 @@ describe("Answer Coach provider runtime gate", () => {
     });
   });
 
+  it.each([undefined, "", "prodution"])(
+    "keeps hosted review unavailable for an absent or invalid APP_ENV (%s)",
+    (appEnvironment) => {
+      configureDeepSeek();
+      if (appEnvironment === undefined) vi.stubEnv("APP_ENV", undefined);
+      else vi.stubEnv("APP_ENV", appEnvironment);
+
+      expect(readAnswerCoachRuntime()).toMatchObject({
+        modelAvailable: false,
+        providerName: "Local rubric",
+      });
+    },
+  );
+
   it("fails closed in production until the member-data gate is approved", () => {
     configureDeepSeek();
     vi.stubEnv("APP_ENV", "production");

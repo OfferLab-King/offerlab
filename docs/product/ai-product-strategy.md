@@ -4,6 +4,8 @@
 
 **Date:** 2026-07-23
 
+**Last reviewed:** 2026-08-09
+
 **Authority:** Governs product uses of generative AI, model selection, prompt design, privacy, evaluation and cost control. Read with `product-strategy-and-roadmap.md` and `experience-principles.md`.
 
 ## Decision
@@ -27,11 +29,16 @@ The desired result is not text disguised as human-written. It is truthful work t
 Prioritise tasks where the input and success criteria are bounded.
 
 1. **Answer Coach:** review a selected answer against its question, linked stories and an OfferLab rubric. Identify missing evidence, unclear reasoning, generic claims and likely follow-up questions. Suggest focused revisions without inventing content.
-2. **Story Coach:** identify gaps in Situation, Task, Actions, Reasoning, Result and Reflection. Ask for missing specifics rather than supplying achievements or numbers.
-3. **Rewrite a selection:** offer two or three concise alternatives for a member-selected passage while preserving facts, meaning and the member's chosen tone.
-4. **Practice variations:** generate safe variations and follow-up prompts from a curated canonical question, without claiming that generated questions were reported by an employer.
-5. **Editorial assistance:** help authorised editors propose tags, summaries, rubric checks or practice variants for cases and resources. A human approves publication.
-6. **Moderation assistance:** flag possible personal data, confidential material or unsupported employer claims in submitted recruitment intelligence. A human makes the moderation decision.
+2. **CV and cover-letter review:** compare one selected immutable version with one member-chosen
+   role, company and job description. Identify grounded strengths, evidence gaps, targeting,
+   clarity and structure improvements. A complete comparison draft is permitted only when every
+   candidate claim remains grounded in the selected document. The v2 provider contract does not
+   enable that option; it remains diagnostic-only until edits can carry verifiable source anchors.
+3. **Story Coach:** identify gaps in Situation, Task, Actions, Reasoning, Result and Reflection. Ask for missing specifics rather than supplying achievements or numbers.
+4. **Rewrite a selection:** offer two or three concise alternatives for a member-selected passage while preserving facts, meaning and the member's chosen tone.
+5. **Practice variations:** generate safe variations and follow-up prompts from a curated canonical question, without claiming that generated questions were reported by an employer.
+6. **Editorial assistance:** help authorised editors propose tags, summaries, rubric checks or practice variants for cases and resources. A human approves publication.
+7. **Moderation assistance:** flag possible personal data, confidential material or unsupported employer claims in submitted recruitment intelligence. A human makes the moderation decision.
 
 The Answer Coach is the preferred first member-facing experiment because the Story Bank supplies grounded evidence and the result can be evaluated against a clear coaching rubric.
 
@@ -59,6 +66,16 @@ An AI action must be explicit and narrowly labelled, for example “Review my an
 - avoid authoritative claims about what an employer will ask or decide; and
 - fail safely with a normal retry or continue-without-AI path.
 
+For hosted CV or cover-letter review, provider notice acceptance is required for each request. Send
+only the selected extracted-text version and its selected role, company and job description after
+removing common contact details. The deterministic local review remains the no-provider path and
+the safe fallback; when a hosted path is configured, a request cannot proceed without consent.
+Neither path may claim an ATS score, job-match probability, interview probability, hiring
+probability or employer decision. The deterministic presentation layer may calculate the approved
+document evidence coverage score from validated represented and missing requirements. The model
+does not supply, weight or predict that score, and the interface must show its numerator,
+denominator and limitations.
+
 AI assistance must never be presented as human coach feedback. Human review and AI review need distinct labels.
 
 ## Prompt packs
@@ -76,7 +93,11 @@ Prompts are versioned product assets, not ad hoc strings scattered through route
 
 Static instructions should be cacheable. Member content must be inserted into clearly delimited data fields and treated as untrusted content, never as instructions. Prompt files must not contain secrets, real member content or environment configuration.
 
-`ai-prompts/answer-coach-v1.md` records the first design contract. A production implementation may compile prompts into typed application code, but the reviewed product intent, rubric and version must remain traceable.
+`ai-prompts/answer-coach-v1.md`, `ai-prompts/cv-review-v2.md` and
+`ai-prompts/cover-letter-review-v2.md` record current reviewed design contracts. V1 career-document
+packs remain as historical contracts. A production implementation
+may compile prompts into typed application code, but the reviewed product intent, rubric and
+version must remain traceable.
 
 ## Model routing
 
@@ -100,12 +121,17 @@ Lock production model versions or snapshots where supported. A model change is a
 Every AI feature must have a per-request and monthly budget before release.
 
 - Send only the fields needed for the task, not a member's full profile or application history.
+- For document review, send only the selected text version and selected target fields; never send
+  the uploaded binary.
 - Select relevant stories explicitly; cap their number and length.
 - Use short structured outputs and enforce maximum output tokens.
 - Cache stable rubric and instruction prefixes when a provider supports it.
 - Prefer batch processing for offline editorial work when it reduces cost.
 - Permit at most one bounded automatic retry for a malformed response.
 - Apply member and account rate limits; premium usage may use transparent credits.
+- For career-document review, reserve admitted attempts atomically before inference. Count local
+  attempts against member limits, hosted attempts against both member and hosted-account limits,
+  and retain the reservation if provider execution fails.
 - Record model, prompt version, token counts, latency and estimated cost without logging prompt or answer content.
 - Set budget alerts and a feature-level kill switch.
 - Escalate to a larger model only after a low-confidence or failed-quality signal, not by default.
@@ -124,7 +150,7 @@ Member stories, answers and application context can contain personal data. Befor
 - the persistence and deletion policy for generated outputs; and
 - whether a data protection impact assessment is required.
 
-Use business/API terms approved for member data. Do not use consumer chat accounts or a provider's data-sharing free tier with real member content. Do not log prompts, outputs, stories, answers, emails, company names, role names or raw application identifiers. Analytics remains allow-listed and may record only coarse feature events and operational measures.
+Use business/API terms approved for member data. Do not use consumer chat accounts or a provider's data-sharing free tier with real member content. Do not log prompts, outputs, stories, answers, CV or cover-letter text, job descriptions, emails, company names, role names or raw application identifiers. Analytics remains allow-listed and may record only coarse feature events and operational measures.
 
 ## Evaluation and release gate
 
@@ -150,5 +176,9 @@ Founder or qualified coach review establishes the initial quality bar. Compare m
 4. Complete privacy and provider review before using real member content.
 5. Pilot with a small opt-in group and compare results with founder or coach feedback.
 6. Expand only the tasks whose usefulness, safety and unit economics meet the release bar.
+
+The career-document pilot follows the same gates independently: synthetic evaluation and local
+fallback may ship before hosted-model approval, but production member content must not be sent to a
+provider until the privacy gate is explicitly recorded for that adapter.
 
 This sequence permits useful AI early without committing OfferLab to a single provider, an expensive default model or a generic chatbot experience.

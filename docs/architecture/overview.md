@@ -21,6 +21,13 @@ There is no separate backend deployment. Route handlers and server actions are a
 - **Identity and access:** Supabase identity linkage, internal user UUIDs, beta entitlement, sessions, roles, and authorization.
 - **Member profile:** onboarding answers and completion. No application stages or deadlines belong here.
 - **Applications:** private application lifecycle, stage and deadlines. All repository operations require owner ID.
+- **Career documents:** private CV and cover-letter lineages, immutable extracted-text versions,
+  saved job targets and immutable bounded reviews. Upload bytes exist only during synchronous
+  extraction and are not persisted.
+- **Job discovery:** provider-neutral explicit job search and response validation. JSearch is a
+  server-only adapter; private saved targets are handed to the Career documents module through its
+  public application boundary. Content-free database reservations enforce member and provider-
+  account request ceilings across web instances.
 - **Answer Bank:** private reusable stories, curated-question answers and explicit story-to-answer relationships. All member records are owner scoped.
 - **Taxonomy:** stable education, opportunity, industry, priority, and recruitment-stage keys.
 - **Preparation resources:** canonical safe-Markdown library content, publication/access lifecycle, search, taxonomy associations, and owner-private save/completion state.
@@ -36,6 +43,13 @@ There is no separate backend deployment. Route handlers and server actions are a
 - **Observability:** structured redacted logs, health, and request correlation.
 
 Modules may depend on shared primitives and declared public module APIs. They must not import another module's internal persistence implementation.
+
+PDF and DOCX parsing runs synchronously in the Node presentation adapter before validated text and
+safe source metadata enter the Career documents application use case. Original upload bytes are
+discarded after extraction. Career-document model review and job discovery are separate outbound
+provider adapters inside the monolith. Provider credentials remain server-only, provider responses
+are validated before entering domain records, and production availability is controlled by explicit
+feature and approval flags. No provider is a system of record.
 
 ## Data isolation
 

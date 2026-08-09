@@ -2,7 +2,7 @@
 
 **Status:** Approved  
 **Date:** 2026-07-19  
-**Last reviewed:** 2026-08-06
+**Last reviewed:** 2026-08-09
 **Authority:** Highest product authority. These decisions govern current implementation; references to Vertical Slice 01 describe the original foundation unless a paragraph explicitly limits itself to that slice.
 
 ## Product experience
@@ -34,6 +34,28 @@ Do not require a separate evidence story, application, recruitment stage, key-po
 Make Answer Coach visible inside the question editor. A member may explicitly save a draft and request review in one action. AI may return a complete suggested revision only when every fact is grounded in the member's answer, key points or selected stories. Display original and suggestion side by side. Copying either a whole suggestion or a small wording change into the draft requires a clear member action and does not save or mark the answer prepared. The member must check accuracy and save explicitly.
 
 Coach by question type: natural present–past–future structure for introductions, credible specificity for motivation, and STAR with first-person action and reasoning for competency answers. Flag generic or machine-like language, inflated claims, unnatural polish, and answers that are materially too short, too long or difficult to say aloud. Do not show the model brand as product positioning; keep provider identity in the required data notice.
+
+### Career documents and job discovery pilot
+
+**Approved:** 7 August 2026
+
+Add separate CV and Cover letters tabs to the member workspace. A member may keep multiple documents of each kind and multiple immutable versions of each document. OfferLab presents one current version, resolved deterministically as the highest immutable revision; saving an edit creates the next revision and never overwrites an earlier one. A version may be targeted to one owner-scoped saved job or to a member-entered role, company and job description. The member remains responsible for checking extracted text and every final document.
+
+Accept PDF and DOCX uploads for synchronous server-side extraction within documented size and page limits. Discard the original upload bytes immediately after extraction. Persist only the editable extracted text and privacy-minimal source metadata: the safe filename, MIME type, byte count and SHA-256 digest. Do not introduce object storage, background processing or binary-document retention for this pilot.
+
+Offer a bounded CV or cover-letter review against the selected version and target. The output may identify grounded strengths, represented and missing requirements, document checks, prioritised actions and one comparison draft when every candidate claim is grounded in the member's source. The review must never silently update a document, invent evidence or metrics, produce an ATS score, predict interview or hiring probability, or present itself as an employer decision. Hosted-model review requires explicit acceptance of the current provider notice for each request, strict structured-output validation, usage caps, immutable review records, non-content operational telemetry and a deterministic local-review fallback. Production use with real member content remains disabled until the applicable provider privacy and data-processing gate is explicitly approved.
+
+Add a server-side JSearch adapter for explicit role-and-location searches. The provider API key remains server-only and must never be returned to browser code, logs or analytics. Treat provider listings as transient discovery results; persist a listing only when the member explicitly saves it as a private job target. Reserve each outbound call in a content-free usage record and enforce configurable member and account ceilings atomically. JSearch production access remains disabled unless an explicit operational flag records approval of the commercial display, retention and automated-use terms. Manual job targets remain available when the provider is absent, disabled or unavailable.
+
+### Career-document evidence coverage and development guidance
+
+**Approved:** 9 August 2026
+
+Replace shallow keyword lists with an inspectable requirement-by-requirement review. Requirements must be meaningful job-description phrases or named skills, never filler words. For every represented requirement, show the exact member evidence; for every gap, explain what truthful evidence would demonstrate it and, where useful, suggest a bounded project or learning option. A CV must not be told to add the target company merely to appear tailored. Company naming remains relevant to a cover letter, while CV targeting is assessed through the relevance and prominence of evidence.
+
+Permit one transparent **document evidence coverage score** from 0 to 100, calculated only as evidenced assessed requirements divided by all assessed requirements. Always show the numerator and denominator and label the measure as document coverage, not candidate quality. It is not an ATS score, job-match probability, candidate ranking, suitability decision or estimate of an interview, hiring or offer outcome. Do not weight protected characteristics, institution prestige, writing dialect or inferred personality.
+
+Connect genuine evidence gaps to small OfferLab evidence-building projects and a bounded curated list of external learning options. Course completion alone is not evidence of competence; guidance should help a member create an inspectable output they can explain truthfully. External options must identify the provider, open outside OfferLab and state the current commercial relationship. Affiliate links may be introduced only after an actual agreement and must be clearly disclosed without changing recommendation order or implying that purchase improves recruitment outcomes.
 
 ### Recruitment Intelligence discussion pilot
 
