@@ -1,4 +1,5 @@
 import { withApplicationRole } from "../../../infrastructure/database/runtime-connections";
+import { isEmployerIndexable } from "../domain/employer-indexability";
 import {
   jobSectorLabel,
   jobSubsectorLabel,
@@ -13,10 +14,12 @@ import {
   listCatalogJobsForSitemap,
   listCompanyActiveJobs,
   listEmployerDirectory,
+  listIndexableEmployersForSitemap,
   sectorJobCounts,
   searchJobsFaceted,
   type EmployerDirectoryRow,
   type EmployerProfileRow,
+  type EmployerSitemapRow,
   type FacetCountRow,
   type JobCardRow,
   type JobDetailRow,
@@ -120,12 +123,30 @@ export function readSitemapJobs(
   return withApplicationRole((database) => listCatalogJobsForSitemap(database, limit));
 }
 
+export function readSitemapEmployers(limit = 10_000): Promise<readonly EmployerSitemapRow[]> {
+  return withApplicationRole((database) => listIndexableEmployersForSitemap(database, limit));
+}
+
 export function readEmployerDirectory(): Promise<EmployerDirectoryRow[]> {
   return withApplicationRole((database) => listEmployerDirectory(database));
 }
 
-export function readEmployerProfile(slug: string): Promise<EmployerProfileRow | null> {
-  return withApplicationRole((database) => findEmployerProfile(database, slug));
+export type EmployerProfileView = EmployerProfileRow & Readonly<{ indexable: boolean }>;
+
+export async function readEmployerProfile(slug: string): Promise<EmployerProfileView | null> {
+  return withApplicationRole(async (database) => {
+    const row = await findEmployerProfile(database, slug);
+    if (!row) return null;
+    return {
+      ...row,
+      indexable: isEmployerIndexable({
+        active: row.active,
+        description: row.description,
+        hasImportedJobs: row.has_imported_jobs,
+        hasOfficialEmployerInfo: row.website_url !== null || row.careers_url !== null,
+      }),
+    };
+  });
 }
 
 export function readEmployerActiveJobs(companyId: string): Promise<JobCardRow[]> {

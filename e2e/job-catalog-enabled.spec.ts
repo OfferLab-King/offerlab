@@ -56,6 +56,27 @@ async function seedCatalogue() {
           directory_visible = excluded.directory_visible
       `;
     });
+    await database.begin(async (transaction) => {
+      await transaction`set local role offerlab_crawler`;
+      await transaction`
+        insert into app.company (
+          name, slug, careers_url, website_url, description, source_type, crawl_allowed,
+          directory_sector_key, directory_priority_rank, directory_visible
+        )
+        values (
+          'Synthetic Retailer', 'synthetic-retailer',
+          'https://synthetic-retailer.example.com/careers', 'https://synthetic-retailer.example.com',
+          'A synthetic retailer used only for automated SEO tests.', 'greenhouse', 'unknown',
+          'consumer_fmcg_retail', 498, true
+        )
+        on conflict (slug) do update set
+          description = excluded.description,
+          website_url = excluded.website_url,
+          directory_sector_key = excluded.directory_sector_key,
+          directory_priority_rank = excluded.directory_priority_rank,
+          directory_visible = excluded.directory_visible
+      `;
+    });
     const jobs = [
       {
         slug: "synthetic-bank-graduate-analyst",
@@ -323,6 +344,123 @@ test("the employer directory has no horizontal overflow on mobile", async ({ pag
   test.skip(testInfo.project.name !== "mobile-chromium", "mobile overflow runs once");
   await page.goto("/employers");
   await expect(page.getByRole("heading", { name: "Explore employers" })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+});
+
+test("the sitemap lists eligible employers and excludes blank profiles", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const response = await page.goto("/sitemap.xml");
+  expect(response?.status()).toBe(200);
+  const body = (await response?.text()) ?? "";
+  expect(body).toContain("/employers/synthetic-bank");
+  expect(body).toContain("/employers/synthetic-consultancy");
+  expect(body).toContain("/employers/synthetic-retailer");
+  expect(body).not.toContain("/employers/synthetic-engineering");
+});
+
+test("an eligible employer page has canonical metadata and safe Organization and Breadcrumb JSON-LD", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/employers/synthetic-bank");
+  await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
+  const canonical = page.locator('link[rel="canonical"]');
+  await expect(canonical).toHaveAttribute("href", /\/employers\/synthetic-bank$/);
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  const script = page.locator('script[type="application/ld+json"]');
+  await expect(script).toHaveCount(1);
+  const content = (await script.first().textContent()) ?? "";
+  expect(content).not.toContain("<");
+  const structured = JSON.parse(content) as Array<Record<string, unknown>>;
+  const organization = structured.find((node) => node["@type"] === "Organization")!;
+  expect(organization.name).toBe("Synthetic Bank");
+  const breadcrumb = structured.find((node) => node["@type"] === "BreadcrumbList")!;
+  const items = breadcrumb.itemListElement as Array<{ name: string; position: number }>;
+  expect(items.map((item) => item.name)).toEqual(["Employers", "Synthetic Bank"]);
+
+  const roleListColumns = await page
+    .locator(".employer-profile-jobs .public-jobs-results")
+    .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+  expect(roleListColumns).toBe(1);
+
+  const firstRoleColumns = await page
+    .locator(".employer-profile-jobs .job-card")
+    .first()
+    .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+  expect(firstRoleColumns).toBe(3);
+});
+
+test("a permanent qualifying employer stays indexable with zero current roles", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/employers/synthetic-retailer");
+  await expect(page.getByRole("heading", { name: "Synthetic Retailer" })).toBeVisible();
+  await expect(page.getByText(/has no roles currently listed/i)).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/employers\/synthetic-retailer$/,
+  );
+  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+});
+
+test("a blank employer profile stays usable but is noindex", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/employers/synthetic-engineering");
+  await expect(page.getByRole("heading", { name: "Synthetic Engineering" })).toBeVisible();
+  await expect(page.getByText(/has no roles currently listed/i)).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/employers\/synthetic-engineering$/,
+  );
+  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
+});
+
+test("a missing employer profile is not indexable", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const response = await page.goto("/employers/not-a-real-employer");
+  expect(response?.status()).toBe(404);
+  const robotContents = await page
+    .locator('meta[name="robots"]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("content") ?? ""));
+  expect(robotContents.length).toBeGreaterThan(0);
+  expect(robotContents.every((content) => content.includes("noindex"))).toBe(true);
+});
+
+test("filtered employer-directory URLs are noindex but follow", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/employers?sector=financial_services");
+  await expect(page.getByRole("heading", { name: /Explore employers/i })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex,\s*follow/);
+});
+
+test("the job detail page visibly links to the OfferLab employer profile", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+  const profileLink = page.getByRole("link", {
+    name: /Synthetic Bank employer profile on OfferLab/i,
+  });
+  await expect(profileLink).toBeVisible();
+  expect(await profileLink.getAttribute("href")).toContain("/employers/synthetic-bank");
+  await profileLink.click();
+  await expect(page).toHaveURL(/\/employers\/synthetic-bank$/);
+});
+
+test("the employer profile has no horizontal overflow on mobile", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "responsive check runs once");
+  await page.goto("/employers/synthetic-bank");
+  await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

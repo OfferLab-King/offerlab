@@ -422,12 +422,15 @@ export async function listEmployerDirectory(
 }
 
 export type EmployerProfileRow = Readonly<{
+  active: boolean;
   active_jobs: number;
   ats_provider: string | null;
   careers_url: string | null;
   description: string | null;
+  has_imported_jobs: boolean;
   id: string;
   industry: string | null;
+  imported_jobs: number;
   logo_url: string | null;
   name: string;
   slug: string;
@@ -439,8 +442,12 @@ export async function findEmployerProfile(
   slug: string,
 ): Promise<EmployerProfileRow | null> {
   const rows = await database<EmployerProfileRow[]>`
-    select c.id, c.name, c.slug, c.website_url, c.careers_url, c.logo_url,
+    select c.id, c.name, c.slug, c.active, c.website_url, c.careers_url, c.logo_url,
       c.industry, c.ats_provider, c.description,
+      exists (
+        select 1 from app.job imported where imported.company_id = c.id
+      ) as has_imported_jobs,
+      count(j.id)::int as imported_jobs,
       count(j.id) filter (
         where j.active and j.publication_status = 'published'
           and j.eligibility_status = 'eligible'
@@ -449,11 +456,45 @@ export async function findEmployerProfile(
     from app.company c
     left join app.job j on j.company_id = c.id
     where c.slug = ${slug}
-    group by c.id, c.name, c.slug, c.website_url, c.careers_url, c.logo_url,
-      c.industry, c.ats_provider, c.description
+    group by c.id, c.name, c.slug, c.active, c.website_url, c.careers_url, c.logo_url,
+      c.industry, c.ats_provider, c.description, has_imported_jobs
     limit 1
   `;
   return rows[0] ?? null;
+}
+
+export type EmployerSitemapRow = Readonly<{
+  last_modified: Date;
+  slug: string;
+}>;
+
+/**
+ * Stable /employers/[slug] URLs for every profile that satisfies the employer
+ * indexability policy. last_modified is the most recent truthful change to the
+ * profile content: the company record's own update time or the latest change
+ * to any of its job content, whichever is newer.
+ */
+export async function listIndexableEmployersForSitemap(
+  database: TransactionSql,
+  limit: number,
+): Promise<EmployerSitemapRow[]> {
+  return database<EmployerSitemapRow[]>`
+    select c.slug,
+      greatest(c.updated_at, coalesce(max(j.last_changed_at), c.updated_at)) as last_modified
+    from app.company c
+    left join app.job j on j.company_id = c.id
+    where c.active
+      and (
+        (c.description is not null and c.description <> '')
+        or (
+          j.id is not null
+          and (c.website_url is not null or c.careers_url is not null)
+        )
+      )
+    group by c.id
+    order by last_modified desc
+    limit ${limit}
+  `;
 }
 
 export async function listCompanyActiveJobs(

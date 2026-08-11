@@ -4,6 +4,10 @@ import { afterAll, describe, expect, it } from "vitest";
 import { planCrawlChanges } from "../../src/modules/job-catalog/domain/change-detection";
 import type { JobClassificationWrite } from "../../src/modules/job-catalog/infrastructure/job-repository";
 import { searchJobsFaceted } from "../../src/modules/job-catalog/infrastructure/catalog-repository";
+import {
+  findEmployerProfile,
+  listIndexableEmployersForSitemap,
+} from "../../src/modules/job-catalog/infrastructure/catalog-repository";
 import { defaultJobCatalogFilters } from "../../src/modules/job-catalog/domain/catalog";
 import type { DiscoveredJob } from "../../src/modules/job-catalog/domain/deduplication";
 import { slugifyTitle } from "../../src/modules/job-catalog/domain/urls";
@@ -621,6 +625,132 @@ describe("job catalogue IA, eligibility and publication", () => {
     const dueIds = new Set(due.map((row) => row.id));
     expect(dueIds.has(blocked)).toBe(false);
     expect(dueIds.has(allowed)).toBe(true);
+  });
+});
+
+describe("employer SEO and sitemap coverage", () => {
+  it("includes only indexable employer profiles in the sitemap query", async () => {
+    const blankSlug = uniqueSlug("seo-blank");
+    await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://seo-blank-${uniqueSlug("c")}.example.com`,
+        directorySectorKey: "technology_it",
+        directoryVisible: true,
+        name: "Blank SEO Co",
+        slug: blankSlug,
+        sourceType: "greenhouse",
+      }),
+    );
+
+    const describedSlug = uniqueSlug("seo-described");
+    const describedId = await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://seo-described-${uniqueSlug("c")}.example.com`,
+        directorySectorKey: "technology_it",
+        directoryVisible: true,
+        name: "Described SEO Co",
+        slug: describedSlug,
+        sourceType: "greenhouse",
+      }),
+    );
+    await asCrawler(
+      (database) =>
+        database`
+        update app.company
+        set description = 'Original curated description used only for SEO tests.'
+        where id = ${describedId}::uuid
+      `,
+    );
+
+    const inactiveSlug = uniqueSlug("seo-inactive");
+    const inactiveId = await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://seo-inactive-${uniqueSlug("c")}.example.com`,
+        directorySectorKey: "technology_it",
+        directoryVisible: true,
+        name: "Inactive SEO Co",
+        slug: inactiveSlug,
+        sourceType: "greenhouse",
+      }),
+    );
+    await asCrawler(
+      (database) =>
+        database`
+        update app.company
+        set active = false,
+          description = 'Original description retained after catalogue deactivation.'
+        where id = ${inactiveId}::uuid
+      `,
+    );
+
+    const historicalSlug = uniqueSlug("seo-historical");
+    const historicalId = await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://seo-historical-${uniqueSlug("c")}.example.com`,
+        directorySectorKey: "technology_it",
+        directoryVisible: true,
+        name: "Historical SEO Co",
+        slug: historicalSlug,
+        sourceType: "greenhouse",
+      }),
+    );
+    const historicalJobLastChanged = new Date(Date.now() - 2 * 86_400_000);
+    await asCrawler(
+      (database) =>
+        database`
+        insert into app.job (
+          company_id, slug, application_url, title, content_hash,
+          eligibility_status, publication_status, active,
+          classification_source, classification_version, last_changed_at
+        )
+        values (
+          ${historicalId}::uuid, ${uniqueSlug("seo-historical-role")},
+          'https://seo.example.com/apply', 'Historical Role', ${"0".repeat(64)},
+          'eligible', 'published', false, 'deterministic', 1,
+          ${historicalJobLastChanged}
+        )
+      `,
+    );
+
+    const sitemapRows = await migrationDatabase.begin((database) =>
+      listIndexableEmployersForSitemap(database, 10_000),
+    );
+    const sitemapSlugs = new Set(sitemapRows.map((row) => row.slug));
+    expect(sitemapSlugs.has(blankSlug)).toBe(false);
+    expect(sitemapSlugs.has(describedSlug)).toBe(true);
+    expect(sitemapSlugs.has(historicalSlug)).toBe(true);
+    expect(sitemapSlugs.has(inactiveSlug)).toBe(false);
+
+    const historicalEntry = sitemapRows.find((row) => row.slug === historicalSlug)!;
+    expect(new Date(historicalEntry.last_modified).getTime()).toBeGreaterThanOrEqual(
+      historicalJobLastChanged.getTime(),
+    );
+
+    const blank = await migrationDatabase.begin((database) =>
+      findEmployerProfile(database, blankSlug),
+    );
+    expect(blank).not.toBeNull();
+    expect(blank!.has_imported_jobs).toBe(false);
+    expect(blank!.imported_jobs).toBe(0);
+
+    const described = await migrationDatabase.begin((database) =>
+      findEmployerProfile(database, describedSlug),
+    );
+    expect(described!.description).toBe("Original curated description used only for SEO tests.");
+    expect(described!.has_imported_jobs).toBe(false);
+    expect(described!.active_jobs).toBe(0);
+
+    const historical = await migrationDatabase.begin((database) =>
+      findEmployerProfile(database, historicalSlug),
+    );
+    expect(historical!.has_imported_jobs).toBe(true);
+    expect(historical!.imported_jobs).toBe(1);
+    expect(historical!.active_jobs).toBe(0);
+
+    const inactive = await migrationDatabase.begin((database) =>
+      findEmployerProfile(database, inactiveSlug),
+    );
+    expect(inactive!.active).toBe(false);
   });
 });
 

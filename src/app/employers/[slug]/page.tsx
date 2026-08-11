@@ -7,6 +7,7 @@ import {
   jobSubsectorLabel,
   remoteTypeLabels,
 } from "../../../modules/job-catalog/domain/taxonomy";
+import { escapeJsonLd } from "../../../modules/job-catalog/domain/publication";
 import {
   readEmployerActiveJobs,
   readEmployerProfile,
@@ -20,16 +21,28 @@ export const dynamic = "force-dynamic";
 
 type EmployerParams = Promise<{ slug: string }>;
 
+function employerMetaDescription(employer: { description: string | null; name: string }): string {
+  if (employer.description) return employer.description;
+  return `${employer.name} employer profile on OfferLab, with roles sourced from the employer's official careers sources plus official website and careers links.`;
+}
+
 export async function generateMetadata({ params }: { params: EmployerParams }): Promise<Metadata> {
   const { slug } = await params;
   const employer = await readEmployerProfile(slug);
-  if (!employer) return { title: "Employer not found | OfferLab" };
+  if (!employer) {
+    return { robots: { index: false, follow: false }, title: "Employer not found | OfferLab" };
+  }
+  if (!employer.indexable) {
+    return {
+      alternates: { canonical: `/employers/${employer.slug}` },
+      robots: { index: false, follow: true },
+      title: `${employer.name} | OfferLab`,
+    };
+  }
   return {
     alternates: { canonical: `/employers/${employer.slug}` },
-    description: employer.description
-      ? `${employer.description} Browse open roles at ${employer.name}.`
-      : `Browse open roles at ${employer.name}, sourced from their official careers site.`,
-    title: `${employer.name} Jobs | OfferLab`,
+    description: employerMetaDescription(employer),
+    title: `${employer.name} | UK Employer Profile and Jobs | OfferLab`,
   };
 }
 
@@ -58,11 +71,58 @@ export default async function EmployerProfilePage({ params }: { params: Employer
     ),
   ];
 
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
+  const structuredData = employer.indexable
+    ? [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          logo: employer.logo_url ?? undefined,
+          name: employer.name,
+          url: employer.website_url ?? employer.careers_url ?? undefined,
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "Employers",
+              item: new URL("/employers", base).toString(),
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: employer.name,
+              item: new URL(`/employers/${employer.slug}`, base).toString(),
+            },
+          ],
+        },
+      ]
+    : null;
+
   return (
     <main className="employer-profile-page">
       <SiteHeader />
 
       <div className="employer-profile">
+        <nav aria-label="Breadcrumb" className="seo-breadcrumb">
+          <ol>
+            <li>
+              <Link href="/employers">Employers</Link>
+            </li>
+            <li aria-current="page">{employer.name}</li>
+          </ol>
+        </nav>
+
+        {structuredData && (
+          <script
+            dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}
+            type="application/ld+json"
+          />
+        )}
+
         <header className="employer-profile-card">
           <div className="employer-profile-mark">
             <EmployerMark companyName={employer.name} logoUrl={employer.logo_url} />
@@ -78,9 +138,15 @@ export default async function EmployerProfilePage({ params }: { params: Employer
 
         <dl className="employer-profile-stats">
           <div className="employer-profile-stat">
-            <dt>Active roles</dt>
+            <dt>Current roles</dt>
             <dd>{employer.active_jobs}</dd>
           </div>
+          {employer.imported_jobs > 0 && (
+            <div className="employer-profile-stat">
+              <dt>Roles tracked</dt>
+              <dd>{employer.imported_jobs}</dd>
+            </div>
+          )}
           {sectors.length > 0 && (
             <div className="employer-profile-stat">
               <dt>Sectors</dt>
@@ -145,6 +211,13 @@ export default async function EmployerProfilePage({ params }: { params: Employer
           {jobs.length === 0 ? (
             <p className="employer-profile-empty">
               {employer.name} has no roles currently listed through their official careers sources.
+              {employer.imported_jobs > 0 && (
+                <>
+                  {" "}
+                  OfferLab has previously tracked {employer.imported_jobs}{" "}
+                  {employer.imported_jobs === 1 ? "role" : "roles"} from those sources.
+                </>
+              )}
             </p>
           ) : (
             <div className="public-jobs-results">

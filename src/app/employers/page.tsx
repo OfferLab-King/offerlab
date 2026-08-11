@@ -10,14 +10,30 @@ import { EmployerDirectoryView } from "./employer-directory-view";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/employers" },
-  description:
-    "Explore leading employers by sector, with live counts of current roles sourced from official career sites.",
-  title: "Explore Employers | OfferLab",
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const raw = await searchParams;
+  const filtered = Object.values(raw).some((value) =>
+    Array.isArray(value) ? value.length > 0 : typeof value === "string" && value.length > 0,
+  );
+  return {
+    alternates: { canonical: "/employers" },
+    description:
+      "Explore UK employers by sector, with current roles sourced from official career sites and honest zero-role states.",
+    robots: filtered ? { index: false, follow: true } : undefined,
+    title: "Explore Employers by Sector | OfferLab",
+  };
+}
 
-export default async function EmployersDirectoryPage() {
+export default async function EmployersDirectoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  await searchParams;
   const [rows, sectorCounts] = await Promise.all([readEmployerDirectory(), readSectorJobCounts()]);
   const employerCount = new Set(rows.map((row) => row.company_slug)).size;
   const hiringCount = new Set(
