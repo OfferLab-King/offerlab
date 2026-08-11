@@ -1,0 +1,30 @@
+[
+  {
+    "id": "80f1f2a3-9f0e-4b5c-8a9b-1234567890ab",
+    "title": "Graduate Data Scientist",
+    "location": "London",
+    "categories": {
+      "commitment": "Full-time",
+      "team": "Data",
+      "allLocations": "London",
+      "workplaceType": "Hybrid"
+    },
+    "hostedUrl": "https://jobs.lever.co/skyscanner/80f1f2a3-9f0e-4b5c-8a9b-1234567890ab",
+    "createdAt": 1784592000000,
+    "text": "<p>Join our data team as a <strong>Graduate Data Scientist</strong>.</p><ul><li>SQL and Python</li><li>Statistical modelling</li></ul>"
+  },
+  {
+    "id": "9b3d4e5f-6a7b-4c8d-9e0f-1234567890ab",
+    "title": "Frontend Engineer (Remote)",
+    "location": "Remote",
+    "categories": {
+      "commitment": "Full-time",
+      "team": "Engineering",
+      "allLocations": "Remote",
+      "workplaceType": "Remote"
+    },
+    "hostedUrl": "https://jobs.lever.co/skyscanner/9b3d4e5f-6a7b-4c8d-9e0f-1234567890ab",
+    "createdAt": 1784678400000,
+    "text": "<p>Remote-first frontend role.</p>"
+  }
+]

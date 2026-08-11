@@ -1,0 +1,34 @@
+{
+  "jobs": [
+    {
+      "id": "7f2d3c4b-5a6b-4c7d-8e9f-0123456789ab",
+      "title": "Graduate Analyst",
+      "location": "London",
+      "department": "Analytics",
+      "team": "Insights",
+      "employmentType": "Full Time",
+      "remote": false,
+      "publishedAt": "2026-07-28T08:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/exampleorg/7f2d3c4b-5a6b-4c7d-8e9f-0123456789ab",
+      "applicationUrl": "https://jobs.ashbyhq.com/exampleorg/7f2d3c4b-5a6b-4c7d-8e9f-0123456789ab/apply",
+      "descriptionHtml": "<p>We are hiring a <strong>Graduate Analyst</strong> for the Insights team.</p><ul><li>Excel and SQL</li><li>Communication skills</li></ul>",
+      "compensation": { "compensationTierSummary": "£50,000 - £65,000" }
+    },
+    {
+      "id": "1a2b3c4d-5e6f-4a7b-8c9d-0123456789ab",
+      "title": "Product Intern",
+      "location": "Manchester",
+      "department": "Product",
+      "team": "Product",
+      "employmentType": "Internship",
+      "remote": true,
+      "publishedAt": "2026-08-01T08:00:00.000Z",
+      "jobUrl": "https://jobs.ashbyhq.com/exampleorg/1a2b3c4d-5e6f-4a7b-8c9d-0123456789ab",
+      "applicationUrl": "https://jobs.ashbyhq.com/exampleorg/1a2b3c4d-5e6f-4a7b-8c9d-0123456789ab/apply",
+      "descriptionHtml": "<p>A remote product internship.</p>",
+      "compensation": { "compensationTierSummary": "" }
+    }
+  ],
+  "jobPostingsUrl": "https://jobs.ashbyhq.com/exampleorg",
+  "paginationInfo": { "hasMore": false, "pageCursor": null }
+}

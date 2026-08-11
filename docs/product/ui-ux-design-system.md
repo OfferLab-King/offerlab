@@ -91,8 +91,11 @@ Use an 8px base grid. The permitted default steps are:
 | `--space-8`  |  64px | major marketing section                 |
 | `--space-10` |  80px | large desktop marketing rhythm          |
 
-Use 4px only for optical correction or tightly related metadata. Do not introduce arbitrary values
-when an adjacent token works.
+Use 4px only for optical correction, tightly related metadata or the visual gap between repeated
+compact rows. A token describes available spacing values; it does not require a full token between
+every list item. Repeated filter choices, directory entries and table-like rows may use a 0–4px
+visual gap when their row height already provides a clear reading rhythm. Do not introduce arbitrary
+values when an adjacent token or an intentional zero-gap row works.
 
 ### Typography
 
@@ -112,6 +115,9 @@ when an adjacent token works.
 - Accent: OfferLab green, reserved for actions, links, focus and selected states.
 - Semantic colours: muted red, amber and green with accompanying text or icons.
 - Never use colour alone to communicate ready, archived, error or urgency states.
+- Standard focus treatment uses the accent colour. Red and amber are reserved for semantic feedback
+  and must never be used as the default focus ring because that makes ordinary interaction resemble
+  an error.
 
 ### Radius and elevation
 
@@ -154,7 +160,11 @@ when an adjacent token works.
 - Secondary: neutral surface with a quiet border.
 - Tertiary: text link or quiet button for low-emphasis actions.
 - Destructive: muted red and visually separated from ordinary save actions.
-- Default height is at least 44px. Labels use specific verbs.
+- Standalone action buttons default to at least 44px. Labels use specific verbs.
+- Inline text actions, disclosure controls, filter choices and dense table controls may use a
+  28–32px visual row on desktop when focus remains clear and adjacent targets remain distinct. At
+  touch breakpoints, provide an approximately 44px hit area without forcing that height into every
+  desktop list row.
 - Links styled as buttons and native buttons must share height, padding, radius and focus treatment.
 
 ### Cards and rows
@@ -218,7 +228,8 @@ Do not mix unadapted default shadcn styling with OfferLab styling.
 Before considering UI work complete, confirm:
 
 - the page uses the shared shell, width and navigation;
-- spacing uses the 8px system, with documented optical exceptions only;
+- region and component spacing uses the 8px system; repeated compact rows may use the documented
+  0–4px optical gap;
 - radii and shadows use shared tokens;
 - exactly one primary action is visually dominant in each region;
 - button-links and buttons align consistently;

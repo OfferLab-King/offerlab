@@ -1,0 +1,93 @@
+# ADR 0023: Job catalogue information architecture, eligibility and publication pipeline
+
+- Status: Accepted
+- Date: 2026-08-10
+- Amended: 2026-08-11
+
+## Context
+
+ADR 0022 built the dormant job-catalog ingestion foundation. The founder's
+10 August 2026 decision (recorded in `docs/architecture/founder-decisions.md`)
+makes OfferLab's own catalogue the primary job-discovery experience, temporarily
+disables JSearch, and requires an original information architecture plus a
+deterministic eligibility and publication pipeline. On 11 August the founder
+broadened the catalogue to include valid general and experienced-hire roles as
+well as early-career opportunities. Bright Network is a structure reference
+only, never a data source.
+
+## Decision
+
+1. **Taxonomy tables.** New `app.job_sector` and `app.job_subsector` tables with
+   stable machine keys (`sector_key` / `subsector_key`), display labels, short
+   original descriptions and explicit parent mapping (a subsector belongs to one
+   sector; the `other` subsector is unassigned). Opportunity types are a
+   constrained list on `app.job`. Display labels are never identifiers.
+2. **Eligibility and publication pipeline (deterministic).** Each job stores
+   `eligibility_status` (`eligible` / `ineligible` / `needs_review`),
+   `eligibility_reasons` (stable keys), `eligibility_evidence` (exact source
+   phrases), `publication_status` (`draft` / `published` / `suppressed` /
+   `expired`), `classification_source` (`source` / `deterministic` /
+   `administrator` / `ai_assisted`) and `classification_version`. The crawler
+   pipeline classifies deterministically on insert and on content change;
+   `eligible` + deterministic → `published`; `needs_review` → `draft` (admin
+   queue); `ineligible` → `suppressed`. Rows whose `classification_source =
+'administrator'` are never reclassified or republished automatically.
+   Career level is retained as classification evidence but is not a publication
+   gate. A current job listing from a reviewed source may be eligible whether it
+   is graduate, general or experienced-hire work. Ambiguous source records still
+   require review. Only `eligible`, `published`, `active` jobs are publicly
+   queryable.
+3. **Source permission review provenance.** `app.company` records review date,
+   reviewer, robots result, terms result, evidence URL and review notes. Only
+   `crawl_allowed = 'allowed'` sources are crawled; `unknown` and `blocked`
+   sources never run.
+4. **Multiple locations.** New `app.job_location` table (city, region, country,
+   source text, remote/hybrid/on-site flags, position) so one requisition can
+   appear in several locations without duplicate job records.
+5. **Crawler hardening.** Advisory locks (per company and for the enrichment
+   worker), response-size limits, bounded manual redirects, SSRF/private-network
+   rejection for every fetched URL, no database fallback in production,
+   nonzero CLI exit on failed runs, stale-run recovery, and duplicate-source
+   coalescing via a `careers_url` uniqueness rule.
+6. **Feature gate.** `JOB_CATALOG_ENABLED=false` default: public catalogue
+   routes, catalogue APIs and member catalogue integration return 404;
+   catalogue URLs are absent from the sitemap; crawling and enrichment do not
+   run. JSearch is separately disabled (`JSEARCH_ENABLED=false`), and the
+   retired `/member/jobs` screen redirects to the catalogue. Private manual job
+   target records remain available to document-tailoring workflows.
+7. **AI boundaries.** AI enrichment remains gated (`JOB_LLM_ENABLED=false` by
+   default), never writes eligibility or publication fields, and requires
+   administrator confirmation for low-confidence classifications before any
+   future activation.
+8. **Combined employer/sector directory.** `/employers` owns public sector,
+   subsector and company browsing. The former `/jobs/sectors/**` pages are
+   permanent compatibility redirects, not a second presentation of the same
+   taxonomy. Job-list sector filters remain URL-backed on `/jobs`.
+9. **Directory metadata is not source permission.** `app.company` stores an
+   editorial `directory_sector_key`, optional internal
+   `directory_priority_rank` (1–500) and `directory_visible`. These fields let
+   a reviewed priority employer appear honestly with zero current roles. They
+   never change `crawl_allowed`, eligibility or publication. Public directory
+   queries union visible zero-role employers with employers that have current
+   eligible published jobs.
+
+## Consequences
+
+- Reviewed whole-company feeds may populate the catalogue across career levels;
+  source permission, active state and publication status remain mandatory.
+- Deterministic classification is auditable and reproducible; every public job
+  has machine-readable eligibility reasons and evidence.
+- Administrator overrides are explicit, owner-attributed, versioned and
+  audited.
+- Unverified sources stay dormant; the initial registry covers every top-level
+  sector only where an official identifier could be verified (gaps documented).
+- The combined directory may be broader than the current job catalogue, but it
+  labels zero-role employers and never manufactures vacancy counts.
+- The pipeline is an expansion of ADR 0022; that ADR remains valid for the
+  ingestion mechanics it describes.
+
+## Notes for operators
+
+See `docs/operations/job-catalog-operations.md`. Production activation requires
+`JOB_CATALOG_ENABLED=true`, per-source permission reviews, and the AI gates
+before any enrichment runs.

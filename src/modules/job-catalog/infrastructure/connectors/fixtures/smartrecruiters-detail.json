@@ -1,0 +1,20 @@
+{
+  "id": "a1b2c3d4-1111-2222-3333-444455556666",
+  "name": "Graduate Risk Analyst",
+  "location": {
+    "city": "London",
+    "country": "United Kingdom",
+    "countryCode": "GB",
+    "remote": false
+  },
+  "applyUrl": "https://jobs.smartrecruiters.com/Wise/a1b2c3d4-1111-2222-3333-444455556666",
+  "jobAd": {
+    "sections": [
+      { "title": "About us", "content": "<p>Wise moves money around the world.</p>" },
+      {
+        "title": "The role",
+        "content": "<ul><li>Support risk frameworks</li><li>Data analysis in SQL</li></ul>"
+      }
+    ]
+  }
+}

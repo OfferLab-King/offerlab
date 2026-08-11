@@ -2,10 +2,24 @@
 
 **Status:** Approved  
 **Date:** 2026-07-19  
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-11
 **Authority:** Highest product authority. These decisions govern current implementation; references to Vertical Slice 01 describe the original foundation unless a paragraph explicitly limits itself to that slice.
 
 ## Product experience
+
+### Finished-product standard; no MVP scope ceiling
+
+**Approved:** 11 August 2026
+
+OfferLab is being built as a finished, production-grade product. Historical
+documents labelled MVP, vertical slice, initial journey or screen hypothesis
+are research and implementation history only. Their old non-goals, feature
+counts and staged-release boundaries must never be used to refuse or remove a
+later founder-approved capability. Scope discipline now means keeping the
+product coherent, secure, private and operationally supportable; it does not
+mean enforcing an MVP ceiling. Production safeguards, source permissions,
+member data isolation, accessibility and truthful product claims remain
+binding.
 
 `docs/product/experience-principles.md` is the current authoritative UX decision. OfferLab is a preparation workspace, not a course or wizard. Default to direct, compact interfaces and proportionate contextual guidance. Earlier draft requirements for guided journeys, fixed pathways, central next-action panels, progress displays or completion targets are not active unless a later scoped decision justifies them.
 
@@ -56,6 +70,106 @@ Replace shallow keyword lists with an inspectable requirement-by-requirement rev
 Permit one transparent **document evidence coverage score** from 0 to 100, calculated only as evidenced assessed requirements divided by all assessed requirements. Always show the numerator and denominator and label the measure as document coverage, not candidate quality. It is not an ATS score, job-match probability, candidate ranking, suitability decision or estimate of an interview, hiring or offer outcome. Do not weight protected characteristics, institution prestige, writing dialect or inferred personality.
 
 Connect genuine evidence gaps to small OfferLab evidence-building projects and a bounded curated list of external learning options. Course completion alone is not evidence of competence; guidance should help a member create an inspectable output they can explain truthfully. External options must identify the provider, open outside OfferLab and state the current commercial relationship. Affiliate links may be introduced only after an actual agreement and must be clearly disclosed without changing recommendation order or implying that purchase improves recruitment outcomes.
+
+### Job catalogue as the primary job-discovery experience
+
+**Approved:** 10 August 2026
+
+This decision supersedes the earlier JSearch pilot for the primary discovery
+experience and records the rules for the OfferLab job catalogue.
+
+- **JSearch is temporarily disabled.** `JSEARCH_ENABLED=false` is the documented
+  deployment posture. The JSearch implementation, migrations and historical
+  usage records are retained but the member job-search UI must not present a
+  broken search form while disabled; it is replaced by a clear link into the
+  OfferLab catalogue. Manual job targets remain available and private.
+- **OfferLab's own catalogue is the main job-discovery experience.** Jobs are
+  collected from employers' official public career websites and official public
+  ATS job-board APIs, in this source-order preference: (1) official public ATS
+  job-board API; (2) employer's official structured job feed; (3) employer's
+  official careers pages after a recorded robots.txt and source review;
+  (4) manually entered official employer job URL. JSearch may be reconsidered
+  later; it is not part of this implementation.
+- **Bright Network is a product-structure reference only and is not an
+  authorised data source.** Its current terms prohibit copying, storing,
+  republishing or commercially using its website information without prior
+  written permission. Do not scrape, crawl, bulk-copy or republish Bright
+  Network job records; do not use authenticated pages, reverse-engineer private
+  APIs, bypass bot protection or access controls, copy its editorial content,
+  branding, CSS, layouts, icons, images or page text, or present OfferLab as
+  affiliated with it. Do not use Bright Network links as application URLs when
+  an official employer application URL exists. The public catalogue may be
+  reviewed manually to understand common information architecture only;
+  implementation and presentation must be original. Any future use of Bright
+  Network data requires a separately gated source with
+  `BRIGHT_NETWORK_DATA_USE_APPROVED=true` (default false), an approval record
+  naming who approved it, when, its scope, retention restrictions and evidence
+  location, and both the approval gate and source-level permission before any
+  request.
+- **Source permission discipline.** Every source remains disabled until an
+  administrator records: permission (allowed, blocked or unknown), review date,
+  reviewer, source type, robots result where applicable, relevant terms result,
+  evidence/reference URL and review notes. Only allowed sources may be crawled.
+  A public page is never silently treated as authorisation. Do not use
+  LinkedIn, Indeed, Glassdoor, Reed, another commercial job aggregator,
+  authenticated pages, private APIs or bot-protection bypasses.
+- **Information architecture.** The catalogue uses two separate classification
+  dimensions — sector (broad career family) and subsector (specific professional
+  area) — plus an opportunity-type taxonomy that makes the full range of
+  early-career opportunities easy to filter (graduate jobs, graduate schemes/programmes,
+  internships, industrial placements, work experience, degree apprenticeships,
+  training contracts, vacation schemes, immediate-start roles,
+  knowledge-transfer partnerships, professionally relevant volunteering,
+  entry-level and junior roles, and postgraduate opportunities only when they
+  are genuine career opportunities). As amended on 2026-08-11, the public
+  catalogue is not limited to early-career work: valid general and
+  experienced-hire roles from reviewed employer sources also appear. Career
+  level and opportunity type are filters, not publication gates. Employment type remains a separate field.
+  Stable machine keys are identifiers; display labels are never identifiers.
+  Locations support country, region, city, free-text source location,
+  remote/hybrid/on-site and multiple locations; filters are derived from stored
+  jobs rather than hard-coded lists.
+- **Combined employer and sector directory.** As amended on 11 August 2026,
+  Employers is the single public directory for companies, sectors and
+  subsectors. Do not maintain a second Sectors navigation destination or a
+  competing sector-card index. Employer groups expose their current sector and
+  subsector job links directly; legacy `/jobs/sectors/**` URLs permanently
+  redirect into the relevant employer-directory section. The Jobs page keeps
+  sector filters because those filter job records rather than duplicate the
+  directory.
+- **Priority UK employer cohort.** Source onboarding prioritises an editorial
+  cohort of at most 500 UK-relevant employers before the long tail. The number
+  is an operating limit, not a public quality ranking. Selection must record a
+  current evidence basis and favour demonstrated UK hiring relevance: current
+  graduate/employer research, large UK private and listed employers, major
+  public employers, and sector coverage. Directory inclusion does not grant
+  crawl permission, imply endorsement or claim a current vacancy. A company
+  appears with “No current roles” until an independently reviewed official
+  source produces an eligible published job.
+- **Eligibility and publication pipeline.** Whole-company feeds must not
+  automatically become public. Deterministic rules classify every job as
+  eligible, ineligible or needs_review with machine-readable reasons and exact
+  source evidence. Only eligible, published, active roles appear publicly.
+  Eligibility establishes that a record is a current job listing from a
+  reviewed source; seniority or absence of graduate wording does not make it
+  ineligible. Ambiguous source records remain needs_review and are never
+  automatically published. Title-based sector and opportunity classification
+  is overridden by contradictory description evidence.
+  Administrator overrides of eligibility, classification or publication are
+  owner-attributed, timestamped and audited. Classification precedence:
+  reliable source-provided taxonomy mapped through an explicit mapping, then
+  administrator override, then deterministic title/department/team mapping,
+  then optional AI-assisted suggestion, then needs_review. AI must not directly
+  publish a job; `JOB_LLM_ENABLED=false` by default; AI output requires
+  structured schema validation, exact evidence, administrator confirmation for
+  low-confidence classifications and synthetic evaluation before activation.
+- **Feature gate.** A master `JOB_CATALOG_ENABLED` gate (default false) keeps
+  the catalogue routes, APIs, sitemap entries, crawling and enrichment dormant
+  until this feature is explicitly enabled for production. The web runtime
+  login must never be able to assume the crawler role.
+
+This is the product-authority record for the implementation described in
+ADR 0023.
 
 ### Recruitment Intelligence discussion pilot
 

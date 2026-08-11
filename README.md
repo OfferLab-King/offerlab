@@ -107,6 +107,24 @@ Members register directly at `/register`. When Supabase email confirmation is en
 
 Legacy invitation schema is retained but inactive; registration does not read or consume it. See `docs/operations/authentication.md` for the flow and deployment controls.
 
+## Job catalogue
+
+The catalogue implementation is dormant by default (`JOB_CATALOG_ENABLED=false`).
+The current founder decision approves gated JSearch/manual targets, so direct
+employer crawling and public catalogue launch require a further recorded decision.
+
+The job catalogue (`src/modules/job-catalog`) collects UK graduate roles directly from employer career sites and supported ATS job-board APIs, deduplicates them, enriches them with a strict-schema DeepSeek step, and presents them at `/jobs` and `/jobs/[slug]`. Sources are only crawled after `crawl_allowed='allowed'` is recorded. Worker commands run as CLI scripts:
+
+```bash
+pnpm jobs:seed-companies --confirm-local   # seed the deterministic example cohort
+pnpm jobs:status                           # sources, runs and events snapshot
+pnpm jobs:crawl --company=<slug> [--dry-run]
+pnpm jobs:crawl:due [--limit=N] [--dry-run]
+pnpm jobs:enrich [--limit=N] [--dry-run]
+```
+
+See `docs/operations/job-catalog-operations.md` for verification, scheduling (systemd timer) and Lightsail deployment, and ADR 0022 for the architecture decision.
+
 ## Environments
 
 - **Local:** local Supabase stack and captured email.
