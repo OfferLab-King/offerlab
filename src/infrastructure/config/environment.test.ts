@@ -91,6 +91,7 @@ describe("parseServerEnvironment", () => {
         AUTH_RATE_LIMIT_SECRET: "production-test-secret",
         DATABASE_URL: "postgresql://runtime.invalid/database",
         IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        JOB_CRAWLER_MODEL_DATA_APPROVED: "true",
         NODE_ENV: "production",
       }),
     ).not.toThrow();
@@ -106,7 +107,27 @@ describe("parseServerEnvironment", () => {
         CAREER_DOCUMENT_PROVIDER: "deepseek",
         DATABASE_URL: "postgresql://runtime.invalid/database",
         IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+        JOB_CRAWLER_MODEL_DATA_APPROVED: "true",
         NODE_ENV: "production",
+      }),
+    ).not.toThrow();
+  });
+
+  it("requires a separate crawler login when the production catalog is enabled", () => {
+    const environment: NodeJS.ProcessEnv = {
+      ...validEnvironment,
+      APP_ENV: "production",
+      AUTH_RATE_LIMIT_SECRET: "production-test-secret",
+      DATABASE_URL: "postgresql://runtime.invalid/database",
+      IDENTITY_SYNC_DATABASE_URL: "postgresql://identity.invalid/database",
+      JOB_CATALOG_ENABLED: "true",
+      NODE_ENV: "production",
+    };
+    expect(() => parseServerEnvironment(environment)).toThrow("JOB_CRAWLER_DATABASE_URL");
+    expect(() =>
+      parseServerEnvironment({
+        ...environment,
+        JOB_CRAWLER_DATABASE_URL: "postgresql://crawler.invalid/database",
       }),
     ).not.toThrow();
   });

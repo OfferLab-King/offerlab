@@ -41,6 +41,28 @@ function applyPrivateSecurityHeaders(response: NextResponse, pathname: string): 
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const pathname = request.nextUrl.pathname;
+  const cataloguePath =
+    pathname.startsWith("/jobs") ||
+    pathname.startsWith("/employers") ||
+    pathname.startsWith("/api/jobs") ||
+    pathname.startsWith("/member/saved-jobs") ||
+    pathname === "/api/member/saved-jobs";
+  if (cataloguePath) {
+    if (process.env.JOB_CATALOG_ENABLED !== "true") {
+      return new NextResponse("Not found", {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+        status: 404,
+      });
+    }
+    // Catalogue enabled: the page and API layers enforce visibility; the
+    // middleware only passes requests through.
+    return NextResponse.next({ request });
+  }
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -76,7 +98,9 @@ export const config = {
     "/admin/:path*",
     "/api/auth/:path*",
     "/api/member/:path*",
+    "/api/jobs/:path*",
     "/auth/:path*",
+    "/jobs/:path*",
     "/member/:path*",
     "/register/:path*",
     "/reset-password/:path*",

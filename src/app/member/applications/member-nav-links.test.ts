@@ -8,7 +8,7 @@ describe("member navigation", () => {
   });
 
   it("keeps each nested career destination current", () => {
-    expect(isMemberDestinationCurrent("/member/jobs/123", "/member/jobs")).toBe(true);
+    expect(isMemberDestinationCurrent("/jobs/123", "/jobs")).toBe(true);
     expect(isMemberDestinationCurrent("/member/cvs/123", "/member/cvs")).toBe(true);
     expect(isMemberDestinationCurrent("/member/cover-letters/123", "/member/cover-letters")).toBe(
       true,

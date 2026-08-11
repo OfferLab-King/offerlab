@@ -1,0 +1,481 @@
+import type { TransactionSql } from "postgres";
+import type { JobCatalogFilters } from "../domain/catalog";
+import {
+  buildJobFilterClauses,
+  type CatalogFacetGroup,
+  JOB_CATALOG_PAGE_SIZE,
+} from "../domain/catalog";
+
+export const PUBLIC_JOB_VISIBILITY = `j.publication_status = 'published'
+  and j.eligibility_status = 'eligible'
+  and j.active`;
+
+export type JobCardRow = Readonly<{
+  application_deadline: Date | null;
+  application_url: string;
+  company_logo_url: string | null;
+  company_name: string;
+  company_slug: string;
+  description_summary: string | null;
+  employment_type: string | null;
+  first_seen_at: Date;
+  id: string;
+  last_successful_check_at: Date | null;
+  location_text: string | null;
+  normalized_title: string | null;
+  opportunity_type: string;
+  posted_at: Date | null;
+  remote_type: string | null;
+  salary_currency: string | null;
+  salary_max: number | null;
+  salary_min: number | null;
+  salary_period: string | null;
+  sector_key: string | null;
+  skills: readonly string[];
+  slug: string;
+  subsector_key: string | null;
+  title: string;
+  visa_sponsorship_status: string;
+}>;
+
+export type JobSearchResult = Readonly<{
+  items: readonly JobCardRow[];
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+}>;
+
+export type JobDetailRow = Readonly<{
+  active: boolean;
+  application_deadline: Date | null;
+  application_url: string;
+  classification_source: string;
+  classification_version: number;
+  company_careers_url: string;
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  degree_requirements: readonly string[];
+  description_summary: string | null;
+  eligibility_evidence: string | null;
+  eligibility_reasons: readonly string[];
+  eligibility_status: string;
+  employment_type: string | null;
+  enrichment_model: string | null;
+  enrichment_version: number | null;
+  experience_requirements: string | null;
+  external_job_id: string | null;
+  first_seen_at: Date;
+  id: string;
+  last_changed_at: Date;
+  last_seen_at: Date;
+  last_successful_check_at: Date | null;
+  location_text: string | null;
+  normalized_title: string | null;
+  opportunity_type: string;
+  posted_at: Date | null;
+  preferred_skills: readonly string[];
+  publication_status: string;
+  remote_type: string | null;
+  requirements: readonly string[];
+  responsibilities: readonly string[];
+  salary_currency: string | null;
+  salary_max: number | null;
+  salary_min: number | null;
+  salary_period: string | null;
+  sector_key: string | null;
+  seniority_level: string | null;
+  skills: readonly string[];
+  slug: string;
+  source_url: string | null;
+  subsector_key: string | null;
+  title: string;
+  updated_at: Date;
+  visa_sponsorship_evidence: string | null;
+  visa_sponsorship_status: string;
+}>;
+
+const jobDetailColumns = `
+  j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
+  j.first_seen_at, j.last_seen_at, j.last_changed_at, j.application_deadline,
+  j.employment_type, j.remote_type, j.seniority_level, j.opportunity_type,
+  j.sector_key, j.subsector_key,
+  j.eligibility_status, j.eligibility_reasons, j.eligibility_evidence,
+  j.publication_status, j.classification_source, j.classification_version,
+  j.visa_sponsorship_status, j.visa_sponsorship_evidence, j.description_summary,
+  j.responsibilities, j.requirements, j.skills, j.preferred_skills,
+  j.degree_requirements, j.experience_requirements,
+  j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
+  j.application_url, j.source_url, j.external_job_id, j.active, j.created_at,
+  j.updated_at, j.enrichment_model, j.enrichment_version,
+  c.id as company_id, c.name as company_name, c.slug as company_slug,
+  c.careers_url as company_careers_url, c.last_successful_check_at`;
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+export async function findJobDetail(
+  database: TransactionSql,
+  slugOrId: string,
+): Promise<JobDetailRow | null> {
+  const isUuid = uuidPattern.test(slugOrId);
+  const rows = await database<JobDetailRow[]>`
+    select ${database.unsafe(jobDetailColumns)}
+    from app.job j
+    join app.company c on c.id = j.company_id
+    where j.slug = ${slugOrId}
+      ${isUuid ? database`or j.id = ${slugOrId}::uuid` : database``}
+    limit 1
+  `;
+  return rows[0] ?? null;
+}
+
+export async function findJobsByIds(
+  database: TransactionSql,
+  ids: readonly string[],
+): Promise<JobDetailRow[]> {
+  if (ids.length === 0) return [];
+  return database<JobDetailRow[]>`
+    select ${database.unsafe(jobDetailColumns)}
+    from app.job j
+    join app.company c on c.id = j.company_id
+    where j.id = any(${ids}::uuid[])
+  `;
+}
+
+export async function listCatalogJobsForSitemap(
+  database: TransactionSql,
+  limit: number,
+): Promise<readonly { slug: string; last_changed_at: Date }[]> {
+  return database<{ slug: string; last_changed_at: Date }[]>`
+    select slug, last_changed_at
+    from app.job
+    where active
+      and publication_status = 'published'
+      and eligibility_status = 'eligible'
+    order by last_changed_at desc
+    limit ${limit}
+  `;
+}
+
+export type SectorCountRow = Readonly<{
+  sector_key: string;
+  subsector_key: string | null;
+  count: number;
+}>;
+
+export async function sectorJobCounts(database: TransactionSql): Promise<SectorCountRow[]> {
+  return database<SectorCountRow[]>`
+    select s.sector_key, j.subsector_key, count(*)::int as count
+    from app.job_sector s
+    left join app.job j on j.sector_key = s.sector_key
+      and j.active and j.publication_status = 'published' and j.eligibility_status = 'eligible'
+    group by s.sector_key, j.subsector_key
+    order by s.position asc, j.subsector_key asc
+  `;
+}
+
+export type LocationFilterOption = Readonly<{ city: string | null; region: string | null }>;
+
+// ============ Faceted catalogue search ============
+
+const DEADLINE_NOT_PASSED = `(j.application_deadline is null or j.application_deadline >= now())`;
+
+export type FacetCountRow = Readonly<{
+  value: string;
+  label: string | null;
+  logo_url: string | null;
+  count: number;
+}>;
+
+export async function searchJobsFaceted(
+  database: TransactionSql,
+  filters: JobCatalogFilters,
+): Promise<
+  Readonly<{
+    result: JobSearchResult;
+    facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>;
+    hasSalaryData: boolean;
+  }>
+> {
+  const pageSize = JOB_CATALOG_PAGE_SIZE;
+  const offset = (filters.page - 1) * pageSize;
+  const now = new Date();
+  const build = (excludeFacet?: CatalogFacetGroup) => {
+    const { conditions, values } = buildJobFilterClauses(filters, now, {
+      ...(excludeFacet ? { excludeFacet } : {}),
+    });
+    return {
+      values,
+      where:
+        conditions.length > 0
+          ? `${PUBLIC_JOB_VISIBILITY} and ${DEADLINE_NOT_PASSED} and ${conditions.join(" and ")}`
+          : `${PUBLIC_JOB_VISIBILITY} and ${DEADLINE_NOT_PASSED}`,
+    };
+  };
+
+  const base = build();
+  let rankingParam = "";
+  const orderingValues: unknown[] = [];
+  if (filters.sort === "relevance" && filters.query) {
+    rankingParam = `$${base.values.length + 1}`;
+    orderingValues.push(filters.query);
+  }
+  const ordering =
+    filters.sort === "closing"
+      ? "j.application_deadline asc nulls last, j.posted_at desc nulls last, j.id"
+      : filters.sort === "salary"
+        ? "j.salary_max desc nulls last, j.posted_at desc nulls last, j.id"
+        : filters.sort === "relevance" && filters.query
+          ? `ts_rank(j.search_vector, websearch_to_tsquery('english', ${rankingParam})) desc, j.posted_at desc nulls last, j.id`
+          : "j.posted_at desc nulls last, j.first_seen_at desc, j.id";
+
+  const pageValues = [...base.values, ...orderingValues, pageSize, offset];
+  const rows = await database.unsafe<JobCardRow[]>(
+    `select j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
+       j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
+       j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
+       j.description_summary, j.skills, j.application_url,
+       j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
+       c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
+       c.last_successful_check_at
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${base.where}
+     order by ${ordering}
+     limit $${pageValues.length - 1}
+     offset $${pageValues.length}`,
+    pageValues as never[],
+  );
+
+  const countRows = await database.unsafe<{ total: number }[]>(
+    `select count(*)::int as total
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${base.where}`,
+    base.values as never[],
+  );
+  const total = countRows[0]?.total ?? 0;
+
+  const facets: Record<CatalogFacetGroup, readonly FacetCountRow[]> = {
+    sectors: [],
+    subsectors: [],
+    employers: [],
+    locations: [],
+    jobTypes: [],
+    sponsorship: [],
+  };
+
+  const sectorBase = build("sectors");
+  facets.sectors = await database.unsafe<FacetCountRow[]>(
+    `select j.sector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${sectorBase.where} and j.sector_key is not null
+     group by j.sector_key
+     order by count(*) desc, j.sector_key asc`,
+    sectorBase.values as never[],
+  );
+
+  const subsectorBase = build("subsectors");
+  facets.subsectors = await database.unsafe<FacetCountRow[]>(
+    `select j.subsector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${subsectorBase.where} and j.subsector_key is not null
+     group by j.subsector_key
+     order by count(*) desc, j.subsector_key asc`,
+    subsectorBase.values as never[],
+  );
+
+  const employerBase = build("employers");
+  facets.employers = await database.unsafe<FacetCountRow[]>(
+    `select c.slug as value, c.name as label, c.logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${employerBase.where}
+     group by c.slug, c.name, c.logo_url
+     order by count(*) desc, c.name asc
+     limit 100`,
+    employerBase.values as never[],
+  );
+
+  const jobTypeBase = build("jobTypes");
+  facets.jobTypes = await database.unsafe<FacetCountRow[]>(
+    `select j.opportunity_type as value, null::text as label, null::text as logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${jobTypeBase.where} and j.opportunity_type <> 'unknown'
+     group by j.opportunity_type
+     order by count(*) desc, j.opportunity_type asc`,
+    jobTypeBase.values as never[],
+  );
+
+  const sponsorshipBase = build("sponsorship");
+  facets.sponsorship = await database.unsafe<FacetCountRow[]>(
+    `select j.visa_sponsorship_status as value, null::text as label, null::text as logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${sponsorshipBase.where} and j.visa_sponsorship_status in ('confirmed','likely')
+     group by j.visa_sponsorship_status
+     order by count(*) desc, j.visa_sponsorship_status asc`,
+    sponsorshipBase.values as never[],
+  );
+
+  const locationBase = build("locations");
+  const cityRows = await database.unsafe<FacetCountRow[]>(
+    `select lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) as value,
+            null::text as label, null::text as logo_url,
+            count(distinct j.id)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     join app.job_location jl on jl.job_id = j.id
+     where ${locationBase.where}
+       and (jl.city is not null or jl.region is not null or jl.source_text <> '')
+     group by value
+     order by count desc, value asc
+     limit 100`,
+    locationBase.values as never[],
+  );
+  const modeRows = await database.unsafe<FacetCountRow[]>(
+    `select j.remote_type as value, null::text as label, null::text as logo_url, count(*)::int as count
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${locationBase.where} and j.remote_type in ('remote','hybrid','on_site')
+     group by j.remote_type
+     order by count desc, j.remote_type asc`,
+    locationBase.values as never[],
+  );
+  facets.locations = [...modeRows, ...cityRows];
+
+  const salaryRows = await database.unsafe<{ has: boolean }[]>(
+    `select count(*) filter (where j.salary_min is not null or j.salary_max is not null) > 0 as has
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${base.where}`,
+    base.values as never[],
+  );
+  const hasSalaryData = salaryRows[0]?.has ?? false;
+
+  return {
+    facets,
+    hasSalaryData,
+    result: {
+      items: rows,
+      page: filters.page,
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      pageSize,
+      total,
+    },
+  };
+}
+
+// ============ Employer directory ============
+
+export type EmployerDirectoryRow = Readonly<{
+  active_count: number;
+  company_name: string;
+  company_slug: string;
+  industry: string | null;
+  logo_url: string | null;
+  priority_rank: number | null;
+  sector_key: string | null;
+}>;
+
+export async function listEmployerDirectory(
+  database: TransactionSql,
+): Promise<EmployerDirectoryRow[]> {
+  return database<EmployerDirectoryRow[]>`
+    with current_jobs as (
+      select j.company_id, j.sector_key, count(*)::int as active_count
+      from app.job j
+      where j.active
+        and j.publication_status = 'published'
+        and j.eligibility_status = 'eligible'
+        and (j.application_deadline is null or j.application_deadline >= now())
+      group by j.company_id, j.sector_key
+    ), directory_rows as (
+      select cj.sector_key, c.slug as company_slug, c.name as company_name,
+        c.industry, c.logo_url, c.directory_priority_rank as priority_rank,
+        cj.active_count
+      from current_jobs cj
+      join app.company c on c.id = cj.company_id
+      where c.active
+
+      union all
+
+      select c.directory_sector_key as sector_key, c.slug as company_slug,
+        c.name as company_name, c.industry, c.logo_url,
+        c.directory_priority_rank as priority_rank, 0::int as active_count
+      from app.company c
+      where c.active and c.directory_visible
+        and not exists (
+          select 1 from current_jobs cj where cj.company_id = c.id
+        )
+    )
+    select sector_key, company_slug, company_name, industry, logo_url,
+      priority_rank, active_count
+    from directory_rows
+    order by sector_key nulls last,
+      (priority_rank is null), priority_rank, active_count desc, company_name asc
+  `;
+}
+
+export type EmployerProfileRow = Readonly<{
+  active_jobs: number;
+  ats_provider: string | null;
+  careers_url: string | null;
+  description: string | null;
+  id: string;
+  industry: string | null;
+  logo_url: string | null;
+  name: string;
+  slug: string;
+  website_url: string | null;
+}>;
+
+export async function findEmployerProfile(
+  database: TransactionSql,
+  slug: string,
+): Promise<EmployerProfileRow | null> {
+  const rows = await database<EmployerProfileRow[]>`
+    select c.id, c.name, c.slug, c.website_url, c.careers_url, c.logo_url,
+      c.industry, c.ats_provider, c.description,
+      count(j.id) filter (
+        where j.active and j.publication_status = 'published'
+          and j.eligibility_status = 'eligible'
+          and (j.application_deadline is null or j.application_deadline >= now())
+      )::int as active_jobs
+    from app.company c
+    left join app.job j on j.company_id = c.id
+    where c.slug = ${slug}
+    group by c.id, c.name, c.slug, c.website_url, c.careers_url, c.logo_url,
+      c.industry, c.ats_provider, c.description
+    limit 1
+  `;
+  return rows[0] ?? null;
+}
+
+export async function listCompanyActiveJobs(
+  database: TransactionSql,
+  companyId: string,
+  limit: number,
+): Promise<JobCardRow[]> {
+  return database<JobCardRow[]>`
+    select j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
+      j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
+      j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
+      j.description_summary, j.skills, j.application_url,
+      j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
+      c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
+      c.last_successful_check_at
+    from app.job j
+    join app.company c on c.id = j.company_id
+    where j.company_id = ${companyId}::uuid
+      and j.active and j.publication_status = 'published'
+      and j.eligibility_status = 'eligible'
+      and (j.application_deadline is null or j.application_deadline >= now())
+    order by j.posted_at desc nulls last, j.first_seen_at desc
+    limit ${limit}
+  `;
+}

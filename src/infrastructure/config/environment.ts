@@ -22,6 +22,22 @@ export const environmentKeys = [
   "DEEPSEEK_MODEL",
   "DATABASE_URL",
   "IDENTITY_SYNC_DATABASE_URL",
+  "JOB_BROWSER_MAX_CONCURRENCY",
+  "JOB_CATALOG_ENABLED",
+  "JOB_CRAWLER_DATABASE_URL",
+  "JOB_CRAWLER_FAILURE_PAUSE_THRESHOLD",
+  "JOB_CRAWLER_MAX_CONCURRENCY",
+  "JOB_CRAWLER_MAX_DETAIL_PAGES",
+  "JOB_CRAWLER_MAX_JOBS_PER_SOURCE",
+  "JOB_CRAWLER_MISSING_THRESHOLD",
+  "JOB_CRAWLER_MODEL_DATA_APPROVED",
+  "JOB_CRAWLER_ROBOTS_CACHE_TTL_MS",
+  "JOB_CRAWLER_TIMEOUT_MS",
+  "JOB_CRAWLER_USER_AGENT",
+  "JOB_ENRICHMENT_BATCH_LIMIT",
+  "JOB_ENRICHMENT_PROMPT_VERSION",
+  "JOB_LLM_ENABLED",
+  "JOB_LLM_MAX_CONCURRENCY",
   "JSEARCH_API_KEY",
   "JSEARCH_ACCOUNT_MONTHLY_LIMIT",
   "JSEARCH_COMMERCIAL_USE_APPROVED",
@@ -63,6 +79,22 @@ const serverEnvironmentSchema = z
     DEEPSEEK_BASE_URL: optionalUrl,
     DEEPSEEK_MODEL: optionalString,
     IDENTITY_SYNC_DATABASE_URL: optionalString,
+    JOB_BROWSER_MAX_CONCURRENCY: optionalPositiveInteger,
+    JOB_CATALOG_ENABLED: z.enum(["true", "false"]).optional(),
+    JOB_CRAWLER_DATABASE_URL: optionalString,
+    JOB_CRAWLER_FAILURE_PAUSE_THRESHOLD: optionalPositiveInteger,
+    JOB_CRAWLER_MAX_CONCURRENCY: optionalPositiveInteger,
+    JOB_CRAWLER_MAX_DETAIL_PAGES: optionalPositiveInteger,
+    JOB_CRAWLER_MAX_JOBS_PER_SOURCE: optionalPositiveInteger,
+    JOB_CRAWLER_MISSING_THRESHOLD: optionalPositiveInteger,
+    JOB_CRAWLER_MODEL_DATA_APPROVED: z.enum(["true", "false"]).optional(),
+    JOB_CRAWLER_ROBOTS_CACHE_TTL_MS: optionalPositiveInteger,
+    JOB_CRAWLER_TIMEOUT_MS: optionalPositiveInteger,
+    JOB_CRAWLER_USER_AGENT: optionalString,
+    JOB_ENRICHMENT_BATCH_LIMIT: optionalPositiveInteger,
+    JOB_ENRICHMENT_PROMPT_VERSION: optionalPositiveInteger,
+    JOB_LLM_ENABLED: z.enum(["true", "false"]).optional(),
+    JOB_LLM_MAX_CONCURRENCY: optionalPositiveInteger,
     JSEARCH_ACCOUNT_MONTHLY_LIMIT: optionalPositiveInteger,
     JSEARCH_API_KEY: optionalString,
     JSEARCH_COMMERCIAL_USE_APPROVED: z.enum(["true", "false"]).optional(),
@@ -90,6 +122,13 @@ const serverEnvironmentSchema = z
       });
     }
     if (environment.APP_ENV === "production") {
+      if (environment.JOB_CATALOG_ENABLED === "true" && !environment.JOB_CRAWLER_DATABASE_URL) {
+        context.addIssue({
+          code: "custom",
+          message: "JOB_CRAWLER_DATABASE_URL is required when the job catalog is enabled",
+          path: ["JOB_CRAWLER_DATABASE_URL"],
+        });
+      }
       for (const key of [
         "DATABASE_URL",
         "IDENTITY_SYNC_DATABASE_URL",
@@ -145,6 +184,31 @@ const serverEnvironmentSchema = z
           code: "custom",
           message: "JSEARCH_COMMERCIAL_USE_APPROVED=true is required for JSearch in production",
           path: ["JSEARCH_COMMERCIAL_USE_APPROVED"],
+        });
+      }
+      if (
+        environment.JOB_CATALOG_ENABLED === "true" &&
+        environment.DEEPSEEK_API_KEY &&
+        environment.JOB_LLM_ENABLED === "true" &&
+        environment.JOB_CRAWLER_MODEL_DATA_APPROVED !== "true"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message:
+            "JOB_CRAWLER_MODEL_DATA_APPROVED=true is required for job enrichment via DeepSeek in production",
+          path: ["JOB_CRAWLER_MODEL_DATA_APPROVED"],
+        });
+      }
+      if (
+        environment.JOB_CATALOG_ENABLED === "true" &&
+        environment.JOB_LLM_ENABLED === "true" &&
+        environment.DEEPSEEK_BASE_URL &&
+        new URL(environment.DEEPSEEK_BASE_URL).protocol !== "https:"
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: "DEEPSEEK_BASE_URL must use HTTPS for production job enrichment",
+          path: ["DEEPSEEK_BASE_URL"],
         });
       }
     }

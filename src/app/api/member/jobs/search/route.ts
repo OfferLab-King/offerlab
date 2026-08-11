@@ -41,9 +41,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json(
       {
         message:
-          runtime.reason === "production_not_approved"
-            ? "External job search is awaiting provider approval. You can still add a role manually."
-            : "External job search is not configured. You can still add a role manually.",
+          runtime.reason === "disabled"
+            ? "Provider job search is temporarily disabled. Browse the OfferLab catalogue or add a role manually."
+            : runtime.reason === "production_not_approved"
+              ? "External job search is awaiting provider approval. You can still add a role manually."
+              : "External job search is not configured. You can still add a role manually.",
       },
       { status: 503 },
     );

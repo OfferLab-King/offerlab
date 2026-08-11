@@ -138,35 +138,46 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await expect(page.getByLabel("Extracted cover letter text")).toHaveValue(/hiring team/);
     coverLetterDetailUrl = page.url();
 
-    await page.goto("/member/jobs");
-    await page.getByLabel("Role title").fill(savedJobRole);
-    await page.getByLabel("Company", { exact: true }).fill("Experian");
-    await page
-      .getByLabel("Job description", { exact: true })
-      .fill(
-        "Build customer-facing software with TypeScript and verify releases with automated tests.",
-      );
-    await page.getByRole("button", { name: "Save private target" }).click();
-    await expect(page.getByText("Role saved to your private targets.")).toBeVisible();
-    await expect(page.getByRole("heading", { name: savedJobRole })).toBeVisible();
+    const saveJobResponse = await page.evaluate(
+      async (job) => {
+        const response = await fetch("/api/member/jobs", {
+          body: JSON.stringify(job),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+        return response.status;
+      },
+      {
+        applyUrl: null,
+        companyName: "Experian",
+        description:
+          "Build customer-facing software with TypeScript and verify releases with automated tests.",
+        employmentType: null,
+        fetchedAt: null,
+        location: null,
+        provider: "manual",
+        providerJobId: null,
+        publishedAt: null,
+        roleTitle: savedJobRole,
+        sourcePublisher: null,
+        sourceUrl: null,
+      },
+    );
+    expect(saveJobResponse).toBe(201);
 
-    await page.getByLabel("Role or keywords").fill("Graduate developer");
-    await page.getByRole("textbox", { name: "Location", exact: true }).fill("London");
-    await page.getByRole("button", { name: "Search jobs" }).click();
-    const jobSearchError = page
-      .locator(".error-summary")
-      .filter({ hasText: "External job search is not configured" });
-    await expect(jobSearchError).toContainText("External job search is not configured");
-    await expect(jobSearchError).toContainText("add a role manually");
+    await page.goto("/member/jobs");
+    await expect(page).toHaveURL(/\/jobs$/);
+    await expect(page.getByRole("heading", { name: /Find your next opportunity/i })).toBeVisible();
     const jobsUrl = page.url();
 
     await page.setViewportSize({ height: 844, width: 390 });
+    await page.goto(cvDetailUrl);
     await expect(
       page.getByRole("navigation", { name: "Member navigation" }).getByRole("link"),
     ).toHaveCount(7);
     for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl]) {
       await page.goto(responsiveUrl);
-      await expect(page.locator("main")).toBeVisible();
+      await expect(page.locator("main").last()).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
