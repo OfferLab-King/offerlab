@@ -36,6 +36,19 @@ async function cleanUpEndpointMembers(database: Sql, emails: readonly string[]) 
   await database`delete from auth.users where email = any(${emails}::text[])`;
 }
 
+async function openMemberNavigationIfNarrow(page: Page) {
+  const toggle = page
+    .getByRole("navigation", { name: "Member navigation" })
+    .getByRole("button", { name: /Menu|Close/ });
+  if (!(await toggle.isVisible())) return;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await toggle.click();
+    if ((await toggle.getAttribute("aria-expanded")) === "true") return;
+    await page.waitForTimeout(250);
+  }
+  throw new Error("Member navigation menu did not open");
+}
+
 async function signOutAndVerify(page: Page) {
   await Promise.all([
     page.waitForURL(/\/sign-in\?signed-out=1$/),
@@ -323,6 +336,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await page.waitForURL("**/member/applications");
     await expect(page.getByText("Example Advisory Plc")).toBeVisible();
 
+    await openMemberNavigationIfNarrow(page);
     await page.getByRole("link", { name: "Profile" }).click();
     await page.getByLabel("I feel confident overall").check();
     await page.getByRole("button", { name: "Update profile" }).click();

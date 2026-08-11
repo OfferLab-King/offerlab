@@ -177,9 +177,11 @@ test("member uploads, versions and reviews career documents and saves a job targ
 
     await page.setViewportSize({ height: 844, width: 390 });
     await page.goto(cvDetailUrl);
-    await expect(
-      page.getByRole("navigation", { name: "Member navigation" }).getByRole("link"),
-    ).toHaveCount(7);
+    await expect(page.locator("main").last()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const memberNavigation = page.getByRole("navigation", { name: "Member navigation" });
+    await memberNavigation.getByRole("button", { name: /Menu|Close/ }).click();
+    await expect(memberNavigation.getByRole("link")).toHaveCount(8);
     for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl].filter(
       (url): url is string => url !== null,
     )) {

@@ -13,6 +13,7 @@ import {
 } from "../../../modules/job-catalog/application/catalog";
 import { JobCard } from "../../jobs/job-card";
 import { EmployerMark } from "../../jobs/employer-mark";
+import { SiteHeader } from "../../components/site-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,16 +60,7 @@ export default async function EmployerProfilePage({ params }: { params: Employer
 
   return (
     <main className="employer-profile-page">
-      <div className="catalogue-topbar">
-        <Link className="brand" href="/">
-          OfferLab
-        </Link>
-        <nav aria-label="Public">
-          <Link href="/jobs">Jobs</Link>
-          <Link href="/employers">Employers &amp; sectors</Link>
-          <Link href="/sign-in">Sign in</Link>
-        </nav>
-      </div>
+      <SiteHeader />
 
       <div className="employer-profile">
         <header className="employer-profile-card">

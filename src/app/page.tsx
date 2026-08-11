@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { SiteHeader } from "./components/site-header";
+
 const availableTools = [
   {
     eyebrow: "Build",
@@ -51,121 +53,144 @@ const distinctiveExperiences = [
 
 export default function FoundationPage() {
   return (
-    <main className="marketing-main">
-      <nav aria-label="Public navigation" className="marketing-nav">
-        <Link className="brand marketing-brand" href="/">
-          OfferLab
-        </Link>
-        <div>
-          <Link href="/intelligence">Recruitment Intelligence</Link>
-          <Link href="/sign-in">Sign in</Link>
-          <Link className="button-link compact-button" href="/register">
-            Create free account
+    <>
+      <SiteHeader />
+      <main className="marketing-main">
+        <section className="marketing-hero">
+          <div className="marketing-hero-copy">
+            <p className="eyebrow">Graduate recruitment, made practicable</p>
+            <h1>Prepare with evidence. Practise with purpose.</h1>
+            <p className="marketing-lead">
+              OfferLab helps you turn your real experience into stronger answers, prepare for each
+              recruitment stage and access the practice and feedback that generic advice cannot give
+              you.
+            </p>
+            <div className="marketing-actions">
+              <Link className="button-link marketing-primary-action" href="/register">
+                Start building your evidence
+              </Link>
+              <a href="#how-it-helps">See how OfferLab helps</a>
+            </div>
+            <p className="marketing-note">Free account · No invitation required</p>
+          </div>
+
+          <aside aria-label="Example OfferLab coaching" className="coaching-preview">
+            <div className="preview-toolbar">
+              <span className="preview-label">Answer Coach preview</span>
+              <span className="status-badge">In development</span>
+            </div>
+            <p className="preview-question">Tell me about a time you influenced a team.</p>
+            <div className="preview-evidence">
+              <span>Linked evidence</span>
+              <strong>Student society event turnaround</strong>
+            </div>
+            <blockquote>
+              <strong>Make your judgement visible.</strong>
+              <span>
+                You explain what the team did, but not why you chose to speak to the venue first.
+                What risk were you trying to remove?
+              </span>
+            </blockquote>
+            <p className="preview-footnote">Grounded in your story. You remain the editor.</p>
+          </aside>
+        </section>
+
+        <section className="marketing-section homepage-jobs" aria-labelledby="homepage-jobs">
+          <div className="section-introduction">
+            <p className="eyebrow">Start from a real role</p>
+            <h2 id="homepage-jobs">Discover a real role, then prepare for it properly</h2>
+            <p>
+              Jobs and Employers are built from employers&apos; official public career sources. Find
+              a current role, understand what it asks for and apply on the employer&apos;s official
+              website.
+            </p>
+          </div>
+          <form action="/jobs" className="homepage-jobs-search" method="get">
+            <label htmlFor="homepage-jobs-query">Search current roles</label>
+            <div className="homepage-jobs-search-row">
+              <input
+                id="homepage-jobs-query"
+                name="q"
+                placeholder="Role, skill or keyword"
+                type="search"
+              />
+              <button className="button-link" type="submit">
+                Search jobs
+              </button>
+            </div>
+          </form>
+          <p className="homepage-jobs-link">
+            <Link href="/employers">Explore employers by sector →</Link>
+          </p>
+          <p className="homepage-jobs-value">
+            Save the role, tailor a truthful CV or cover letter, prepare your answers and track the
+            application from one private workspace.
+          </p>
+        </section>
+
+        <section className="marketing-section" id="how-it-helps">
+          <div className="section-introduction">
+            <p className="eyebrow">Useful from your first application</p>
+            <h2>Build preparation you can reuse</h2>
+            <p>
+              Stop starting from a blank document for every application. Keep your evidence,
+              questions and preparation together, then choose exactly what helps today.
+            </p>
+          </div>
+          <div className="marketing-card-grid">
+            {availableTools.map((tool) => (
+              <article className="marketing-feature-card" key={tool.title}>
+                <p className="eyebrow">{tool.eyebrow}</p>
+                <h3>{tool.title}</h3>
+                <p>{tool.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="marketing-section distinctive-section">
+          <div className="section-introduction">
+            <p className="eyebrow">More than another content library</p>
+            <h2>Practice, judgement and current intelligence</h2>
+            <p>
+              These are the experiences OfferLab is developing and validating. Availability is
+              labelled plainly so you always know what you can use now and what is being piloted.
+            </p>
+          </div>
+          <div className="distinctive-grid">
+            {distinctiveExperiences.map((experience) => (
+              <article className="distinctive-card" key={experience.title}>
+                <span className="availability-label">{experience.availability}</span>
+                <h3>{experience.title}</h3>
+                <p>{experience.description}</p>
+                {"href" in experience && experience.href && (
+                  <Link href={experience.href as never}>Browse current reports →</Link>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="marketing-cta">
+          <div>
+            <p className="eyebrow">Start with what you already have</p>
+            <h2>Your experience is more useful when you can find and explain it.</h2>
+            <p>Create your first evidence story and use it to build a stronger interview answer.</p>
+          </div>
+          <Link className="button-link marketing-primary-action" href="/register">
+            Create your free account
           </Link>
-        </div>
-      </nav>
+        </section>
 
-      <section className="marketing-hero">
-        <div className="marketing-hero-copy">
-          <p className="eyebrow">Graduate recruitment, made practicable</p>
-          <h1>Prepare with evidence. Practise with purpose.</h1>
-          <p className="marketing-lead">
-            OfferLab helps you turn your real experience into stronger answers, prepare for each
-            recruitment stage and access the practice and feedback that generic advice cannot give
-            you.
-          </p>
-          <div className="marketing-actions">
-            <Link className="button-link marketing-primary-action" href="/register">
-              Start building your evidence
-            </Link>
-            <a href="#how-it-helps">See how OfferLab helps</a>
-          </div>
-          <p className="marketing-note">Free account · No invitation required</p>
-        </div>
-
-        <aside aria-label="Example OfferLab coaching" className="coaching-preview">
-          <div className="preview-toolbar">
-            <span className="preview-label">Answer Coach preview</span>
-            <span className="status-badge">In development</span>
-          </div>
-          <p className="preview-question">Tell me about a time you influenced a team.</p>
-          <div className="preview-evidence">
-            <span>Linked evidence</span>
-            <strong>Student society event turnaround</strong>
-          </div>
-          <blockquote>
-            <strong>Make your judgement visible.</strong>
-            <span>
-              You explain what the team did, but not why you chose to speak to the venue first. What
-              risk were you trying to remove?
-            </span>
-          </blockquote>
-          <p className="preview-footnote">Grounded in your story. You remain the editor.</p>
-        </aside>
-      </section>
-
-      <section className="marketing-section" id="how-it-helps">
-        <div className="section-introduction">
-          <p className="eyebrow">Useful from your first application</p>
-          <h2>Build preparation you can reuse</h2>
-          <p>
-            Stop starting from a blank document for every application. Keep your evidence, questions
-            and preparation together, then choose exactly what helps today.
-          </p>
-        </div>
-        <div className="marketing-card-grid">
-          {availableTools.map((tool) => (
-            <article className="marketing-feature-card" key={tool.title}>
-              <p className="eyebrow">{tool.eyebrow}</p>
-              <h3>{tool.title}</h3>
-              <p>{tool.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-section distinctive-section">
-        <div className="section-introduction">
-          <p className="eyebrow">More than another content library</p>
-          <h2>Practice, judgement and current intelligence</h2>
-          <p>
-            These are the experiences OfferLab is developing and validating. Availability is
-            labelled plainly so you always know what you can use now and what is being piloted.
-          </p>
-        </div>
-        <div className="distinctive-grid">
-          {distinctiveExperiences.map((experience) => (
-            <article className="distinctive-card" key={experience.title}>
-              <span className="availability-label">{experience.availability}</span>
-              <h3>{experience.title}</h3>
-              <p>{experience.description}</p>
-              {"href" in experience && experience.href && (
-                <Link href={experience.href as never}>Browse current reports →</Link>
-              )}
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-cta">
-        <div>
-          <p className="eyebrow">Start with what you already have</p>
-          <h2>Your experience is more useful when you can find and explain it.</h2>
-          <p>Create your first evidence story and use it to build a stronger interview answer.</p>
-        </div>
-        <Link className="button-link marketing-primary-action" href="/register">
-          Create your free account
-        </Link>
-      </section>
-
-      <footer className="marketing-footer">
-        <Link className="brand" href="/">
-          OfferLab
-        </Link>
-        <p>Practical preparation for UK graduate recruitment.</p>
-        <Link href="/intelligence">Recruitment Intelligence</Link>
-        <Link href="/sign-in">Member sign in</Link>
-      </footer>
-    </main>
+        <footer className="marketing-footer">
+          <Link className="brand" href="/">
+            OfferLab
+          </Link>
+          <p>Practical preparation for UK graduate recruitment.</p>
+          <Link href="/intelligence">Recruitment Intelligence</Link>
+          <Link href="/member">Open workspace</Link>
+        </footer>
+      </main>
+    </>
   );
 }

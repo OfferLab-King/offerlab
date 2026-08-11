@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function JobsError({
   error,
   reset,
@@ -7,9 +9,11 @@ export default function JobsError({
   void error;
   return (
     <main className="public-jobs-page">
-      <nav aria-label="Public" className="public-jobs-nav">
-        <span className="brand">OfferLab</span>
-      </nav>
+      <header className="site-header">
+        <Link className="brand" href="/">
+          OfferLab
+        </Link>
+      </header>
       <section className="job-catalog-error" role="alert">
         <h1>The job catalogue could not be loaded</h1>
         <p>Something went wrong while looking up the latest roles. Try again in a moment.</p>

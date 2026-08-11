@@ -67,6 +67,7 @@ jobs:
           e2e/job-catalog-enabled.spec.ts
           e2e/job-discovery-disabled.spec.ts
           e2e/career-documents.spec.ts
+          e2e/site-navigation.spec.ts
         env:
           JOB_CATALOG_ENABLED: "true"
 

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import {
   readEmployerDirectory,
   readSectorJobCounts,
 } from "../../modules/job-catalog/application/catalog";
+import { SiteHeader } from "../components/site-header";
 import { EmployerDirectoryView } from "./employer-directory-view";
 
 export const runtime = "nodejs";
@@ -25,18 +25,7 @@ export default async function EmployersDirectoryPage() {
   ).size;
   return (
     <main className="employers-page">
-      <div className="catalogue-topbar">
-        <Link className="brand" href="/">
-          OfferLab
-        </Link>
-        <nav aria-label="Public">
-          <Link href="/jobs">Jobs</Link>
-          <Link aria-current={true} href="/employers">
-            Employers &amp; sectors
-          </Link>
-          <Link href="/sign-in">Sign in</Link>
-        </nav>
-      </div>
+      <SiteHeader />
       <div className="employer-directory">
         <header className="employer-directory-hero">
           <div>
