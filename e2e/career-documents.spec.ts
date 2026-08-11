@@ -165,17 +165,24 @@ test("member uploads, versions and reviews career documents and saves a job targ
     );
     expect(saveJobResponse).toBe(201);
 
-    await page.goto("/member/jobs");
-    await expect(page).toHaveURL(/\/jobs$/);
-    await expect(page.getByRole("heading", { name: /Find your next opportunity/i })).toBeVisible();
-    const jobsUrl = page.url();
+    let jobsUrl: string | null = null;
+    if (process.env.JOB_CATALOG_ENABLED === "true") {
+      await page.goto("/member/jobs");
+      await expect(page).toHaveURL(/\/jobs$/);
+      await expect(
+        page.getByRole("heading", { name: /Find your next opportunity/i }),
+      ).toBeVisible();
+      jobsUrl = page.url();
+    }
 
     await page.setViewportSize({ height: 844, width: 390 });
     await page.goto(cvDetailUrl);
     await expect(
       page.getByRole("navigation", { name: "Member navigation" }).getByRole("link"),
     ).toHaveCount(7);
-    for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl]) {
+    for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl].filter(
+      (url): url is string => url !== null,
+    )) {
       await page.goto(responsiveUrl);
       await expect(page.locator("main").last()).toBeVisible();
       expect(

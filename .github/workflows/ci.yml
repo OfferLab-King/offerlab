@@ -57,8 +57,18 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
-      - name: Run browser foundation tests
+      - name: Run browser foundation tests with catalogue disabled
         run: pnpm test:e2e --project=chromium
+        env:
+          JOB_CATALOG_ENABLED: "false"
+      - name: Run catalogue browser tests
+        run: >-
+          pnpm test:e2e --project=chromium
+          e2e/job-catalog-enabled.spec.ts
+          e2e/job-discovery-disabled.spec.ts
+          e2e/career-documents.spec.ts
+        env:
+          JOB_CATALOG_ENABLED: "true"
 
   security:
     name: Security

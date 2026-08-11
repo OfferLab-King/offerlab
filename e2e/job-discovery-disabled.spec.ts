@@ -5,6 +5,11 @@ import postgres from "postgres";
  * The retired member job-discovery route sends members directly to the public
  * catalogue. JSearch and the duplicate manual-target workspace stay absent.
  */
+test.skip(
+  process.env.JOB_CATALOG_ENABLED !== "true",
+  "requires the OfferLab catalogue to be enabled",
+);
+
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 const password = "StrongPassword123!";
