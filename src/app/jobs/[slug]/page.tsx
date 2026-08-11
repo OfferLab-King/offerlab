@@ -91,6 +91,15 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
       />
 
       <article className="job-detail">
+        <nav aria-label="Breadcrumb" className="seo-breadcrumb">
+          <ol>
+            <li>
+              <Link href="/jobs">Jobs</Link>
+            </li>
+            <li aria-current="page">{job.normalized_title ?? job.title}</li>
+          </ol>
+        </nav>
+
         <header className="job-detail-header">
           <p className="eyebrow">Source: {job.company_name} Careers</p>
           <h1>{job.normalized_title ?? job.title}</h1>
@@ -101,6 +110,11 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
           </div>
           <p className="job-detail-apply-note">
             Application is completed on the employer&apos;s official website.
+          </p>
+          <p className="job-detail-employer-profile-link">
+            <Link href={`/employers/${job.company_slug}` as never}>
+              {job.company_name} employer profile on OfferLab
+            </Link>
           </p>
         </header>
 
