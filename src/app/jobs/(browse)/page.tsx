@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { searchJobCatalogFaceted } from "../../../modules/job-catalog/application/catalog";
 import { parseJobCatalogFilters } from "../../../modules/job-catalog/domain/catalog";
+import { SiteHeader } from "../../components/site-header";
 import { JobCatalogueView } from "./job-catalogue-view";
 
 export const runtime = "nodejs";
@@ -43,18 +43,7 @@ export default async function PublicJobsPage({
 
   return (
     <main className="catalogue-page">
-      <div className="catalogue-topbar">
-        <Link className="brand" href="/">
-          OfferLab
-        </Link>
-        <nav aria-label="Public">
-          <Link aria-current={true} href="/jobs">
-            Jobs
-          </Link>
-          <Link href="/employers">Employers &amp; sectors</Link>
-          <Link href="/sign-in">Sign in</Link>
-        </nav>
-      </div>
+      <SiteHeader />
       <div className="catalogue-shell">
         <header className="catalogue-header">
           <p className="catalogue-eyebrow">Roles from official employer sites</p>

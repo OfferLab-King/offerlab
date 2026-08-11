@@ -1,5 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
+
+async function openMemberNavigationIfNarrow(page: Page) {
+  const toggle = page
+    .getByRole("navigation", { name: "Member navigation" })
+    .getByRole("button", { name: /Menu|Close/ });
+  if (!(await toggle.isVisible())) return;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await toggle.click();
+    if ((await toggle.getAttribute("aria-expanded")) === "true") return;
+    await page.waitForTimeout(250);
+  }
+  throw new Error("Member navigation menu did not open");
+}
+
 const databaseUrl =
     process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres",
   mailpit = "http://127.0.0.1:55324";
@@ -66,6 +80,7 @@ test("a member registers openly, verifies, onboards and opens Prepare", async ({
     await page.getByLabel("Applications and CV").check();
     await page.getByRole("button", { name: "Complete onboarding" }).click();
     await page.waitForURL("**/member");
+    await openMemberNavigationIfNarrow(page);
     await page.getByRole("link", { name: "Prepare" }).click();
     await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
     const state = await db<

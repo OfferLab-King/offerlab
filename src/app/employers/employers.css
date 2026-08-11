@@ -13,37 +13,6 @@
   color: var(--employers-ink);
 }
 
-.employers-page .catalogue-topbar,
-.employer-profile-page .catalogue-topbar {
-  backdrop-filter: blur(14px);
-  background: rgb(255 255 255 / 94%);
-  border-bottom: 1px solid var(--employers-line);
-  min-height: 4.5rem;
-  padding-inline: max(1rem, calc((100vw - 76rem) / 2));
-}
-
-.employers-page .catalogue-topbar .brand,
-.employer-profile-page .catalogue-topbar .brand {
-  color: var(--employers-accent-dark);
-  font-size: 1.05rem;
-  font-weight: 780;
-  letter-spacing: -0.015em;
-}
-
-.employers-page .catalogue-topbar nav,
-.employer-profile-page .catalogue-topbar nav {
-  gap: clamp(0.9rem, 2.4vw, 1.75rem);
-}
-
-.employers-page .catalogue-topbar nav a,
-.employer-profile-page .catalogue-topbar nav a {
-  color: #435148;
-  font-size: 0.9rem;
-  font-weight: 650;
-  padding-block: 1.55rem;
-  text-decoration: none;
-}
-
 .employers-page .employer-directory {
   margin: 0 auto;
   max-width: 88rem;
@@ -319,24 +288,6 @@
 }
 
 @media (max-width: 42rem) {
-  .employers-page .catalogue-topbar,
-  .employer-profile-page .catalogue-topbar {
-    align-items: flex-start;
-    gap: 0.5rem;
-    min-height: auto;
-    padding-block: 0.9rem;
-  }
-
-  .employers-page .catalogue-topbar nav,
-  .employer-profile-page .catalogue-topbar nav {
-    flex-wrap: wrap;
-  }
-
-  .employers-page .catalogue-topbar nav a,
-  .employer-profile-page .catalogue-topbar nav a {
-    padding-block: 0.25rem;
-  }
-
   .employer-directory-hero {
     align-items: start;
     grid-template-columns: 1fr;

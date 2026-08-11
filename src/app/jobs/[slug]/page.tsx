@@ -15,6 +15,7 @@ import {
   visaSponsorshipLabels,
 } from "../../../modules/job-catalog/domain/taxonomy";
 import { formatDate, formatRelativeTime, formatSalary, isDeadlinePassed } from "../job-display";
+import { SiteHeader } from "../../components/site-header";
 import { ApplyTrackingLink } from "./apply-tracking";
 import { SaveJobButton } from "./save-job-button";
 
@@ -82,16 +83,7 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
 
   return (
     <main className="public-jobs-page job-detail-page">
-      <nav aria-label="Public" className="public-jobs-nav">
-        <Link className="brand" href="/">
-          OfferLab
-        </Link>
-        <div>
-          <Link href="/jobs">All jobs</Link>
-          <Link href="/employers">Employers &amp; sectors</Link>
-          <Link href="/sign-in">Sign in</Link>
-        </div>
-      </nav>
+      <SiteHeader />
 
       <script
         dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}

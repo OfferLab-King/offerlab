@@ -1,9 +1,9 @@
+import { SiteHeader } from "../../components/site-header";
+
 export default function JobsLoading() {
   return (
     <main className="catalogue-page">
-      <div className="catalogue-topbar">
-        <span className="brand">OfferLab</span>
-      </div>
+      <SiteHeader />
       <div className="catalogue-shell">
         <header className="catalogue-header">
           <h1>Find your next opportunity</h1>

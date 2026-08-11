@@ -26,44 +26,6 @@
   color: var(--jobs-ink);
 }
 
-.catalogue-topbar {
-  backdrop-filter: blur(14px);
-  background: rgb(255 255 255 / 94%);
-  border-bottom-color: var(--jobs-line);
-  min-height: 4.5rem;
-  padding-inline: max(1rem, calc((100vw - 76rem) / 2));
-}
-
-.catalogue-topbar .brand {
-  color: var(--jobs-accent-dark);
-  font-size: 1.05rem;
-  font-weight: 780;
-  letter-spacing: -0.015em;
-}
-
-.catalogue-topbar nav {
-  gap: clamp(0.9rem, 2.4vw, 1.75rem);
-}
-
-.catalogue-topbar nav a {
-  color: #435148;
-  font-size: 0.9rem;
-  font-weight: 650;
-  padding-block: 1.55rem;
-  position: relative;
-}
-
-.catalogue-topbar nav a[aria-current="page"]::after {
-  background: var(--jobs-accent);
-  border-radius: 999px;
-  bottom: 0.9rem;
-  content: "";
-  height: 2px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
-
 .catalogue-shell {
   max-width: 76rem;
   padding: 0 clamp(1rem, 3vw, 2rem);
@@ -750,14 +712,6 @@
   padding: 0 clamp(1rem, 3vw, 2rem) 5rem;
 }
 
-.public-jobs-page .public-jobs-nav {
-  min-height: 4.5rem;
-}
-
-.public-jobs-page .public-jobs-nav a {
-  text-decoration: none;
-}
-
 .public-jobs-page .public-jobs-hero {
   border-bottom: 1px solid var(--jobs-line);
   max-width: none;
@@ -939,28 +893,6 @@
 }
 
 @media (max-width: 42rem) {
-  .catalogue-topbar {
-    align-items: flex-start;
-    gap: 0.5rem;
-    min-height: auto;
-    padding-block: 0.9rem;
-  }
-
-  .catalogue-topbar nav {
-    flex-wrap: wrap;
-    gap: 0.4rem 0.9rem;
-    justify-content: flex-end;
-  }
-
-  .catalogue-topbar nav a {
-    font-size: 0.8rem;
-    padding-block: 0.3rem;
-  }
-
-  .catalogue-topbar nav a[aria-current="page"]::after {
-    bottom: 0;
-  }
-
   .catalogue-header {
     border-radius: 1.1rem;
     margin-top: 1rem;
@@ -1066,11 +998,6 @@
 
   .sector-index-card {
     min-height: 0;
-  }
-
-  .public-jobs-page .public-jobs-nav > div {
-    flex-wrap: wrap;
-    justify-content: flex-end;
   }
 }
 
