@@ -301,6 +301,19 @@ Every ingested or changed job passes through the deterministic pipeline
   deactivated and set to `expired`. Only `eligible` + `published` + `active`
   roles with a future deadline are publicly visible (single predicate in
   `domain/publication.ts`).
+- **Indexability**: the public detail page, its metadata and structured data,
+  and the sitemap share one deterministic policy
+  (`domain/job-indexability.ts`). An indexable role must be publicly visible,
+  have an official application URL, the employer's original posting date, and
+  enough visible stored description content to support valid JobPosting data
+  (a factual summary, responsibilities, requirements or experience). Location,
+  taxonomy or salary alone cannot qualify a thin page. A publicly valid but thin role still renders normally but
+  is `noindex, follow`, emits no JobPosting structured data and is excluded
+  from the sitemap; the sitemap SQL is an exact mirror of the domain policy
+  and parity is covered by `tests/integration/job-detail-seo.test.ts`.
+  Job detail pages also link compact, bounded related-role sections (more
+  roles at the same employer and similar current roles), sourced through the
+  job-catalog application boundary and limited to public, non-expired roles.
 - **Administrator overrides** (admin page): eligibility, classification,
   publication and source permission changes set
   `classification_source='administrator'`, bump `classification_version`, and
