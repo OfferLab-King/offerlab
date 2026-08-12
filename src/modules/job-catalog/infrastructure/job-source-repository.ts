@@ -180,6 +180,40 @@ export async function updateJobSourceUrls(
   return rows.length === 1;
 }
 
+export async function recordJobSourceHealth(
+  database: TransactionSql,
+  sourceId: string,
+  target: "landing" | "endpoint",
+  health: Readonly<{
+    checkedAt: Date | null;
+    errorCode: string | null;
+    finalUrl: string | null;
+    invalidSince: Date | null;
+    status: "healthy" | "redirected" | "invalid" | "unchecked";
+    statusCode: number | null;
+  }>,
+): Promise<void> {
+  if (target === "landing") {
+    await database`
+      update app.job_source set
+        landing_health_status = ${health.status}, landing_last_status_code = ${health.statusCode},
+        landing_final_url = ${health.finalUrl}, landing_checked_at = ${health.checkedAt},
+        landing_error_code = ${health.errorCode}, landing_invalid_since = ${health.invalidSince},
+        updated_at = now()
+      where id = ${sourceId}::uuid
+    `;
+    return;
+  }
+  await database`
+    update app.job_source set
+      endpoint_health_status = ${health.status}, endpoint_last_status_code = ${health.statusCode},
+      endpoint_final_url = ${health.finalUrl}, endpoint_checked_at = ${health.checkedAt},
+      endpoint_error_code = ${health.errorCode}, endpoint_invalid_since = ${health.invalidSince},
+      updated_at = now()
+    where id = ${sourceId}::uuid
+  `;
+}
+
 export type SourceRunOutcome = Readonly<{
   automaticPauseReason?: string | null;
   consecutiveFailures: number;

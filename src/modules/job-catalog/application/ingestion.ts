@@ -1,10 +1,12 @@
 import { planCrawlChanges } from "../domain/change-detection";
 import type { DiscoveredJob } from "../domain/deduplication";
 import { nextCheckAtWithJitter } from "../domain/scheduler";
+import { sourceUrlHealthAfterCheck, type SourceUrlHealth } from "../domain/source-health";
 import { isCrawlable, sourceKey, type JobSource, type SourceStatus } from "../domain/source";
 import { canonicalizeJobUrl, slugifyTitle } from "../domain/urls";
 import {
   updateJobSourceAfterRun,
+  recordJobSourceHealth,
   type SourceRunOutcome,
 } from "../infrastructure/job-source-repository";
 import { createConnectorForSource } from "../infrastructure/connectors/registry";
@@ -228,6 +230,19 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
           );
         }
         await updateJobSourceAfterRun(transaction, source.id, outcome);
+        const target = source.crawlEndpointUrl ? "endpoint" : "landing";
+        await recordJobSourceHealth(
+          transaction,
+          source.id,
+          target,
+          sourceUrlHealthAfterCheck(uncheckedUrlHealth, {
+            checkedAt: now,
+            errorCode: code,
+            requestedUrl: source.crawlEndpointUrl ?? source.careersUrl,
+            statusCode:
+              fetchError instanceof JobFetchError ? (fetchError.statusCode ?? null) : null,
+          }),
+        );
       });
     }
     logger.warn({
@@ -334,6 +349,18 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
           );
         }
         await updateJobSourceAfterRun(transaction, source.id, outcome);
+        const checkedUrl = source.crawlEndpointUrl ?? source.careersUrl;
+        await recordJobSourceHealth(
+          transaction,
+          source.id,
+          source.crawlEndpointUrl ? "endpoint" : "landing",
+          sourceUrlHealthAfterCheck(uncheckedUrlHealth, {
+            checkedAt: now,
+            finalUrl: checkedUrl,
+            requestedUrl: checkedUrl,
+            statusCode: 200,
+          }),
+        );
       });
     }
 
@@ -422,6 +449,15 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
     };
   }
 }
+
+const uncheckedUrlHealth: SourceUrlHealth = {
+  checkedAt: null,
+  errorCode: null,
+  finalUrl: null,
+  invalidSince: null,
+  status: "unchecked",
+  statusCode: null,
+};
 
 function sourceStatusAfterFailure(failures: number, pauseThreshold: number): SourceStatus {
   return failures >= pauseThreshold ? "paused" : "active";
