@@ -6,6 +6,14 @@ export function jsonParameter(database: TransactionSql, value: unknown) {
 
 let crawlerDatabase: Sql | undefined;
 
+export function crawlerConnectionPoolSize(
+  environment: Readonly<Record<string, string | undefined>>,
+): number {
+  const raw = Number(environment.JOB_CRAWLER_MAX_CONCURRENCY);
+  const concurrency = Number.isInteger(raw) && raw > 0 && raw <= 25 ? raw : 2;
+  return concurrency * 2 + 2;
+}
+
 export function getCrawlerDatabase(): Sql {
   const databaseUrl =
     process.env.JOB_CRAWLER_DATABASE_URL ??
@@ -13,7 +21,10 @@ export function getCrawlerDatabase(): Sql {
   if (!databaseUrl) {
     throw new Error("JOB_CRAWLER_DATABASE_URL is required for job catalog workers.");
   }
-  crawlerDatabase ??= postgres(databaseUrl, { max: 3, prepare: false });
+  crawlerDatabase ??= postgres(databaseUrl, {
+    max: crawlerConnectionPoolSize(process.env),
+    prepare: false,
+  });
   return crawlerDatabase;
 }
 
