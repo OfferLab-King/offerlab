@@ -17,6 +17,7 @@ import {
   listJobsForCompany,
   listJobsForSource,
 } from "../../src/modules/job-catalog/infrastructure/job-repository";
+import { listJobSourcesForAdmin } from "../../src/modules/job-catalog/infrastructure/job-source-repository";
 
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
@@ -307,6 +308,22 @@ describe("job catalog", () => {
         run_requested_by_user_id: administrator,
       });
       expect(changed[0]!.run_requested_at).toBeInstanceOf(Date);
+    } finally {
+      await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
+    }
+  });
+
+  it("requires an authenticated administrator identity to read source operations", async () => {
+    await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
+    try {
+      const withoutIdentity = await runtimeDatabase.begin(async (database) => {
+        await database`set local role offerlab_app`;
+        return listJobSourcesForAdmin(database);
+      });
+      expect(withoutIdentity).toHaveLength(0);
+
+      const withIdentity = await asUser(administrator, listJobSourcesForAdmin);
+      expect(withIdentity.length).toBeGreaterThan(0);
     } finally {
       await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
     }

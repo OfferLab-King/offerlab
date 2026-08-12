@@ -1,7 +1,4 @@
-import {
-  withApplicationRole,
-  withApplicationUser,
-} from "../../../infrastructure/database/runtime-connections";
+import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
 import {
   listJobSourcesForAdmin,
   requestJobSourceRun,
@@ -51,8 +48,10 @@ export type ClassificationQueueRow = Readonly<{
   updated_at: Date;
 }>;
 
-export async function readJobCatalogAdmin(): Promise<JobCatalogAdminView> {
-  return withApplicationRole(async (database) => {
+export async function readJobCatalogAdmin(
+  administratorUserId: string,
+): Promise<JobCatalogAdminView> {
+  return withApplicationUser(administratorUserId, async (database) => {
     const [sources, recentRuns, recentEvents, eligibilityQueue, classificationQueue] =
       await Promise.all([
         listJobSourcesForAdmin(database),

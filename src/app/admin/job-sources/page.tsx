@@ -29,8 +29,8 @@ const statusLabels = {
 } as const;
 
 export default async function JobSourcesPage() {
-  await requireAdministrator();
-  const view = await readJobCatalogAdmin();
+  const administrator = await requireAdministrator();
+  const view = await readJobCatalogAdmin(administrator.userId);
 
   return (
     <main className="cms-page admin-jobs-page">
