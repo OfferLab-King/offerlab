@@ -34,6 +34,10 @@ export function jobSourceInputFor(company: ManifestCompany, companyId: string): 
   };
 }
 
+export function directoryPriorityRankFor(index: number): number {
+  return (index + 1) * 10;
+}
+
 export async function seedInitialCohort(
   database: Parameters<typeof upsertCompany>[0],
 ): Promise<readonly { id: string; slug: string; name: string }[]> {
@@ -53,7 +57,9 @@ export async function seedInitialCohort(
     };
     const id = await upsertCompany(database, {
       ...companyInput,
-      directoryPriorityRank: employerManifest.findIndex((entry) => entry.slug === company.slug) + 1,
+      directoryPriorityRank: directoryPriorityRankFor(
+        employerManifest.findIndex((entry) => entry.slug === company.slug),
+      ),
       directorySectorKey: company.directorySectorKey,
       directoryVisible: true,
     });

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { employerManifest, MANIFEST_VERSION } from "./employer-cohort";
-import { jobSourceInputFor } from "./seed-companies";
+import { directoryPriorityRankFor, jobSourceInputFor } from "./seed-companies";
 
 function manifestCompany(slug: string) {
   const company = employerManifest.find((entry) => entry.slug === slug);
@@ -15,7 +15,14 @@ describe("employer manifest integrity", () => {
     const names = employerManifest.map((entry) => entry.name);
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(new Set(names).size).toBe(names.length);
-    expect(employerManifest).toHaveLength(39);
+    expect(employerManifest).toHaveLength(42);
+  });
+
+  it("derives unique gap-based directory priority ranks so manifest insertions never collide", () => {
+    const ranks = employerManifest.map((_, index) => directoryPriorityRankFor(index));
+    expect(new Set(ranks).size).toBe(ranks.length);
+    expect(Math.min(...ranks)).toBe(10);
+    for (const rank of ranks) expect(rank % 10).toBe(0);
   });
 
   it("produces unique manifest source identities", () => {
@@ -26,6 +33,7 @@ describe("employer manifest integrity", () => {
   it("records exactly the currently verified endpoints as verified", () => {
     const verified = employerManifest.filter((entry) => entry.verification.status === "verified");
     expect(verified.map((entry) => entry.slug).sort()).toEqual([
+      "bank-of-america",
       "dropbox",
       "duolingo",
       "instacart",
@@ -67,7 +75,7 @@ describe("employer manifest integrity", () => {
     const unverified = employerManifest.filter(
       (entry) => entry.verification.status === "unverified",
     );
-    expect(unverified).toHaveLength(15);
+    expect(unverified).toHaveLength(17);
     for (const entry of unverified) {
       expect(jobSourceInputFor(entry, "00000000-0000-4000-8000-000000000001").status).toBe(
         "paused",

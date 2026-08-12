@@ -205,6 +205,68 @@ export const employerManifest: readonly ManifestCompany[] = [
     websiteUrl: "https://robinhood.com",
   },
   {
+    atsProvider: "Workday",
+    careersUrl: "https://careers.bankofamerica.com/en-us",
+    configuration: {
+      cxsEndpoint: "https://ghr.wd1.myworkdayjobs.com/wday/cxs/ghr/lateral-us",
+    },
+    crawlFrequencyMinutes: 1440,
+    directorySectorKey: "financial_services",
+    industry: "Investment Banking",
+    name: "Bank of America",
+    slug: "bank-of-america",
+    sourceType: "workday",
+    verification: {
+      status: "verified",
+      date: "2026-08-12",
+      evidenceUrl: "https://ghr.wd1.myworkdayjobs.com/wday/cxs/ghr/lateral-us/jobs",
+      notes:
+        "Verified 2026-08-12: bounded POST against the official public Workday CXS jobs endpoint returned 200 with live postings.",
+    },
+    websiteUrl: "https://www.bankofamerica.com",
+  },
+  {
+    atsProvider: "Workday",
+    careersUrl: "https://search.jobs.barclays/",
+    configuration: {
+      cxsEndpoint:
+        "https://External_Career_Site_Barclays.wd1.myworkdayjobs.com/wday/cxs/External_Career_Site_Barclays/External_Career_Site_Barclays",
+    },
+    crawlFrequencyMinutes: 1440,
+    directorySectorKey: "financial_services",
+    industry: "Banking",
+    name: "Barclays",
+    slug: "barclays",
+    sourceType: "workday",
+    verification: {
+      status: "unverified",
+      date: "2026-08-12",
+      notes:
+        "Workday tenant host confirmed, but the public CXS jobs endpoint returned 422 on 2026-08-12; the tenant site configuration still needs verification. Imported paused until verified.",
+    },
+    websiteUrl: "https://www.barclays.co.uk",
+  },
+  {
+    atsProvider: "Workday",
+    careersUrl: "https://jobs.citi.com",
+    configuration: {
+      cxsEndpoint: "https://citi.wd5.myworkdayjobs.com/wday/cxs/citi/Citi",
+    },
+    crawlFrequencyMinutes: 1440,
+    directorySectorKey: "financial_services",
+    industry: "Banking",
+    name: "Citi",
+    slug: "citi",
+    sourceType: "workday",
+    verification: {
+      status: "unverified",
+      date: "2026-08-12",
+      notes:
+        "Workday tenant host confirmed, but the public CXS jobs endpoint site name returned 404 on 2026-08-12; tenant discovery still needed. Imported paused until verified.",
+    },
+    websiteUrl: "https://www.citi.com",
+  },
+  {
     atsProvider: "SmartRecruiters",
     careersUrl: "https://www.smartrecruiters.com/BDO",
     configuration: { smartRecruitersCompany: "BDO" },
