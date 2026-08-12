@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractJobLinks } from "./html-job-extraction";
+import { extractJobDetail, extractJobLinks } from "./html-job-extraction";
 
 describe("extractJobLinks", () => {
   it("keeps genuine job links and their text", () => {
@@ -42,5 +42,23 @@ describe("extractJobLinks", () => {
     const links = extractJobLinks(html, "https://employer.example.com");
     expect(links).toHaveLength(1);
     expect(links[0]!.url).toBe("https://employer.example.com/job/12345");
+  });
+
+  it("extracts a clean location from job detail pages", () => {
+    const html = `
+      <html><head><style>#job-location.job-location-inline { display: inline; }</style>
+      <script>var london = "London";</script></head>
+      <body><main>
+        <h1>Workday HCM Assistant Manager</h1>
+        <p>Location: London</p>
+        <p>We are looking for a manager in London to join the team.</p>
+      </main></body></html>
+    `;
+    const job = extractJobDetail(html, {
+      text: "Workday HCM Assistant Manager",
+      url: "https://experienced.kpmgcareers.co.uk/job/London-Workday-HCM-Assistant-Manager/1404602333",
+    });
+    expect(job.title).toBe("Workday HCM Assistant Manager");
+    expect(job.locationText).toBe("London");
   });
 });

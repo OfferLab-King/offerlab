@@ -15,7 +15,7 @@ describe("employer manifest integrity", () => {
     const names = employerManifest.map((entry) => entry.name);
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(new Set(names).size).toBe(names.length);
-    expect(employerManifest).toHaveLength(43);
+    expect(employerManifest).toHaveLength(46);
   });
 
   it("derives unique gap-based directory priority ranks so manifest insertions never collide", () => {
@@ -38,6 +38,7 @@ describe("employer manifest integrity", () => {
       "dropbox",
       "duolingo",
       "instacart",
+      "kpmg-uk",
       "monzo",
       "notion",
       "robinhood",
@@ -76,7 +77,7 @@ describe("employer manifest integrity", () => {
     const unverified = employerManifest.filter(
       (entry) => entry.verification.status === "unverified",
     );
-    expect(unverified).toHaveLength(17);
+    expect(unverified).toHaveLength(19);
     for (const entry of unverified) {
       expect(jobSourceInputFor(entry, "00000000-0000-4000-8000-000000000001").status).toBe(
         "paused",

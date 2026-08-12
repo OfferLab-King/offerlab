@@ -141,17 +141,23 @@ export function extractJobDetail(html: string, link: JobListingLink): Discovered
   };
 }
 
+const LOCATION_CITY_PATTERN =
+  /(?:^|\b)(London|Manchester|Birmingham|Leeds|Glasgow|Edinburgh|Bristol|remote|hybrid)(?:\b|$)/iu;
+
 function extractLocation(node: HTMLElement): string | null {
   for (const element of node.querySelectorAll("*")) {
+    const tag = element.tagName.toLowerCase();
+    if (tag === "style" || tag === "script") continue;
     const text = element.text.replace(/\s+/gu, " ").trim();
-    if (!text || text.length > 120) continue;
-    const label = element.getAttribute("data-testid") ?? "";
-    const locationMatch = text.match(
-      /(?:^|\b)(London|Manchester|Birmingham|Leeds|Glasgow|Edinburgh|Bristol|remote|hybrid)(?:\b|$)/iu,
-    );
-    if (locationMatch && (label.includes("location") || /(?:^|\b)location(?:\b|$)/iu.test(text))) {
-      return text.replace(/^location\s*[:.-]?\s*/iu, "").trim();
+    if (!text || text.length > 160 || text.includes("{")) continue;
+    const labeled = text.match(/(?:base\s*)?location\s*[:.-]?\s*([^]{1,100})/iu);
+    if (labeled && LOCATION_CITY_PATTERN.test(labeled[1]!)) {
+      return labeled[1]!.trim();
     }
+    const cityOnly = text.match(
+      /^(?:London|Manchester|Birmingham|Leeds|Glasgow|Edinburgh|Bristol)(?:\s+(?:or|,|&)\s+[A-Za-z][A-Za-z -]+)*$/iu,
+    );
+    if (cityOnly) return cityOnly[0].trim();
   }
   return null;
 }
