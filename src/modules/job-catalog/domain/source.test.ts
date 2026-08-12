@@ -15,6 +15,7 @@ function source(status: JobSource["status"]): JobSource {
     id: "source",
     lastCheckedAt: null,
     lastSuccessfulCheckAt: null,
+    needsBrowser: false,
     nextCheckAt: null,
     runRequestedAt: null,
     sourceName: "Careers",

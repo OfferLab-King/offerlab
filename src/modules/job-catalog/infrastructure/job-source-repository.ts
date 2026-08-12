@@ -15,6 +15,7 @@ type JobSourceRow = Readonly<{
   id: string;
   last_checked_at: Date | null;
   last_successful_check_at: Date | null;
+  needs_browser: boolean;
   next_check_at: Date | null;
   run_requested_at: Date | null;
   source_name: string;
@@ -28,7 +29,7 @@ const sourceColumns = `
   s.slug as source_slug, s.name as source_name, s.channel, s.careers_url,
   s.crawl_endpoint_url, s.source_type, s.status, s.crawl_frequency_minutes,
   s.last_checked_at, s.last_successful_check_at, s.next_check_at,
-  s.run_requested_at, s.consecutive_failures, s.configuration
+  s.run_requested_at, s.consecutive_failures, s.needs_browser, s.configuration
 `;
 
 function mapSource(row: JobSourceRow): JobSource {
@@ -45,6 +46,7 @@ function mapSource(row: JobSourceRow): JobSource {
     id: row.id,
     lastCheckedAt: row.last_checked_at,
     lastSuccessfulCheckAt: row.last_successful_check_at,
+    needsBrowser: row.needs_browser,
     nextCheckAt: row.next_check_at,
     runRequestedAt: row.run_requested_at,
     sourceName: row.source_name,
@@ -318,6 +320,7 @@ export type JobSourceWrite = Readonly<{
   manuallyOverridden?: boolean;
   manifestVersion?: number;
   name: string;
+  needsBrowser?: boolean;
   notes?: string;
   slug: string;
   sourceType: SourceType;
@@ -335,7 +338,7 @@ export async function upsertJobSource(
       company_id, slug, name, channel, careers_url, crawl_endpoint_url,
       ats_provider, source_type, status, crawl_frequency_minutes, configuration,
       manually_overridden, notes, verification_date, verification_evidence_url,
-      manifest_version
+      manifest_version, needs_browser
     ) values (
       ${input.companyId}::uuid, ${input.slug}, ${input.name}, ${input.channel},
       ${input.careersUrl}, ${input.crawlEndpointUrl ?? null}, ${input.atsProvider ?? null},
@@ -344,7 +347,7 @@ export async function upsertJobSource(
       ${jsonParameter(database, input.configuration ?? {})},
       ${input.manuallyOverridden ?? false}, ${input.notes ?? ""},
       ${input.verificationDate ?? null}, ${input.verificationEvidenceUrl ?? null},
-      ${input.manifestVersion ?? null}
+      ${input.manifestVersion ?? null}, ${input.needsBrowser ?? false}
     )
     on conflict (company_id, slug) do update
     set name = excluded.name,
@@ -359,6 +362,7 @@ export async function upsertJobSource(
         verification_date = excluded.verification_date,
         verification_evidence_url = excluded.verification_evidence_url,
         manifest_version = excluded.manifest_version,
+        needs_browser = excluded.needs_browser,
         updated_at = now()
     returning id
   `;
