@@ -139,10 +139,11 @@ export async function requestSourceRunForAdmin(
   administratorUserId: string,
   sourceId: string,
 ): Promise<void> {
-  const requested = await withApplicationUser(administratorUserId, (database) =>
+  const result = await withApplicationUser(administratorUserId, (database) =>
     requestJobSourceRun(database, sourceId, administratorUserId),
   );
-  if (!requested) throw new Error("job_source_not_active");
+  if (result === "unavailable") throw new Error("job_source_not_active");
+  if (result === "already_requested") return;
   await insertAuditEvent(administratorUserId, "job_source.run_requested", "job_source", sourceId);
 }
 

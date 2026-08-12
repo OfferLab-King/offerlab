@@ -273,16 +273,22 @@ export async function requestJobSourceRun(
   sourceId: string,
   administratorUserId: string,
   requestedAt = new Date(),
-): Promise<boolean> {
+): Promise<"requested" | "already_requested" | "unavailable"> {
   const rows = await database<{ id: string }[]>`
     update app.job_source
     set run_requested_at = ${requestedAt},
         run_requested_by_user_id = ${administratorUserId}::uuid,
         updated_at = now()
-    where id = ${sourceId}::uuid and status = 'active'
+    where id = ${sourceId}::uuid and status = 'active' and run_requested_at is null
     returning id
   `;
-  return rows.length === 1;
+  if (rows.length === 1) return "requested";
+  const existing = await database<{ pending: boolean }[]>`
+    select run_requested_at is not null as pending
+    from app.job_source
+    where id = ${sourceId}::uuid and status = 'active'
+  `;
+  return existing[0]?.pending ? "already_requested" : "unavailable";
 }
 
 export async function setJobSourceStatus(
