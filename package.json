@@ -45,6 +45,7 @@
     "jobs:enrich": "tsx scripts/jobs/enrich.ts",
     "jobs:seed-companies": "tsx scripts/jobs/seed-companies.ts",
     "jobs:status": "tsx scripts/jobs/status.ts",
+    "jobs:clean-synthetic-catalog": "tsx scripts/jobs/clean-synthetic-catalog.ts",
     "jobs:reclassify": "tsx scripts/jobs/reclassify.ts",
     "jobs:verify-sources": "tsx scripts/jobs/verify-sources.ts",
     "security:audit": "pnpm audit --audit-level high",
