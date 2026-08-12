@@ -14,7 +14,11 @@ export type EligibilityReason =
   | "closed_or_expired"
   | "contradictory_evidence"
   | "insufficient_evidence"
-  | "postgraduate_uncertain";
+  | "postgraduate_uncertain"
+  | "uk_location"
+  | "uk_remote"
+  | "non_uk_location"
+  | "location_ambiguous";
 
 export type EligibilityEvaluation = Readonly<{
   status: EligibilityStatus;
@@ -219,4 +223,8 @@ export const eligibilityReasonLabels: Readonly<Record<EligibilityReason, string>
   contradictory_evidence: "Early-career and senior signals conflict",
   insufficient_evidence: "Insufficient listing evidence",
   postgraduate_uncertain: "Postgraduate programme without confirmed career opportunity",
+  uk_location: "UK location confirmed",
+  uk_remote: "Remote role explicitly available within the UK",
+  non_uk_location: "No UK location in the official listing",
+  location_ambiguous: "Location requires administrator review",
 };

@@ -1,6 +1,7 @@
 import { classifyJob, classificationRequiresReview } from "../domain/classification";
 import type { DiscoveredJob } from "../domain/deduplication";
 import { evaluateEligibility } from "../domain/eligibility";
+import { evaluateUkLocation } from "../domain/uk-location";
 import type { JobClassificationWrite } from "../infrastructure/job-repository";
 
 /**
@@ -26,19 +27,27 @@ export function classifyDiscoveredJob(discovered: DiscoveredJob): JobClassificat
     team: sourcePayloadString(discovered, "team"),
     title: discovered.title,
   });
+  const location = evaluateUkLocation(discovered);
+
+  const eligibilityStatus =
+    location.status === "non_uk"
+      ? "ineligible"
+      : location.status === "ambiguous"
+        ? "needs_review"
+        : eligibility.status;
 
   const publicationStatus =
-    eligibility.status === "eligible"
+    eligibilityStatus === "eligible"
       ? "published"
-      : eligibility.status === "ineligible"
+      : eligibilityStatus === "ineligible"
         ? "suppressed"
         : "draft";
 
   return {
     classificationSource: "deterministic",
-    eligibilityEvidence: eligibility.evidence[0] ?? null,
-    eligibilityReasons: eligibility.reasons,
-    eligibilityStatus: eligibility.status,
+    eligibilityEvidence: location.evidence ?? eligibility.evidence[0] ?? null,
+    eligibilityReasons: [...eligibility.reasons, location.reason],
+    eligibilityStatus,
     opportunityType: eligibility.opportunityType,
     publicationStatus,
     sectorKey: classificationRequiresReview(classification) ? null : classification.sectorKey,
