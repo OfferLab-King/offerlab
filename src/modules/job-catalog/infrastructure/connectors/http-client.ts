@@ -87,6 +87,8 @@ export async function fetchText(
     headers?: Readonly<Record<string, string>>;
     httpClient: HttpClient;
     retryable?: boolean;
+    method?: "GET" | "POST";
+    body?: string;
   }>,
 ): Promise<HttpResponse> {
   if (!isSafeWebUrl(url)) {
@@ -99,7 +101,16 @@ export async function fetchText(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), options.httpClient.timeoutMs);
     try {
-      const response = await fetchWithBoundedRedirects(url, options.httpClient, controller.signal);
+      const request: { body?: string; method: "GET" | "POST" } = {
+        method: options.method ?? "GET",
+      };
+      if (options.body !== undefined) request.body = options.body;
+      const response = await fetchWithBoundedRedirects(
+        url,
+        options.httpClient,
+        controller.signal,
+        request,
+      );
       if (response.status === 403) {
         logger.warn({
           event: "job_fetch_forbidden",
@@ -155,18 +166,22 @@ async function fetchWithBoundedRedirects(
   initialUrl: string,
   httpClient: HttpClient,
   signal: AbortSignal,
+  request: Readonly<{ body?: string; method: "GET" | "POST" }>,
 ): Promise<Response> {
   let currentUrl = initialUrl;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
     await httpClient.assertSafeUrl(currentUrl);
-    const response = await fetch(currentUrl, {
+    const init: RequestInit = {
       headers: {
         accept: "*/*",
         "user-agent": httpClient.userAgent,
       },
+      method: request.method,
       redirect: "manual",
       signal,
-    });
+    };
+    if (request.body !== undefined) init.body = request.body;
+    const response = await fetch(currentUrl, init);
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) return response;

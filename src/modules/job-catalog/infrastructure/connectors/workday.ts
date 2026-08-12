@@ -13,53 +13,81 @@ import {
 
 export const workdaySourceType = "workday" as const;
 
+const WORKDAY_CXS_PAGE_SIZE = 100;
+
+type WorkdayCxsPosting = Readonly<{
+  bulletFields?: readonly string[];
+  externalPath?: string;
+  locationsText?: string;
+  postedOn?: string;
+  timeType?: string;
+  title?: string;
+}>;
+
+type WorkdayCxsResponse = Readonly<{
+  jobPostings?: readonly WorkdayCxsPosting[];
+  total?: number;
+}>;
+
 /**
- * Workday connectors are a scaffold: there is no stable public job-board API,
- * and each tenant exposes its own RaaS endpoint shape. This connector supports
- * the common JSON RaaS pattern (endpoint?$format=json with Job_Requisition_Data
- * arrays) but must be validated per tenant before use. It intentionally fails
- * with `not_configured` until `raasEndpoint` is supplied in company
- * configuration.
+ * Workday tenants expose two public patterns:
+ *
+ * - CXS (used by most large employers such as Bank of America): a POST JSON
+ *   endpoint `{host}/wday/cxs/{tenant}/{site}/jobs` returning
+ *   `{total, jobPostings:[{title, externalPath, locationsText, ...}]}` with
+ *   offset/limit pagination. No authentication.
+ * - RaaS: per-tenant XML/JSON feeds via `?$format=json` (scaffold below).
+ *
+ * The connector uses CXS when `cxsEndpoint` is configured and falls back to
+ * the RaaS scaffold when `raasEndpoint` is configured. Per-tenant validation
+ * is required before activating a source.
  */
 export function createWorkdayConnector(): JobSourceConnector {
   return {
-    name: "Workday RaaS (scaffold, per-tenant validation required)",
+    name: "Workday (CXS or RaaS, per-tenant validation required)",
     sourceType: workdaySourceType,
     async discoverJobs(context: ConnectorContext): Promise<DiscoveredJob[]> {
-      const endpoint = connectorToken(context.company, "raasEndpoint");
-      if (!endpoint) {
-        throw new JobFetchError(
-          "not_configured",
-          "workday requires raasEndpoint in company configuration",
-        );
+      const cxsEndpoint = connectorToken(context.company, "cxsEndpoint");
+      if (cxsEndpoint) {
+        return discoverWorkdayCxsJobs(cxsEndpoint, context);
       }
-      const url = new URL(endpoint);
-      url.searchParams.set("$format", "json");
-      const response = await fetchText(url.toString(), { httpClient: context.httpClient });
-      let payload: unknown;
-      try {
-        payload = JSON.parse(response.body);
-      } catch {
-        throw new JobFetchError("parser_changed", "workday_raas_unparseable");
+      const raasEndpoint = connectorToken(context.company, "raasEndpoint");
+      if (raasEndpoint) {
+        return discoverWorkdayRaasJobs(raasEndpoint, context);
       }
-      const requisitions = extractRequisitions(payload);
-      if (requisitions.length === 0) {
-        throw new JobFetchError("parser_changed", "workday_raas_unexpected_shape");
-      }
-      return limited(
-        requisitions.map((requisition) => normalizeWorkdayRequisition(requisition)),
-        context.maxJobs,
+      throw new JobFetchError(
+        "not_configured",
+        "workday requires cxsEndpoint or raasEndpoint in company configuration",
       );
     },
     async healthCheck(context: ConnectorContext): Promise<void> {
-      const endpoint = connectorToken(context.company, "raasEndpoint");
-      if (!endpoint) {
+      const cxsEndpoint = connectorToken(context.company, "cxsEndpoint");
+      if (cxsEndpoint) {
+        const jobsUrl = workdayCxsJobsUrl(cxsEndpoint);
+        const response = await fetchText(jobsUrl.toString(), {
+          httpClient: context.httpClient,
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({ appliedFacets: {}, limit: 1, offset: 0, searchText: "" }),
+          retryable: false,
+        });
+        const payload = parseCxsResponse(response.body);
+        if ((payload.total ?? 0) <= 0) {
+          throw new JobFetchError("parser_changed", "workday_cxs_no_postings");
+        }
+        return;
+      }
+      const raasEndpoint = connectorToken(context.company, "raasEndpoint");
+      if (!raasEndpoint) {
         throw new JobFetchError(
           "not_configured",
-          "workday requires raasEndpoint in company configuration",
+          "workday requires cxsEndpoint or raasEndpoint in company configuration",
         );
       }
-      const url = new URL(endpoint);
+      const url = new URL(raasEndpoint);
       url.searchParams.set("$format", "json");
       const response = await fetchText(url.toString(), { httpClient: context.httpClient });
       try {
@@ -70,6 +98,135 @@ export function createWorkdayConnector(): JobSourceConnector {
       }
     },
   };
+}
+
+async function discoverWorkdayCxsJobs(
+  cxsEndpoint: string,
+  context: ConnectorContext,
+): Promise<DiscoveredJob[]> {
+  const jobsUrl = workdayCxsJobsUrl(cxsEndpoint);
+  const host = jobsUrl.host;
+  const discovered: DiscoveredJob[] = [];
+  let offset = 0;
+  for (let page = 0; page < 20; page += 1) {
+    const remaining = context.maxJobs - discovered.length;
+    if (remaining <= 0) break;
+    const limit = Math.min(WORKDAY_CXS_PAGE_SIZE, remaining);
+    const response = await fetchText(jobsUrl.toString(), {
+      httpClient: context.httpClient,
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({
+        appliedFacets: {},
+        limit,
+        offset,
+        searchText: "",
+      }),
+      retryable: false,
+    });
+    const payload = parseCxsResponse(response.body);
+    const postings = payload.jobPostings ?? [];
+    if (postings.length === 0 || payload.total === undefined) {
+      if (discovered.length === 0) {
+        throw new JobFetchError("parser_changed", "workday_cxs_no_postings");
+      }
+      break;
+    }
+    for (const posting of postings) {
+      if (discovered.length >= context.maxJobs) break;
+      discovered.push(normalizeWorkdayCxsPosting(posting, host));
+    }
+    offset += postings.length;
+    if (
+      postings.length < limit ||
+      offset >= payload.total ||
+      discovered.length >= context.maxJobs
+    ) {
+      break;
+    }
+  }
+  return discovered;
+}
+
+function workdayCxsJobsUrl(cxsEndpoint: string): URL {
+  const url = new URL(cxsEndpoint);
+  if (!url.pathname.endsWith("/jobs")) {
+    url.pathname = `${url.pathname.replace(/\/$/u, "")}/jobs`;
+  }
+  return url;
+}
+
+function parseCxsResponse(body: string): WorkdayCxsResponse {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(body);
+  } catch {
+    throw new JobFetchError("parser_changed", "workday_cxs_unparseable");
+  }
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    !Array.isArray((payload as WorkdayCxsResponse).jobPostings)
+  ) {
+    throw new JobFetchError("parser_changed", "workday_cxs_missing_postings");
+  }
+  return payload as WorkdayCxsResponse;
+}
+
+function normalizeWorkdayCxsPosting(posting: WorkdayCxsPosting, host: string): DiscoveredJob {
+  const externalPath = posting.externalPath?.trim() ?? "";
+  const rawUrl = externalPath.startsWith("/")
+    ? `https://${host}${externalPath}`
+    : `https://${host}/${externalPath}`;
+  const canonical = canonicalizeJobUrl(rawUrl);
+  const applicationUrl = canonical ?? rawUrl;
+  return {
+    applicationDeadline: null,
+    applicationUrl,
+    descriptionText: "",
+    employmentType: mapEmploymentType(posting.timeType ?? null),
+    externalJobId: posting.bulletFields?.[0] ?? null,
+    locationText: posting.locationsText?.trim() ?? "",
+    postedAt: null,
+    remoteType: null,
+    salaryCurrency: null,
+    salaryMax: null,
+    salaryMin: null,
+    salaryPeriod: null,
+    sourcePayload: {
+      externalPath: externalPath || null,
+      postedOn: posting.postedOn ?? null,
+      timeType: posting.timeType ?? null,
+    },
+    sourceUrl: applicationUrl,
+    title: posting.title?.trim() || "",
+  };
+}
+
+async function discoverWorkdayRaasJobs(
+  raasEndpoint: string,
+  context: ConnectorContext,
+): Promise<DiscoveredJob[]> {
+  const url = new URL(raasEndpoint);
+  url.searchParams.set("$format", "json");
+  const response = await fetchText(url.toString(), { httpClient: context.httpClient });
+  let payload: unknown;
+  try {
+    payload = JSON.parse(response.body);
+  } catch {
+    throw new JobFetchError("parser_changed", "workday_raas_unparseable");
+  }
+  const requisitions = extractRequisitions(payload);
+  if (requisitions.length === 0) {
+    throw new JobFetchError("parser_changed", "workday_raas_unexpected_shape");
+  }
+  return limited(
+    requisitions.map((requisition) => normalizeWorkdayRequisition(requisition)),
+    context.maxJobs,
+  );
 }
 
 type WorkdayRequisition = Readonly<{
