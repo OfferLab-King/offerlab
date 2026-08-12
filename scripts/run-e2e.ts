@@ -101,10 +101,11 @@ const environment = {
   IDENTITY_SYNC_DATABASE_URL:
     process.env.IDENTITY_SYNC_DATABASE_URL ?? roleDatabaseUrl("offerlab_identity_sync_login"),
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
+  LOCAL_AUTH_BYPASS_ENABLED: "false",
   JSEARCH_ENABLED: "false",
   JOB_CATALOG_ENABLED: process.env.JOB_CATALOG_ENABLED ?? "false",
   NEXT_DIST_DIR: e2eDistDirectory,
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${e2ePort}`,
+  NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${e2ePort}`,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? local.PUBLISHABLE_KEY,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? local.API_URL,

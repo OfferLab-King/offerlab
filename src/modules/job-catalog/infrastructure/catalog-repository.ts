@@ -46,6 +46,16 @@ export type JobSearchResult = Readonly<{
   total: number;
 }>;
 
+export type JobLocationEvidence = Readonly<{
+  city: string | null;
+  country: string | null;
+  hybrid: boolean;
+  on_site: boolean;
+  region: string | null;
+  remote: boolean;
+  source_text: string;
+}>;
+
 export type JobDetailRow = Readonly<{
   active: boolean;
   application_deadline: Date | null;
@@ -54,8 +64,10 @@ export type JobDetailRow = Readonly<{
   classification_version: number;
   company_careers_url: string;
   company_id: string;
+  company_logo_url: string | null;
   company_name: string;
   company_slug: string;
+  company_website_url: string | null;
   degree_requirements: readonly string[];
   description_summary: string | null;
   eligibility_evidence: string | null;
@@ -72,6 +84,7 @@ export type JobDetailRow = Readonly<{
   last_seen_at: Date;
   last_successful_check_at: Date | null;
   location_text: string | null;
+  locations: readonly JobLocationEvidence[];
   normalized_title: string | null;
   opportunity_type: string;
   posted_at: Date | null;
@@ -110,7 +123,20 @@ const jobDetailColumns = `
   j.application_url, j.source_url, j.external_job_id, j.active, j.created_at,
   j.updated_at, j.enrichment_model, j.enrichment_version,
   c.id as company_id, c.name as company_name, c.slug as company_slug,
-  c.careers_url as company_careers_url, c.last_successful_check_at`;
+  c.careers_url as company_careers_url, c.website_url as company_website_url,
+  c.logo_url as company_logo_url, c.last_successful_check_at,
+  coalesce(
+    (select jsonb_agg(
+       jsonb_build_object(
+         'city', jl.city, 'region', jl.region, 'country', jl.country,
+         'source_text', jl.source_text, 'remote', jl.remote,
+         'hybrid', jl.hybrid, 'on_site', jl.on_site
+       ) order by jl.position, jl.id
+     )
+     from app.job_location jl
+     where jl.job_id = j.id),
+    '[]'::jsonb
+  ) as locations`;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
@@ -143,6 +169,13 @@ export async function findJobsByIds(
   `;
 }
 
+/**
+ * SQL mirror of `isJobIndexable` in `domain/job-indexability.ts`: only
+ * publicly visible roles with an official application URL and sufficient
+ * stored factual value are included. The domain predicate applies `now` as a
+ * JavaScript clock; here the database clock (`now()`) plays the same role.
+ * Parity is covered by `tests/integration/job-detail-seo.test.ts`.
+ */
 export async function listCatalogJobsForSitemap(
   database: TransactionSql,
   limit: number,
@@ -153,6 +186,15 @@ export async function listCatalogJobsForSitemap(
     where active
       and publication_status = 'published'
       and eligibility_status = 'eligible'
+      and (application_deadline is null or application_deadline >= now())
+      and application_url is not null
+      and posted_at is not null
+      and (
+        nullif(btrim(description_summary), '') is not null
+        or jsonb_array_length(responsibilities) > 0
+        or jsonb_array_length(requirements) > 0
+        or nullif(btrim(experience_requirements), '') is not null
+      )
     order by last_changed_at desc
     limit ${limit}
   `;
@@ -503,13 +545,7 @@ export async function listCompanyActiveJobs(
   limit: number,
 ): Promise<JobCardRow[]> {
   return database<JobCardRow[]>`
-    select j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
-      j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
-      j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
-      j.description_summary, j.skills, j.application_url,
-      j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
-      c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
-      c.last_successful_check_at
+    select ${database.unsafe(jobCardColumns)}
     from app.job j
     join app.company c on c.id = j.company_id
     where j.company_id = ${companyId}::uuid
@@ -519,4 +555,107 @@ export async function listCompanyActiveJobs(
     order by j.posted_at desc nulls last, j.first_seen_at desc
     limit ${limit}
   `;
+}
+
+// ============ Related roles ============
+
+const jobCardColumns = `j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
+  j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
+  j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
+  j.description_summary, j.skills, j.application_url,
+  j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
+  c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
+  c.last_successful_check_at`;
+
+/** Deterministic ordering shared by every related-role query. */
+const relatedRoleOrder = `j.posted_at desc nulls last, j.first_seen_at desc, j.id`;
+
+/** Same-employer current roles, excluding the role being viewed. */
+export async function listRelatedEmployerJobs(
+  database: TransactionSql,
+  companyId: string,
+  excludeJobId: string,
+  limit: number,
+): Promise<JobCardRow[]> {
+  return database<JobCardRow[]>`
+    select ${database.unsafe(jobCardColumns)}
+    from app.job j
+    join app.company c on c.id = j.company_id
+    where j.company_id = ${companyId}::uuid
+      and j.id <> ${excludeJobId}::uuid
+      and j.active and j.publication_status = 'published'
+      and j.eligibility_status = 'eligible'
+      and (j.application_deadline is null or j.application_deadline >= now())
+    order by ${database.unsafe(relatedRoleOrder)}
+    limit ${limit}
+  `;
+}
+
+export type RelatedJobEvidence = Readonly<{
+  locationLabels: readonly string[];
+  opportunityType: string | null;
+  sectorKey: string | null;
+  subsectorKey: string | null;
+}>;
+
+/**
+ * Current roles similar to the role being viewed, matched on any stored
+ * evidence that overlaps (subsector, sector, opportunity type or location).
+ * Never returns non-public or expired roles and never returns the excluded
+ * ids, so related sections cannot duplicate each other.
+ */
+export async function listSimilarJobs(
+  database: TransactionSql,
+  evidence: RelatedJobEvidence,
+  excludeJobIds: readonly string[],
+  limit: number,
+): Promise<JobCardRow[]> {
+  const conditions: string[] = [
+    `j.active`,
+    `j.publication_status = 'published'`,
+    `j.eligibility_status = 'eligible'`,
+    `(j.application_deadline is null or j.application_deadline >= now())`,
+  ];
+  const values: unknown[] = [];
+  const parameter = (value: unknown): string => {
+    values.push(value);
+    return `$${values.length}`;
+  };
+  if (excludeJobIds.length > 0) {
+    // Note: `<> any(array)` is true for any value not equal to *every*
+    // element's complement semantics; exclusion requires `<> all` (or
+    // `not (id = any(...))`).
+    conditions.push(`j.id <> all(${parameter(excludeJobIds)}::uuid[])`);
+  }
+  const similarity: string[] = [];
+  if (evidence.subsectorKey !== null) {
+    similarity.push(`j.subsector_key = ${parameter(evidence.subsectorKey)}`);
+  }
+  if (evidence.sectorKey !== null) {
+    similarity.push(`j.sector_key = ${parameter(evidence.sectorKey)}`);
+  }
+  if (evidence.opportunityType !== null) {
+    similarity.push(`j.opportunity_type = ${parameter(evidence.opportunityType)}`);
+  }
+  if (evidence.locationLabels.length > 0) {
+    similarity.push(
+      `exists (
+        select 1 from app.job_location jl
+        where jl.job_id = j.id
+          and lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) = any(${parameter(evidence.locationLabels)})
+      )`,
+    );
+  }
+  if (similarity.length === 0) return [];
+  conditions.push(`(${similarity.join(" or ")})`);
+  values.push(limit);
+  return database.unsafe<JobCardRow[]>(
+    `select ${jobCardColumns}
+     from app.job j
+     join app.company c on c.id = j.company_id
+     where ${conditions.join(" and ")}
+     order by ${relatedRoleOrder}
+     limit $${values.length}`,
+    values as never[],
+  );
 }

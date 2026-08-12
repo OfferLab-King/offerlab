@@ -15,6 +15,8 @@ import {
   listCompanyActiveJobs,
   listEmployerDirectory,
   listIndexableEmployersForSitemap,
+  listRelatedEmployerJobs,
+  listSimilarJobs,
   sectorJobCounts,
   searchJobsFaceted,
   type EmployerDirectoryRow,
@@ -23,7 +25,9 @@ import {
   type FacetCountRow,
   type JobCardRow,
   type JobDetailRow,
+  type JobLocationEvidence,
   type JobSearchResult,
+  type RelatedJobEvidence,
   type SectorCountRow,
 } from "../infrastructure/catalog-repository";
 
@@ -153,4 +157,59 @@ export function readEmployerActiveJobs(companyId: string): Promise<JobCardRow[]>
   return withApplicationRole((database) => listCompanyActiveJobs(database, companyId, 50));
 }
 
-export type { JobCardRow, JobDetailRow, JobSearchResult, SectorCountRow };
+export const RELATED_JOBS_SECTION_LIMIT = 3;
+
+export type RelatedJobsView = Readonly<{
+  sameEmployer: readonly JobCardRow[];
+  similar: readonly JobCardRow[];
+}>;
+
+/**
+ * Compact, factual related-role sections for a job detail page. Both queries
+ * are bounded, deterministic and only ever return active, eligible, published,
+ * non-expired roles; the current role and the same-employer results are
+ * excluded from the similar section so no role appears twice.
+ */
+export function readRelatedJobs(job: JobDetailRow): Promise<RelatedJobsView> {
+  return withApplicationRole(async (database) => {
+    const sameEmployer = await listRelatedEmployerJobs(
+      database,
+      job.company_id,
+      job.id,
+      RELATED_JOBS_SECTION_LIMIT,
+    );
+    const evidence = relatedJobEvidence(job);
+    const hasEvidence =
+      evidence.sectorKey !== null ||
+      evidence.subsectorKey !== null ||
+      evidence.opportunityType !== null ||
+      evidence.locationLabels.length > 0;
+    const similar = hasEvidence
+      ? await listSimilarJobs(
+          database,
+          evidence,
+          [job.id, ...sameEmployer.map((item) => item.id)],
+          RELATED_JOBS_SECTION_LIMIT,
+        )
+      : [];
+    return { sameEmployer, similar };
+  });
+}
+
+function relatedJobEvidence(job: JobDetailRow): RelatedJobEvidence {
+  const labels = new Set<string>();
+  for (const location of job.locations) {
+    const label = [location.city, location.region, location.source_text]
+      .map((value) => value?.trim())
+      .filter((value): value is string => Boolean(value))[0];
+    if (label) labels.add(label.toLowerCase());
+  }
+  return {
+    locationLabels: [...labels],
+    opportunityType: job.opportunity_type !== "unknown" ? job.opportunity_type : null,
+    sectorKey: job.sector_key,
+    subsectorKey: job.subsector_key,
+  };
+}
+
+export type { JobCardRow, JobDetailRow, JobLocationEvidence, JobSearchResult, SectorCountRow };

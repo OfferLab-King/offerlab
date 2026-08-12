@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { isPubliclyVisible, escapeJsonLd } from "../../../modules/job-catalog/domain/publication";
+import { isJobIndexable } from "../../../modules/job-catalog/domain/job-indexability";
 import { currentMemberAccess } from "../../../modules/identity-access/application/authorization";
 import { isJobSavedForMember } from "../../../modules/job-catalog/application/saved-jobs";
-import { readJobDetail } from "../../../modules/job-catalog/application/catalog";
+import { readJobDetail, readRelatedJobs } from "../../../modules/job-catalog/application/catalog";
 import {
   employmentTypeLabels,
   jobSectorLabel,
@@ -16,8 +17,12 @@ import {
 } from "../../../modules/job-catalog/domain/taxonomy";
 import { formatDate, formatRelativeTime, formatSalary, isDeadlinePassed } from "../job-display";
 import { SiteHeader } from "../../components/site-header";
+import { JobCard } from "../job-card";
+import { EmployerMark } from "../employer-mark";
 import { ApplyTrackingLink } from "./apply-tracking";
 import { SaveJobButton } from "./save-job-button";
+import { buildJobDetailMetadata } from "./job-detail-metadata";
+import { buildJobStructuredData } from "./job-structured-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,31 +32,21 @@ type JobDetailParams = Promise<{ slug: string }>;
 export async function generateMetadata({ params }: { params: JobDetailParams }): Promise<Metadata> {
   const { slug } = await params;
   const job = await readJobDetail(slug);
-  if (!job || !isPubliclyVisible(job, new Date())) {
-    return { robots: { index: false, follow: false }, title: "Role not available | OfferLab" };
-  }
-  const title = job.normalized_title ?? job.title;
-  const location = job.location_text ? ` in ${job.location_text}` : "";
-  return {
-    alternates: { canonical: `/jobs/${job.slug}` },
-    description:
-      job.description_summary ??
-      `${title} at ${job.company_name}${location}. Application is completed on the employer's official website.`,
-    title: `${title} at ${job.company_name} | OfferLab`,
-  };
+  return buildJobDetailMetadata(job, new Date());
 }
 
 export default async function JobDetailPage({ params }: { params: JobDetailParams }) {
   const { slug } = await params;
   const job = await readJobDetail(slug);
-  if (!job || !isPubliclyVisible(job, new Date())) notFound();
+  const now = new Date();
+  if (!job || !isPubliclyVisible(job, now)) notFound();
+  const indexable = isJobIndexable(job, now);
 
   const access = await currentMemberAccess();
   const memberSaved =
     access.status === "eligible"
       ? await isJobSavedForMember(access.authorization.userId, job.id)
       : false;
-  const now = new Date();
   const deadlinePassed = isDeadlinePassed(job.application_deadline, now);
   const salary = formatSalary(
     job.salary_min === null ? null : Number(job.salary_min),
@@ -65,30 +60,21 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
     : false;
   const subsectorLabel = jobSubsectorLabel(job.subsector_key);
   const sectorLabel = jobSectorLabel(job.sector_key);
+  const related = await readRelatedJobs(job);
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    datePosted: job.posted_at?.toISOString(),
-    description: job.description_summary ?? job.title,
-    employmentType:
-      job.employment_type && job.employment_type !== "unknown"
-        ? employmentTypeLabels[job.employment_type as keyof typeof employmentTypeLabels]
-        : undefined,
-    hiringOrganization: { name: job.company_name },
-    jobLocation: job.location_text ? { "@type": "Place", name: job.location_text } : undefined,
-    title: job.normalized_title ?? job.title,
-    validThrough: job.application_deadline?.toISOString(),
-  };
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
+  const structuredData = indexable ? buildJobStructuredData(job, now, base) : null;
 
   return (
     <main className="public-jobs-page job-detail-page">
       <SiteHeader />
 
-      <script
-        dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}
-        type="application/ld+json"
-      />
+      {structuredData && (
+        <script
+          dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}
+          type="application/ld+json"
+        />
+      )}
 
       <article className="job-detail">
         <nav aria-label="Breadcrumb" className="seo-breadcrumb">
@@ -101,8 +87,13 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
         </nav>
 
         <header className="job-detail-header">
-          <p className="eyebrow">Source: {job.company_name} Careers</p>
-          <h1>{job.normalized_title ?? job.title}</h1>
+          <div className="job-detail-heading-row">
+            <EmployerMark companyName={job.company_name} logoUrl={job.company_logo_url} />
+            <div className="job-detail-heading-text">
+              <p className="eyebrow">Source: {job.company_name} Careers</p>
+              <h1>{job.normalized_title ?? job.title}</h1>
+            </div>
+          </div>
           <p className="job-detail-location">{job.location_text || "Location not specified"}</p>
           <div className="job-detail-actions">
             <ApplyTrackingLink applicationUrl={job.application_url} />
@@ -211,17 +202,19 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
           </div>
         </dl>
 
-        {enriched && job.description_summary && (
+        {job.description_summary && (
           <section
             className="job-detail-section job-detail-summary"
             aria-labelledby="offerlab-summary"
           >
             <h2 id="offerlab-summary">OfferLab summary</h2>
             <p>{job.description_summary}</p>
-            <p className="job-detail-ai-note">
-              AI-generated summary from the employer&apos;s posting. Facts such as location and
-              deadline come from the posting itself, not from OfferLab.
-            </p>
+            {enriched && (
+              <p className="job-detail-ai-note">
+                AI-generated summary from the employer&apos;s posting. Facts such as location and
+                deadline come from the posting itself, not from OfferLab.
+              </p>
+            )}
           </section>
         )}
 
@@ -308,6 +301,34 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
             </>
           )}
         </section>
+
+        {related.sameEmployer.length > 0 && (
+          <section
+            className="job-detail-section job-detail-related"
+            aria-labelledby="related-employer"
+          >
+            <h2 id="related-employer">More roles at {job.company_name}</h2>
+            <div className="public-jobs-results">
+              {related.sameEmployer.map((item) => (
+                <JobCard job={item} key={item.id} now={now} showSave={false} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {related.similar.length > 0 && (
+          <section
+            className="job-detail-section job-detail-related"
+            aria-labelledby="related-similar"
+          >
+            <h2 id="related-similar">Similar current roles</h2>
+            <div className="public-jobs-results">
+              {related.similar.map((item) => (
+                <JobCard job={item} key={item.id} now={now} showSave={false} />
+              ))}
+            </div>
+          </section>
+        )}
 
         <footer className="job-detail-footer">
           <p>

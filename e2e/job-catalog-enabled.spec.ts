@@ -81,12 +81,15 @@ async function seedCatalogue() {
       {
         slug: "synthetic-bank-graduate-analyst",
         title: "Graduate Analyst",
+        descriptionSummary: "A synthetic analyst role used only for automated SEO tests.",
         opportunityType: "graduate_scheme",
         sectorKey: "financial_services",
         subsectorKey: "retail_corporate_banking",
         eligibility: "eligible",
         publication: "published",
         active: true,
+        deadline: null,
+        firstSeenDaysAgo: 5,
       },
       {
         slug: "synthetic-bank-software-engineer",
@@ -97,6 +100,9 @@ async function seedCatalogue() {
         eligibility: "eligible",
         publication: "published",
         active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 1,
       },
       {
         slug: "synthetic-bank-draft-intern",
@@ -107,6 +113,9 @@ async function seedCatalogue() {
         eligibility: "needs_review",
         publication: "draft",
         active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 6,
       },
       {
         slug: "synthetic-consultancy-intern",
@@ -117,6 +126,9 @@ async function seedCatalogue() {
         eligibility: "eligible",
         publication: "published",
         active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 1,
       },
       {
         slug: "synthetic-bank-senior-director",
@@ -127,6 +139,87 @@ async function seedCatalogue() {
         eligibility: "eligible",
         publication: "published",
         active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 2,
+      },
+      {
+        slug: "synthetic-bank-thin-role",
+        title: "Thin Role (title only)",
+        opportunityType: "unknown",
+        sectorKey: null,
+        subsectorKey: null,
+        eligibility: "eligible",
+        publication: "published",
+        active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 3,
+      },
+      {
+        slug: "synthetic-bank-expired-role",
+        title: "Expired Role (must never appear)",
+        opportunityType: "graduate_job",
+        sectorKey: "technology_it",
+        subsectorKey: "software_development",
+        eligibility: "eligible",
+        publication: "published",
+        active: true,
+        deadline: "2000-01-01T00:00:00Z",
+        descriptionSummary: null,
+        firstSeenDaysAgo: 1,
+      },
+      {
+        slug: "synthetic-bank-suppressed-role",
+        title: "Suppressed Role (must never appear)",
+        opportunityType: "graduate_job",
+        sectorKey: "technology_it",
+        subsectorKey: "software_development",
+        eligibility: "eligible",
+        publication: "suppressed",
+        active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 1,
+      },
+      {
+        slug: "synthetic-bank-ineligible-role",
+        title: "Ineligible Role (must never appear)",
+        opportunityType: "graduate_job",
+        sectorKey: "technology_it",
+        subsectorKey: "software_development",
+        eligibility: "ineligible",
+        publication: "published",
+        active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 1,
+      },
+      {
+        slug: "synthetic-bank-escaping-role",
+        title: 'Graduate <script>alert("x")</script> Analyst',
+        descriptionSummary: "A synthetic role used to verify safe structured-data escaping.",
+        opportunityType: "graduate_job",
+        sectorKey: "technology_it",
+        subsectorKey: "software_development",
+        eligibility: "eligible",
+        publication: "published",
+        active: true,
+        deadline: null,
+        firstSeenDaysAgo: 4,
+      },
+      {
+        slug: "synthetic-consultancy-graduate-analyst",
+        title: "Consultancy Graduate Scheme",
+        opportunityType: "graduate_scheme",
+        sectorKey: "financial_services",
+        subsectorKey: "retail_corporate_banking",
+        eligibility: "eligible",
+        publication: "published",
+        active: true,
+        deadline: null,
+        descriptionSummary: null,
+        firstSeenDaysAgo: 2,
       },
     ];
     for (const job of jobs) {
@@ -139,7 +232,8 @@ async function seedCatalogue() {
             opportunity_type, sector_key, subsector_key,
             eligibility_status, publication_status, active,
             classification_source, classification_version,
-            description_text, first_seen_at, last_seen_at, last_changed_at
+            description_text, description_summary, posted_at, first_seen_at, last_seen_at,
+            last_changed_at, application_deadline
           )
           values (
             ${owner}::uuid, ${job.slug}, ${`https://synthetic-bank.example.com/apply/${job.slug}`},
@@ -147,9 +241,31 @@ async function seedCatalogue() {
             ${job.sectorKey}, ${job.subsectorKey}, ${job.eligibility}, ${job.publication},
             ${job.active}, 'deterministic', 1,
             'A synthetic role used only for automated tests.',
-            now() - interval '1 day', now() - interval '1 day', now() - interval '1 day'
+            ${job.descriptionSummary ?? null},
+            now() - make_interval(days => ${job.firstSeenDaysAgo}),
+            now() - make_interval(days => ${job.firstSeenDaysAgo}),
+            now() - make_interval(days => ${job.firstSeenDaysAgo}),
+            now() - make_interval(days => ${job.firstSeenDaysAgo}),
+            ${job.deadline}::timestamptz
           )
           on conflict (slug) do update set title = excluded.title
+        `;
+      });
+    }
+    const locatedJobs = [
+      "synthetic-bank-graduate-analyst",
+      "synthetic-consultancy-intern",
+      "synthetic-consultancy-graduate-analyst",
+    ];
+    for (const slug of locatedJobs) {
+      await database.begin(async (transaction) => {
+        await transaction`set local role offerlab_crawler`;
+        await transaction`
+          insert into app.job_location (job_id, city, region, country, source_text, on_site, position)
+          select id, 'London', 'London', 'United Kingdom', 'London', true, 0
+          from app.job
+          where slug = ${slug}
+            and not exists (select 1 from app.job_location where job_id = app.job.id)
         `;
       });
     }
@@ -460,6 +576,212 @@ test("the employer profile has no horizontal overflow on mobile", async ({ page 
   test.skip(testInfo.project.name !== "mobile-chromium", "responsive check runs once");
   await page.goto("/employers/synthetic-bank");
   await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+});
+
+test("an indexable job page emits one canonical, no robots meta and valid JobPosting and Breadcrumb JSON-LD", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+  await expect(page.getByRole("heading", { name: "Graduate Analyst" })).toBeVisible();
+
+  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  const canonical = page.locator('link[rel="canonical"]');
+  await expect(canonical).toHaveCount(1);
+  await expect(canonical).toHaveAttribute("href", /\/jobs\/synthetic-bank-graduate-analyst$/);
+
+  const description = page.locator('meta[name="description"]');
+  await expect(description).toHaveCount(1);
+  const descriptionLength = (await description.getAttribute("content"))?.length ?? 0;
+  expect(descriptionLength).toBeGreaterThan(0);
+  expect(descriptionLength).toBeLessThanOrEqual(160);
+
+  const script = page.locator('script[type="application/ld+json"]');
+  await expect(script).toHaveCount(1);
+  const content = (await script.first().textContent()) ?? "";
+  expect(content).not.toContain("<");
+  const structured = JSON.parse(content) as Array<Record<string, unknown>>;
+  const jobPosting = structured.find((node) => node["@type"] === "JobPosting")!;
+  expect(jobPosting.title).toBe("Graduate Analyst");
+  expect(jobPosting.datePosted).toBeTruthy();
+  expect(jobPosting.description).toBeTruthy();
+  expect(jobPosting.description).not.toBe(jobPosting.title);
+  await expect(
+    page.getByText("A synthetic analyst role used only for automated SEO tests."),
+  ).toBeVisible();
+  const organization = jobPosting.hiringOrganization as Record<string, unknown>;
+  expect(organization.name).toBe("Synthetic Bank");
+  const location = jobPosting.jobLocation as { address: Record<string, string> };
+  expect(location.address.addressLocality).toBe("London");
+  expect(jobPosting.url).toContain("/jobs/synthetic-bank-graduate-analyst");
+  const identifier = jobPosting.identifier as { value: string };
+  expect(identifier.value).toBe("synthetic-bank-graduate-analyst");
+  const breadcrumb = structured.find((node) => node["@type"] === "BreadcrumbList")!;
+  const items = breadcrumb.itemListElement as Array<{ name: string }>;
+  expect(items.map((item) => item.name)).toEqual(["Jobs", "Graduate Analyst"]);
+});
+
+test("a thin public job page renders but is noindex, follow with no structured data", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const response = await page.goto("/jobs/synthetic-bank-thin-role");
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole("heading", { name: "Thin Role (title only)" })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex,\s*follow/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    /\/jobs\/synthetic-bank-thin-role$/,
+  );
+  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
+});
+
+test("expired, suppressed and ineligible roles are never publicly reachable", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  for (const slug of [
+    "synthetic-bank-expired-role",
+    "synthetic-bank-suppressed-role",
+    "synthetic-bank-ineligible-role",
+  ]) {
+    const response = await page.goto(`/jobs/${slug}`);
+    expect(response?.status()).toBe(404);
+    const robotContents = await page
+      .locator('meta[name="robots"]')
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("content") ?? ""));
+    expect(robotContents.length).toBeGreaterThan(0);
+    expect(robotContents.every((content) => content.includes("noindex"))).toBe(true);
+  }
+});
+
+test("a missing job page is not indexable and leaks no role details", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const response = await page.goto("/jobs/not-a-real-role");
+  expect(response?.status()).toBe(404);
+  const robotContents = await page
+    .locator('meta[name="robots"]')
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("content") ?? ""));
+  expect(robotContents.length).toBeGreaterThan(0);
+  expect(robotContents.every((content) => content.includes("noindex"))).toBe(true);
+});
+
+test("the job detail page shows related current roles without duplicates or non-public roles", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+
+  const employerSection = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: /More roles at Synthetic Bank/ }) });
+  await expect(employerSection).toHaveCount(1);
+  await expect(
+    employerSection.getByRole("link", { name: "Graduate Software Engineer" }),
+  ).toBeVisible();
+  expect(await employerSection.locator(".job-card").count()).toBeLessThanOrEqual(3);
+
+  const similarSection = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: "Similar current roles" }) });
+  await expect(similarSection).toHaveCount(1);
+  await expect(
+    similarSection.getByRole("link", { name: "Consultancy Graduate Scheme" }),
+  ).toBeVisible();
+  await expect(similarSection.getByRole("link", { name: "Consulting Intern" })).toBeVisible();
+  expect(await similarSection.locator(".job-card").count()).toBeLessThanOrEqual(3);
+
+  const employerLinks = new Set(
+    await employerSection
+      .locator('a[href^="/jobs/"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  );
+  const similarLinks = new Set(
+    await similarSection
+      .locator('a[href^="/jobs/"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+  );
+  for (const href of similarLinks) expect(employerLinks.has(href)).toBe(false);
+  for (const slug of [
+    "synthetic-bank-draft-intern",
+    "synthetic-bank-expired-role",
+    "synthetic-bank-suppressed-role",
+    "synthetic-bank-ineligible-role",
+  ]) {
+    expect([...employerLinks, ...similarLinks].some((href) => href?.includes(slug))).toBe(false);
+  }
+});
+
+test("script-breaking role titles stay safely escaped in JSON-LD and visible text", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const title = 'Graduate <script>alert("x")</script> Analyst';
+  await page.goto("/jobs/synthetic-bank-escaping-role");
+  await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
+  const content =
+    (await page.locator('script[type="application/ld+json"]').first().textContent()) ?? "";
+  expect(content).not.toContain("<");
+  expect(content).toContain("\\u003c");
+});
+
+test("the sitemap lists only indexable job pages", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  const response = await page.goto("/sitemap.xml");
+  expect(response?.status()).toBe(200);
+  const body = (await response?.text()) ?? "";
+  expect(body).toContain("/jobs/synthetic-bank-graduate-analyst");
+  expect(body).toContain("/jobs/synthetic-bank-escaping-role");
+  for (const slug of [
+    "synthetic-bank-thin-role",
+    "synthetic-bank-software-engineer",
+    "synthetic-bank-senior-director",
+    "synthetic-bank-draft-intern",
+    "synthetic-bank-expired-role",
+    "synthetic-bank-suppressed-role",
+    "synthetic-bank-ineligible-role",
+  ]) {
+    expect(body).not.toContain(`/jobs/${slug}`);
+  }
+});
+
+test("the official application link stays external with nofollow and opens in a new tab", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+  const applyLink = page.getByRole("link", { name: /Apply on employer website/i }).first();
+  expect(await applyLink.getAttribute("href")).toMatch(/^https:\/\//);
+  expect(await applyLink.getAttribute("href")).not.toContain("offerlab");
+  expect(await applyLink.getAttribute("rel")).toContain("nofollow");
+  expect(await applyLink.getAttribute("rel")).toContain("noopener");
+  expect(await applyLink.getAttribute("target")).toBe("_blank");
+});
+
+test("the job detail page has no horizontal overflow on mobile", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "responsive check runs once");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+  await expect(page.getByRole("heading", { name: "Graduate Analyst" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+});
+
+test("the job detail page has no horizontal overflow on desktop", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "desktop overflow check runs once");
+  await page.goto("/jobs/synthetic-bank-graduate-analyst");
+  await expect(page.getByRole("heading", { name: "Graduate Analyst" })).toBeVisible();
   await page.waitForLoadState("networkidle");
   expect(
     await page.evaluate(
