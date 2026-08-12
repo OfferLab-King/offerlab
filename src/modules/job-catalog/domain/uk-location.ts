@@ -12,7 +12,7 @@ export type UkLocationEvaluation = Readonly<{
 const ukCountryPattern =
   /^(?:uk|u\.k\.|united kingdom|great britain|gb|england|scotland|wales|northern ireland)$/iu;
 const explicitUkText =
-  /\b(?:united kingdom|great britain|england|scotland|wales|northern ireland|uk-wide|across the uk|remote(?:ly)?\s+(?:in|within)\s+the uk)\b/iu;
+  /\b(?:united kingdom|great britain|england|scotland|wales|northern ireland|uk-wide|across the uk|remote(?:ly)?\s+(?:in|within)\s+the uk|remote(?:ly)?\s*\(\s*(?:uk|u\.k\.|united kingdom)\s*\))(?![a-z])/iu;
 const ukPostcode = /\b(?:[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/iu;
 const nonUkCountryPattern =
   /^(?:ireland|republic of ireland|united states|usa|canada|france|germany|spain|italy|netherlands|australia|india|singapore|china|japan|switzerland)$/iu;

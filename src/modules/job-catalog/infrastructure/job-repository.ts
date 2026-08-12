@@ -5,7 +5,7 @@ import {
   type CrawlChangePlan,
   type ExistingJobRecord,
 } from "../domain/change-detection";
-import type { DiscoveredJob } from "../domain/deduplication";
+import type { DiscoveredJob, DiscoveredLocation } from "../domain/deduplication";
 import type { EligibilityReason, EligibilityStatus } from "../domain/eligibility";
 import type { OpportunityType } from "../domain/taxonomy";
 
@@ -543,6 +543,8 @@ export type ReclassificationRow = Readonly<{
   classification_source: string;
   description_text: string | null;
   id: string;
+  location_text: string | null;
+  locations: readonly DiscoveredLocation[];
   source_payload: unknown;
   title: string;
 }>;
@@ -551,11 +553,26 @@ export async function listJobsForReclassification(
   database: TransactionSql,
 ): Promise<ReclassificationRow[]> {
   return database<ReclassificationRow[]>`
-    select id, title, description_text, application_deadline,
-      source_payload, classification_source
-    from app.job
-    where active and classification_source <> 'administrator'
-    order by updated_at asc
+    select j.id, j.title, j.description_text, j.application_deadline,
+      j.source_payload, j.classification_source, j.location_text,
+      coalesce(
+        (
+          select jsonb_agg(
+            jsonb_build_object(
+              'city', l.city, 'region', l.region, 'country', l.country,
+              'sourceText', l.source_text, 'remote', l.remote,
+              'hybrid', l.hybrid, 'onSite', l.on_site
+            )
+            order by l.position
+          )
+          from app.job_location l
+          where l.job_id = j.id
+        ),
+        '[]'::jsonb
+      ) as locations
+    from app.job j
+    where j.active and j.classification_source <> 'administrator'
+    order by j.updated_at asc
   `;
 }
 

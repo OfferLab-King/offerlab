@@ -84,6 +84,22 @@ describe("UK location admission", () => {
     expect(evaluateUkLocation({ locationText: "EMEA", remoteType: null }).status).toBe("ambiguous");
   });
 
+  it("accepts common parenthetical remote-within-UK wording such as Remote (UK)", () => {
+    expect(
+      evaluateUkLocation({ locationText: "Cardiff, London or Remote (UK)", remoteType: null })
+        .status,
+    ).toBe("uk_confirmed");
+    expect(
+      evaluateUkLocation({ locationText: "Remote (United Kingdom)", remoteType: null }).status,
+    ).toBe("uk_confirmed");
+  });
+
+  it("does not treat parenthetical remote in another country as UK", () => {
+    expect(evaluateUkLocation({ locationText: "Remote (Ireland)", remoteType: null }).status).toBe(
+      "ambiguous",
+    );
+  });
+
   it("does not treat Crown Dependencies as UK", () => {
     expect(evaluateUkLocation({ locationText: "Jersey", remoteType: null }).status).toBe(
       "ambiguous",
