@@ -316,11 +316,14 @@ export type JobSourceWrite = Readonly<{
   crawlEndpointUrl?: string | null;
   crawlFrequencyMinutes?: number;
   manuallyOverridden?: boolean;
+  manifestVersion?: number;
   name: string;
   notes?: string;
   slug: string;
   sourceType: SourceType;
   status?: SourceStatus;
+  verificationDate?: Date;
+  verificationEvidenceUrl?: string | null;
 }>;
 
 export async function upsertJobSource(
@@ -331,14 +334,17 @@ export async function upsertJobSource(
     insert into app.job_source (
       company_id, slug, name, channel, careers_url, crawl_endpoint_url,
       ats_provider, source_type, status, crawl_frequency_minutes, configuration,
-      manually_overridden, notes
+      manually_overridden, notes, verification_date, verification_evidence_url,
+      manifest_version
     ) values (
       ${input.companyId}::uuid, ${input.slug}, ${input.name}, ${input.channel},
       ${input.careersUrl}, ${input.crawlEndpointUrl ?? null}, ${input.atsProvider ?? null},
       ${input.sourceType}, ${input.status ?? "active"},
       ${input.crawlFrequencyMinutes ?? 1440},
       ${jsonParameter(database, input.configuration ?? {})},
-      ${input.manuallyOverridden ?? false}, ${input.notes ?? ""}
+      ${input.manuallyOverridden ?? false}, ${input.notes ?? ""},
+      ${input.verificationDate ?? null}, ${input.verificationEvidenceUrl ?? null},
+      ${input.manifestVersion ?? null}
     )
     on conflict (company_id, slug) do update
     set name = excluded.name,
@@ -350,6 +356,9 @@ export async function upsertJobSource(
         crawl_frequency_minutes = excluded.crawl_frequency_minutes,
         configuration = case when app.job_source.manually_overridden then app.job_source.configuration else excluded.configuration end,
         notes = excluded.notes,
+        verification_date = excluded.verification_date,
+        verification_evidence_url = excluded.verification_evidence_url,
+        manifest_version = excluded.manifest_version,
         updated_at = now()
     returning id
   `;
