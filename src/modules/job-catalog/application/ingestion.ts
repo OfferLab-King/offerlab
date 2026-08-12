@@ -1,6 +1,6 @@
 import { planCrawlChanges } from "../domain/change-detection";
 import type { DiscoveredJob } from "../domain/deduplication";
-import { nextCheckAtWithJitter } from "../domain/scheduler";
+import { nextCheckAfterFailure, nextCheckAtWithJitter } from "../domain/scheduler";
 import { sourceUrlHealthAfterCheck, type SourceUrlHealth } from "../domain/source-health";
 import { isCrawlable, sourceKey, type JobSource, type SourceStatus } from "../domain/source";
 import { canonicalizeJobUrl, slugifyTitle } from "../domain/urls";
@@ -46,6 +46,14 @@ export type CrawlOptions = Readonly<{
   dryRun?: boolean;
   now?: Date;
 }>;
+
+const THROTTLE_LIKE_CODES = new Set([
+  "http_429",
+  "http_error",
+  "network_timeout",
+  "network_error",
+  "source_unavailable",
+]);
 
 export async function runSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome> {
   const source = options.source;
@@ -181,7 +189,12 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
       ),
       lastCheckedAt: now,
       lastSuccessfulCheckAt: null,
-      nextCheckAt: nextCheckAtWithJitter(source.crawlFrequencyMinutes, now),
+      nextCheckAt: nextCheckAfterFailure({
+        crawlFrequencyMinutes: source.crawlFrequencyMinutes,
+        consecutiveFailures: source.consecutiveFailures + 1,
+        now,
+        throttleLike: THROTTLE_LIKE_CODES.has(code),
+      }),
     };
     if (!options.dryRun) {
       await withCrawlerRole(async (transaction) => {
@@ -400,7 +413,12 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
       ),
       lastCheckedAt: now,
       lastSuccessfulCheckAt: null,
-      nextCheckAt: nextCheckAtWithJitter(source.crawlFrequencyMinutes, now),
+      nextCheckAt: nextCheckAfterFailure({
+        crawlFrequencyMinutes: source.crawlFrequencyMinutes,
+        consecutiveFailures: source.consecutiveFailures + 1,
+        now,
+        throttleLike: false,
+      }),
     };
     if (!options.dryRun && runId) {
       try {

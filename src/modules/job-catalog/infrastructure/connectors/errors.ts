@@ -15,16 +15,22 @@ export class JobFetchError extends Error {
   readonly code: JobFetchErrorCode;
   readonly retryable: boolean;
   readonly statusCode: number | undefined;
+  readonly retryAfterSeconds: number | undefined;
 
   constructor(
     code: JobFetchErrorCode,
     message: string,
-    options: Readonly<{ retryable?: boolean; statusCode?: number }> = {},
+    options: Readonly<{
+      retryable?: boolean;
+      statusCode?: number;
+      retryAfterSeconds?: number;
+    }> = {},
   ) {
     super(message);
     this.name = "JobFetchError";
     this.code = code;
     this.retryable = options.retryable ?? false;
     this.statusCode = options.statusCode;
+    this.retryAfterSeconds = options.retryAfterSeconds;
   }
 }

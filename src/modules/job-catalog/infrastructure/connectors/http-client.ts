@@ -123,7 +123,9 @@ export async function fetchText(
         throw new JobFetchError("http_404", "http_404_not_found", { statusCode: 404 });
       }
       if (response.status === 429) {
+        const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get("retry-after"));
         throw new JobFetchError("http_429", "http_429_rate_limited", {
+          ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
           retryable: true,
           statusCode: 429,
         });
@@ -142,7 +144,7 @@ export async function fetchText(
       lastError = error;
       const shouldRetry = error instanceof JobFetchError ? error.retryable && retryable : retryable;
       if (shouldRetry && attempt < attempts - 1) {
-        const delay = backoffDelay(attempt);
+        const delay = retryDelayMs(error, attempt);
         logger.warn({
           attempt: attempt + 1,
           delayMs: delay,
@@ -160,6 +162,22 @@ export async function fetchText(
     }
   }
   throw lastError ?? new JobFetchError("source_unavailable", "source_unavailable");
+}
+
+function retryDelayMs(error: unknown, attempt: number): number {
+  if (error instanceof JobFetchError && error.retryAfterSeconds !== undefined) {
+    return Math.min(Math.max(error.retryAfterSeconds, 0), 3_600) * 1_000;
+  }
+  return backoffDelay(attempt);
+}
+
+export function parseRetryAfterSeconds(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isInteger(seconds) && seconds >= 0) return seconds;
+  const date = Date.parse(value);
+  if (Number.isFinite(date)) return Math.max(0, Math.ceil((date - Date.now()) / 1_000));
+  return undefined;
 }
 
 async function fetchWithBoundedRedirects(

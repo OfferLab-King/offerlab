@@ -22,6 +22,29 @@ export function nextCheckAtWithJitter(
   return new Date(now.getTime() + offset);
 }
 
+/**
+ * After a failed crawl, either keeps the normal frequency (ordinary failures)
+ * or backs off exponentially (2, 4, 8, ... hours, capped at 24) when the
+ * failure looks like rate limiting or a throttled origin (429s, 5xx,
+ * timeouts). The backoff lets throttles such as Workday's clear before the
+ * worker probes the source again. Manual run requests still bypass the
+ * schedule.
+ */
+export function nextCheckAfterFailure(
+  options: Readonly<{
+    crawlFrequencyMinutes: number;
+    consecutiveFailures: number;
+    now: Date;
+    throttleLike: boolean;
+  }>,
+): Date {
+  if (!options.throttleLike) {
+    return nextCheckAtWithJitter(options.crawlFrequencyMinutes, options.now);
+  }
+  const hours = Math.min(2 ** options.consecutiveFailures, 24);
+  return new Date(options.now.getTime() + hours * 3_600_000);
+}
+
 export function sortDueSources<
   T extends { nextCheckAt: Date | null; runRequestedAt?: Date | null },
 >(companies: readonly T[]): T[] {
