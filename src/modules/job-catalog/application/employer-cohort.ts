@@ -33,12 +33,13 @@ export const MANIFEST_VERSION = 2;
 /**
  * Versioned UK-relevant employer cohort.
  *
- * VERIFICATION (2026-08-12): eleven endpoints are currently verified by a
+ * VERIFICATION (2026-08-12): seven endpoints are currently verified by a
  * bounded unauthenticated GET against the official public ATS job-board API.
- * Thirteen known-stale entries (Greenhouse/Lever/Ashby 404s, a SmartRecruiters
- * 400, and the Accenture identifier change to Workday) and fifteen not-yet-
- * re-verified entries import as PAUSED. A source is never activated without a
- * current verification; nothing here claims all 39 entries are verified.
+ * Seventeen known-stale entries (Greenhouse/Lever/Ashby 404s, a SmartRecruiters
+ * 400, four SmartRecruiters identifiers returning 200 with zero postings, and
+ * the Accenture identifier change to Workday) and fifteen not-yet-re-verified
+ * entries import as PAUSED. A source is never activated without a current
+ * verification; nothing here claims all 39 entries are verified.
  */
 export const employerManifest: readonly ManifestCompany[] = [
   {
@@ -142,10 +143,10 @@ export const employerManifest: readonly ManifestCompany[] = [
     slug: "national-grid",
     sourceType: "smartrecruiters",
     verification: {
-      status: "verified",
+      status: "stale",
       date: "2026-08-12",
-      evidenceUrl: "https://api.smartrecruiters.com/v1/companies/NationalGrid/postings?limit=1",
-      notes: "Verified 2026-08-12: bounded GET on the official SmartRecruiters API returned 200.",
+      notes:
+        "Stale 2026-08-12: official SmartRecruiters postings API returns 200 with zero postings for this identifier. Paused until a valid official endpoint is verified.",
     },
     websiteUrl: "https://www.nationalgrid.com",
   },
@@ -178,10 +179,10 @@ export const employerManifest: readonly ManifestCompany[] = [
     slug: "revolut",
     sourceType: "smartrecruiters",
     verification: {
-      status: "verified",
+      status: "stale",
       date: "2026-08-12",
-      evidenceUrl: "https://api.smartrecruiters.com/v1/companies/Revolut/postings?limit=1",
-      notes: "Verified 2026-08-12: bounded GET on the official SmartRecruiters API returned 200.",
+      notes:
+        "Stale 2026-08-12: official SmartRecruiters postings API returns 200 with zero postings for this identifier. Paused until a valid official endpoint is verified.",
     },
     websiteUrl: "https://www.revolut.com",
   },
@@ -350,10 +351,10 @@ export const employerManifest: readonly ManifestCompany[] = [
     slug: "iqvia",
     sourceType: "smartrecruiters",
     verification: {
-      status: "verified",
+      status: "stale",
       date: "2026-08-12",
-      evidenceUrl: "https://api.smartrecruiters.com/v1/companies/IQVIA/postings?limit=1",
-      notes: "Verified 2026-08-12: bounded GET on the official SmartRecruiters API returned 200.",
+      notes:
+        "Stale 2026-08-12: official SmartRecruiters postings API returns 200 with zero postings for this identifier. Paused until a valid official endpoint is verified.",
     },
     websiteUrl: "https://www.iqvia.com",
   },
@@ -419,10 +420,10 @@ export const employerManifest: readonly ManifestCompany[] = [
     slug: "pagegroup",
     sourceType: "smartrecruiters",
     verification: {
-      status: "verified",
+      status: "stale",
       date: "2026-08-12",
-      evidenceUrl: "https://api.smartrecruiters.com/v1/companies/PageGroup/postings?limit=1",
-      notes: "Verified 2026-08-12: bounded GET on the official SmartRecruiters API returned 200.",
+      notes:
+        "Stale 2026-08-12: official SmartRecruiters postings API returns 200 with zero postings for this identifier. Paused until a valid official endpoint is verified.",
     },
     websiteUrl: "https://www.page.com",
   },
