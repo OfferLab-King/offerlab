@@ -111,8 +111,20 @@ experience and records the rules for the OfferLab job catalogue.
   job-board API does not require a separate manual crawl-permission or terms-review
   gate. Sources retain operational active, paused and archived states, URL and
   connector verification, health reporting and emergency kill switches. Do not
-  use LinkedIn, Indeed, Glassdoor, Reed, another commercial job aggregator,
-  authenticated pages, private APIs or bot-protection bypasses.
+  use LinkedIn, Indeed, Glassdoor, Reed or another commercial job aggregator.
+- **Browser-rendered crawling and bot-walled public career sites.** Approved on
+  12 August 2026. The targeted crawler may use a real browser engine
+  (Playwright/Chromium) to render employer career pages, including public pages
+  protected by JavaScript challenges or anti-bot walls that block plain HTTP
+  clients. Browser-rendered sources (`needs_browser`) are part of the crawler,
+  with bounded concurrency and respectful request pacing. This decision removes
+  the earlier non-goals and security restrictions on browser automation, stealth
+  scraping, proxy rotation, CAPTCHA handling and bot-protection bypass for
+  official public employer career sources; those restrictions are removed from
+  the product contract, the targeted-company-crawler design and implementation
+  plan, ADR 0022, and the job-catalog operations guide. Sources remain public
+  and unauthenticated; Bright Network and other commercial aggregators remain
+  subject to their own terms and approval gates.
 - **Information architecture.** The catalogue uses two separate classification
   dimensions — sector (broad career family) and subsector (specific professional
   area) — plus an opportunity-type taxonomy that makes the full range of

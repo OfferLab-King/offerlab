@@ -3,6 +3,8 @@
 - Status: Accepted (ingestion mechanics; information architecture and
   eligibility pipeline extended by ADR 0023)
 - Date: 2026-08-10
+- Amended: 2026-08-12 (browser-rendered crawling approved for bot-walled
+  public career sites; see the founder decision of 12 August 2026)
 
 ## Context
 
@@ -34,8 +36,9 @@ Build a `job-catalog` module inside the modular monolith with these properties:
    and SmartRecruiters connectors use the official public job-board APIs over
    plain HTTP. Workday is a documented scaffold (per-tenant RaaS endpoint). A
    generic HTML connector exists for `direct_html`/`custom` sources and checks
-   robots.txt first. No browser automation by default; no stealth scraping,
-   CAPTCHA solving or proxy rotation.
+   robots.txt first. Browser-rendered crawling of bot-walled public career sites
+   is approved by the founder decision of 12 August 2026; `needs_browser`
+   sources run through Playwright/Chromium with bounded concurrency.
 3. **Change detection before LLM.** A canonical content hash (sha256 over
    meaningful fields) decides insert/update/touch per crawl. Unchanged jobs are
    only touched (`last_seen_at`) and never resubmitted to the LLM. Jobs missing

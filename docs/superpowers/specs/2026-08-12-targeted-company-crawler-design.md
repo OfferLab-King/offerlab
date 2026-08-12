@@ -59,13 +59,17 @@ authoritative documents rather than leaving contradictory restrictions in place.
 
 ## Non-goals
 
-- Aggregator scraping, authenticated sources, CAPTCHA solving, proxy rotation, or
-  bot-protection bypass.
+- Aggregator scraping (commercial job aggregators such as LinkedIn, Indeed,
+  Glassdoor, Reed and Bright Network).
 - A microservice, message queue, cache, Kubernetes workload, or separate API.
 - Publishing non-UK vacancies.
 - Using AI as the sole UK classifier, publication authority, or source of facts.
 - Creating a public employer ranking from the internal priority cohort.
 - Automatically replacing curated URLs after a redirect.
+
+Browser-rendered crawling of official public employer career pages - including
+pages protected by JavaScript challenges or anti-bot walls - is approved by the
+founder decision of 12 August 2026 and is in scope for `needs_browser` sources.
 
 ## Architecture
 
@@ -297,9 +301,9 @@ are copied.
 
 - The web runtime cannot assume `offerlab_crawler`.
 - The crawler cannot access member-owned saves or private application data.
-- Only public, unauthenticated official employer sources are supported.
-- No CAPTCHA solving, stealth, proxy rotation, authenticated scraping, or
-  bot-protection bypass.
+- Sources are public and unauthenticated. Browser-rendered crawling of
+  bot-walled public employer career pages is approved (founder decision
+  12 August 2026) with bounded concurrency and respectful pacing.
 - SSRF protection, redirect validation, DNS/IP checks, response caps, timeouts,
   concurrency limits, and sanitized logs remain.
 - Raw model prompts/outputs and source descriptions are not logged.

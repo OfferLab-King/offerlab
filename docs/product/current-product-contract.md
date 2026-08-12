@@ -82,8 +82,6 @@ in this contract still apply.
   numerator, denominator and non-predictive limitation;
 - scraping, crawling or republishing LinkedIn, Indeed, Glassdoor, Reed, Bright Network or any
   other commercial job aggregator without explicit founder approval of that source;
-- automated ingestion from authenticated pages, private APIs, or any source with bot-protection
-  bypass;
 - silent AI or coach edits to member source records; a grounded suggested revision is permitted
   only as a comparison that the member explicitly copies and then saves;
 - an open tutor marketplace, automatic tutor/peer matching or unrestricted member-created rooms;

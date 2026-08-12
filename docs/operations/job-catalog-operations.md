@@ -35,7 +35,7 @@ Relevant keys:
 | `JOB_CRAWLER_DATABASE_URL`                                  | —                              | Dedicated production crawler login connection string                          |
 | `JOB_CRAWLER_USER_AGENT`                                    | `OfferLabJobCrawler/1.0 (...)` | Crawler user agent                                                            |
 | `JOB_CRAWLER_MAX_CONCURRENCY`                               | `2`                            | Concurrent sources in `jobs:crawl:due`                                        |
-| `JOB_BROWSER_MAX_CONCURRENCY`                               | `1`                            | Reserved for future browser rendering                                         |
+| `JOB_BROWSER_MAX_CONCURRENCY`                               | `1`                            | Concurrent browser-rendered (`needs_browser`) sources                         |
 | `JOB_LLM_MAX_CONCURRENCY`                                   | `2`                            | Concurrent enrichment calls                                                   |
 | `JOB_CRAWLER_TIMEOUT_MS`                                    | `20000`                        | Per-request timeout                                                           |
 | `JOB_CRAWLER_MAX_JOBS_PER_SOURCE`                           | `500`                          | Hard cap per source per run                                                   |
@@ -217,9 +217,11 @@ lives in Supabase, so the instance remains replaceable.
    corepack enable && corepack prepare pnpm@11.9.0 --activate
    ```
 
-   (Playwright is NOT installed by default; the generic HTML connector is
-   HTTP-only. Only `pnpm exec playwright install chromium` if a future source
-   sets `needs_browser`.)
+   Browser-rendered crawling of bot-walled public career sites is approved
+   (founder decision 12 August 2026). For `needs_browser` sources, install
+   Chromium with `pnpm exec playwright install chromium` and keep
+   `JOB_BROWSER_MAX_CONCURRENCY` low. The generic HTML connector remains
+   HTTP-only and checks robots.txt.
 
 2. Deploy the repository and install dependencies:
 
@@ -296,9 +298,10 @@ lives in Supabase, so the instance remains replaceable.
 ## Honesty and safety rules
 
 - Crawl only active sources; paused, archived and repeatedly failing sources do not run.
-- Never bypass bot protection, CAPTCHAs or authentication walls; no stealth
-  scraping, proxy rotation or fingerprint evasion.
-- Never bypass bot protection, authentication or access controls.
+- Browser-rendered crawling of public, unauthenticated employer career pages
+  (including pages behind JavaScript challenges or anti-bot walls) is approved
+  by the founder decision of 12 August 2026. Keep browser concurrency bounded
+  and pace requests; sources remain public and unauthenticated.
 - Only successful, non-empty crawls can deactivate jobs (after the
   consecutive-miss threshold). Failed crawls never touch job activity.
 - User-facing pages show freshness only after a successful crawl and clearly
