@@ -1,4 +1,10 @@
 import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
+import type { SourceStatus } from "../domain/source";
+import {
+  deriveSourceOperationalState,
+  type LatestSourceRun,
+  type SourceOperationalState,
+} from "../domain/source-operational-state";
 import {
   listJobSourcesForAdmin,
   requestJobSourceRun,
@@ -19,8 +25,13 @@ import {
   type ClassificationOverrideInput,
 } from "../infrastructure/job-repository";
 
+export type JobSourceAdminViewRow = JobSourceAdminRow &
+  Readonly<{
+    operationalState: SourceOperationalState;
+  }>;
+
 export type JobCatalogAdminView = Readonly<{
-  sources: readonly JobSourceAdminRow[];
+  sources: readonly JobSourceAdminViewRow[];
   classificationQueue: readonly ClassificationQueueRow[];
   eligibilityQueue: readonly EligibilityQueueRow[];
   recentEvents: readonly RecentEventRow[];
@@ -62,12 +73,34 @@ export async function readJobCatalogAdmin(
       ]);
     return {
       classificationQueue,
-      sources,
+      sources: sources.map((source) => ({
+        ...source,
+        operationalState: deriveSourceOperationalState({
+          status: source.status as SourceStatus,
+          runRequestedAt: source.run_requested_at,
+          latestRun: latestRunOf(source),
+        }),
+      })),
       eligibilityQueue,
       recentEvents,
       recentRuns,
     };
   });
+}
+
+function latestRunOf(source: JobSourceAdminRow): LatestSourceRun | null {
+  if (!source.latest_run_started_at) return null;
+  return {
+    status: source.latest_run_status as LatestSourceRun["status"],
+    startedAt: source.latest_run_started_at,
+    finishedAt: source.latest_run_finished_at,
+    jobsDeactivated: source.latest_run_jobs_deactivated,
+    jobsDiscovered: source.latest_run_jobs_discovered,
+    jobsNew: source.latest_run_jobs_new,
+    jobsUnchanged: source.latest_run_jobs_unchanged,
+    jobsUpdated: source.latest_run_jobs_updated,
+    errorSummary: source.latest_run_error_summary,
+  };
 }
 
 async function insertAuditEvent(

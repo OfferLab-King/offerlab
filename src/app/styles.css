@@ -6629,6 +6629,18 @@ progress {
   margin: 0;
 }
 
+.cms-job-source-state {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cms-job-source-state p {
+  color: var(--muted);
+  margin: 0;
+}
+
 .cms-run-list,
 .cms-event-list {
   display: grid;

@@ -144,6 +144,16 @@ export type JobSourceAdminRow = Readonly<{
   endpoint_last_status_code: number | null;
   endpoint_final_url: string | null;
   endpoint_invalid_since: Date | null;
+  latest_run_status: string | null;
+  latest_run_started_at: Date | null;
+  latest_run_finished_at: Date | null;
+  latest_run_jobs_deactivated: number;
+  latest_run_jobs_discovered: number;
+  latest_run_jobs_new: number;
+  latest_run_jobs_unchanged: number;
+  latest_run_jobs_updated: number;
+  latest_run_error_count: number;
+  latest_run_error_summary: string | null;
 }>;
 
 export async function listJobSourcesForAdmin(
@@ -157,9 +167,24 @@ export async function listJobSourcesForAdmin(
       s.run_requested_at, s.consecutive_failures, s.landing_health_status,
       s.landing_last_status_code, s.landing_final_url, s.landing_invalid_since,
       s.endpoint_health_status, s.endpoint_last_status_code, s.endpoint_final_url,
-      s.endpoint_invalid_since
+      s.endpoint_invalid_since,
+      r.status as latest_run_status, r.started_at as latest_run_started_at,
+      r.finished_at as latest_run_finished_at,
+      r.jobs_discovered as latest_run_jobs_discovered,
+      r.jobs_new as latest_run_jobs_new, r.jobs_updated as latest_run_jobs_updated,
+      r.jobs_unchanged as latest_run_jobs_unchanged,
+      r.jobs_deactivated as latest_run_jobs_deactivated,
+      r.error_count as latest_run_error_count, r.error_summary as latest_run_error_summary
     from app.job_source s
     join app.company c on c.id = s.company_id
+    left join lateral (
+      select r.status, r.started_at, r.finished_at, r.jobs_discovered, r.jobs_new,
+        r.jobs_updated, r.jobs_unchanged, r.jobs_deactivated, r.error_count, r.error_summary
+      from app.job_ingestion_run r
+      where r.source_id = s.id
+      order by r.started_at desc
+      limit 1
+    ) r on true
     order by s.status = 'active' desc, c.name, s.name
   `;
 }

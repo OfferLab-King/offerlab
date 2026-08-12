@@ -1,5 +1,9 @@
 import { requireAdministrator } from "../../../modules/identity-access/application/authorization";
 import { readJobCatalogAdmin } from "../../../modules/job-catalog/application/admin";
+import type {
+  LatestSourceRunResult,
+  SourceOperationalState,
+} from "../../../modules/job-catalog/domain/source-operational-state";
 import {
   opportunityTypes,
   opportunityTypeLabels,
@@ -28,6 +32,60 @@ const statusLabels = {
   paused: "Paused",
 } as const;
 
+function LatestResult({ latest }: { latest: LatestSourceRunResult }) {
+  if (latest.kind === "succeeded") {
+    return (
+      <p>
+        Last run succeeded · discovered {latest.jobsDiscovered} · new {latest.jobsNew} · updated{" "}
+        {latest.jobsUpdated} · deactivated {latest.jobsDeactivated} ·{" "}
+        {latest.finishedAt.toISOString()}
+      </p>
+    );
+  }
+  return (
+    <p className="cms-run-error">
+      Last run failed · {latest.errorCode ?? "unknown"} · {latest.finishedAt.toISOString()}
+    </p>
+  );
+}
+
+function SourceState({ state, sourceId }: { state: SourceOperationalState; sourceId: string }) {
+  switch (state.kind) {
+    case "queued":
+      return (
+        <>
+          <span className="status-badge">Queued</span>
+          <p className="hint">Run requested · the worker will pick it up.</p>
+        </>
+      );
+    case "running":
+      return (
+        <>
+          <span className="status-badge">Running</span>
+          <p className="hint">Crawl started at {state.startedAt.toISOString()}.</p>
+        </>
+      );
+    case "paused":
+      return <p className="hint">Paused · crawls are disabled until the source is resumed.</p>;
+    case "archived":
+      return <p className="hint">Archived · crawls are disabled.</p>;
+    case "ready":
+      return (
+        <>
+          <form action={requestSourceRun} className="cms-job-source-form">
+            <input name="sourceId" type="hidden" value={sourceId} />
+            <button type="submit">Run now</button>
+          </form>
+          {state.latest ? (
+            <LatestResult latest={state.latest} />
+          ) : (
+            <p className="hint">Never run.</p>
+          )}
+        </>
+      );
+  }
+}
+
 export default async function JobSourcesPage() {
   const administrator = await requireAdministrator();
   const view = await readJobCatalogAdmin(administrator.userId);
@@ -40,8 +98,8 @@ export default async function JobSourcesPage() {
           <h1>Job sources</h1>
           <p>
             Maintain each employer&apos;s official early-career and professional sources, inspect
-            URL health, or request an immediate run. Network crawling remains isolated in the
-            scheduled worker.
+            URL health, or request an immediate run. Network crawling never runs inside the web
+            request.
           </p>
         </div>
       </header>
@@ -51,6 +109,11 @@ export default async function JobSourcesPage() {
           <div>
             <h2 id="sources">Employer source registry</h2>
             <p>Independent schedule, health and controls for every official employer source.</p>
+            <p className="hint">
+              Run now records a durable crawl request; crawling happens outside the web process.
+              Local development: start the worker with <code>pnpm dev:jobs</code>. Production: the
+              installed worker service handles the same queue.
+            </p>
           </div>
         </div>
         <ul className="cms-job-source-list">
@@ -110,30 +173,24 @@ export default async function JobSourcesPage() {
                   </dd>
                 </div>
               </dl>
-              <form action={requestSourceRun} className="cms-job-source-form">
-                <input name="sourceId" type="hidden" value={company.id} />
-                <button
-                  type="submit"
-                  disabled={company.status !== "active" || company.run_requested_at !== null}
-                >
-                  {company.run_requested_at ? "Run requested" : "Run now"}
-                </button>
-              </form>
-              <form action={updateSourcePause} className="cms-job-source-form">
-                <input name="sourceId" type="hidden" value={company.id} />
-                <input
-                  name="paused"
-                  type="hidden"
-                  value={company.status === "paused" ? "false" : "true"}
-                />
-                <button
-                  className="button-link secondary"
-                  type="submit"
-                  disabled={company.status === "archived"}
-                >
-                  {company.status === "paused" ? "Resume source" : "Pause source"}
-                </button>
-              </form>
+              <div className="cms-job-source-state">
+                <SourceState sourceId={company.id} state={company.operationalState} />
+                <form action={updateSourcePause} className="cms-job-source-form">
+                  <input name="sourceId" type="hidden" value={company.id} />
+                  <input
+                    name="paused"
+                    type="hidden"
+                    value={company.status === "paused" ? "false" : "true"}
+                  />
+                  <button
+                    className="button-link secondary"
+                    type="submit"
+                    disabled={company.status === "archived"}
+                  >
+                    {company.status === "paused" ? "Resume source" : "Pause source"}
+                  </button>
+                </form>
+              </div>
               <details className="cms-review-details">
                 <summary>Edit official source URLs</summary>
                 <form action={updateSourceUrls} className="cms-review-form">
