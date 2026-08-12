@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:bypass": "tsx scripts/run-local-bypass.ts",
+    "dev:jobs": "tsx scripts/dev-with-jobs.ts",
     "build": "next build",
     "start": "next start",
     "format": "prettier --write .",
