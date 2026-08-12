@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createSmartRecruitersConnector } from "./smartrecruiters";
+import { createSmartRecruitersConnector, smartRecruitersSectionsToText } from "./smartrecruiters";
 import {
   readFixture,
   stubContext,
@@ -59,4 +59,47 @@ describe("SmartRecruiters connector", () => {
       }),
     ).rejects.toMatchObject({ code: "not_configured" });
   });
+});
+
+describe("smartRecruitersSectionsToText", () => {
+  it("reads the object-form sections returned by Wise (keyed sections with text)", () => {
+    const sections = {
+      companyDescription: {
+        title: "Company Description",
+        text: "<p>Wise is a global company.</p>",
+      },
+      jobDescription: {
+        title: "Job Description",
+        text: "<p>Build the best way to move money.</p>",
+      },
+      qualifications: { title: "Qualifications", text: "<p>Some experience.</p>" },
+      additionalInformation: { title: "Additional Information", text: "<p>More info.</p>" },
+    };
+    expect(smartRecruitersSectionsToText(sections)).toBe(
+      "<p>Wise is a global company.</p>\n<p>Build the best way to move money.</p>\n<p>Some experience.</p>\n<p>More info.</p>",
+    );
+  });
+
+  it("still reads the array-form sections (title with content)", () => {
+    const sections = [
+      { title: "About us", content: "<p>Wise moves money around the world.</p>" },
+      { title: "Requirements", content: "<p>Support risk frameworks.</p>" },
+    ];
+    expect(smartRecruitersSectionsToText(sections)).toBe(
+      "<p>Wise moves money around the world.</p>\n<p>Support risk frameworks.</p>",
+    );
+  });
+
+  it("returns an empty string when sections are absent", () => {
+    expect(smartRecruitersSectionsToText(undefined)).toBe("");
+  });
+
+  it.each([["a string"], [42], [["not an object"]]])(
+    "reports parser_changed instead of a raw TypeError for malformed sections %s",
+    (malformed) => {
+      expect(() => smartRecruitersSectionsToText(malformed)).toThrow(
+        expect.objectContaining({ code: "parser_changed" }),
+      );
+    },
+  );
 });

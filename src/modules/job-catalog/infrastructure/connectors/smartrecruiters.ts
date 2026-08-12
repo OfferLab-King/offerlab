@@ -44,11 +44,49 @@ type SmartSection = Readonly<{ title?: string; content?: string }>;
 
 type SmartDetail = Readonly<{
   applyUrl?: string;
-  jobAd?: Readonly<{ sections?: readonly SmartSection[] }>;
+  jobAd?: Readonly<{ sections?: unknown }>;
   location?: SmartLocation;
   name?: string;
   releasedDate?: string;
 }>;
+
+/**
+ * SmartRecruiters postings return `jobAd.sections` in two shapes: the classic
+ * array of `{title, content}` objects, and an object keyed by section id whose
+ * values are `{title, text}` (currently returned by Wise). Malformed shapes
+ * surface as parser_changed rather than a raw TypeError so the worker reports
+ * a meaningful failure code.
+ */
+export function smartRecruitersSectionsToText(sections: unknown): string {
+  if (sections === undefined || sections === null) return "";
+  if (Array.isArray(sections)) {
+    if (
+      sections.length > 0 &&
+      !sections.some((section) => section && typeof section === "object")
+    ) {
+      throw new JobFetchError("parser_changed", "smartrecruiters_sections_unexpected");
+    }
+    return sections
+      .map((section) =>
+        section && typeof section === "object" ? ((section as SmartSection).content ?? "") : "",
+      )
+      .join("\n");
+  }
+  if (typeof sections === "object") {
+    const parts: string[] = [];
+    for (const value of Object.values(sections)) {
+      if (
+        value &&
+        typeof value === "object" &&
+        typeof (value as { text?: unknown }).text === "string"
+      ) {
+        parts.push((value as { text: string }).text);
+      }
+    }
+    return parts.join("\n");
+  }
+  throw new JobFetchError("parser_changed", "smartrecruiters_sections_unexpected");
+}
 
 export function createSmartRecruitersConnector(): JobSourceConnector {
   return {
@@ -135,9 +173,7 @@ function normalizeSmartPosting(
     company,
   )}/${encodeURIComponent(posting.id ?? "")}`;
   const canonical = canonicalizeJobUrl(rawApplicationUrl ?? "") ?? fallbackUrl;
-  const descriptionHtml =
-    detail?.jobAd?.sections?.map((section) => section.content ?? "").join("\n") ?? "";
-  const descriptionText = htmlToPlainText(descriptionHtml);
+  const descriptionText = htmlToPlainText(smartRecruitersSectionsToText(detail?.jobAd?.sections));
   const location = posting.location ?? detail?.location;
   const locationText = [location?.city, location?.region, location?.country]
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
