@@ -48,3 +48,24 @@ export function parseOptionalDate(value: unknown): Date | null {
 export function limited<T>(items: readonly T[], max: number): T[] {
   return items.slice(0, max);
 }
+
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.max(1, Math.min(concurrency, items.length)) },
+    async () => {
+      while (next < items.length) {
+        const index = next;
+        next += 1;
+        results[index] = await mapper(items[index]!, index);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}

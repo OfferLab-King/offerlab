@@ -14,7 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function context(): ConnectorContext {
+function context(overrides: Partial<ConnectorContext> = {}): ConnectorContext {
   return {
     ...stubContext({ configuration: { smartRecruitersCompany: "Wise" } }),
     company: stubContext({ configuration: { smartRecruitersCompany: "Wise" } }).company,
@@ -22,6 +22,7 @@ function context(): ConnectorContext {
     maxDetailPages: 10,
     maxJobs: 100,
     robotsGate: stubRobotsGate(),
+    ...overrides,
   } as ConnectorContext;
 }
 
@@ -58,6 +59,76 @@ describe("SmartRecruiters connector", () => {
         company: { ...bare.company, configuration: {} },
       }),
     ).rejects.toMatchObject({ code: "not_configured" });
+  });
+
+  it("pages through the whole listing with offset when totalFound exceeds the page size", async () => {
+    const page = (count: number) =>
+      JSON.stringify({
+        totalFound: 250,
+        content: Array.from({ length: count }, (_, index) => ({
+          id: String(index),
+          name: `Role ${index}`,
+        })),
+      });
+    const fetchImplementation = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      let body = "{}";
+      if (url.includes("/postings?")) {
+        const offset = Number(new URL(url).searchParams.get("offset") ?? "0");
+        body =
+          offset === 0 ? page(100) : offset === 100 ? page(100) : offset === 200 ? page(50) : "{}";
+      }
+      return {
+        headers: new Headers({ "content-type": "application/json" }),
+        ok: true,
+        status: 200,
+        text: async () => body,
+      };
+    });
+    vi.stubGlobal("fetch", fetchImplementation);
+
+    const jobs = await createSmartRecruitersConnector().discoverJobs(context({ maxJobs: 300 }));
+
+    expect(jobs).toHaveLength(250);
+    const listUrls = fetchImplementation.mock.calls
+      .map((call) => String(call[0]))
+      .filter((url) => url.includes("/postings?"));
+    expect(listUrls.map((url) => new URL(url).searchParams.get("offset"))).toEqual([
+      "0",
+      "100",
+      "200",
+    ]);
+  });
+
+  it("stops paging once the per-source job cap is reached", async () => {
+    const page = (count: number) =>
+      JSON.stringify({
+        totalFound: 5000,
+        content: Array.from({ length: count }, (_, index) => ({
+          id: String(index),
+          name: `Role ${index}`,
+        })),
+      });
+    const fetchImplementation = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      let body = "{}";
+      if (url.includes("/postings?")) body = page(100);
+      return {
+        headers: new Headers({ "content-type": "application/json" }),
+        ok: true,
+        status: 200,
+        text: async () => body,
+      };
+    });
+    vi.stubGlobal("fetch", fetchImplementation);
+
+    const jobs = await createSmartRecruitersConnector().discoverJobs(context({ maxJobs: 100 }));
+
+    expect(jobs).toHaveLength(100);
+    const listUrls = fetchImplementation.mock.calls
+      .map((call) => String(call[0]))
+      .filter((url) => url.includes("/postings?"));
+    expect(listUrls).toHaveLength(1);
   });
 });
 

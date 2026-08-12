@@ -5,6 +5,7 @@ import { fetchText } from "./http-client";
 import {
   connectorToken,
   limited,
+  mapWithConcurrency,
   parseOptionalDate,
   type ConnectorContext,
   type DiscoveredJob,
@@ -13,8 +14,8 @@ import {
 
 export const smartRecruitersSourceType = "smartrecruiters" as const;
 
-const MAX_SMART_RECRUITERS_DETAILS = 100;
 const SMART_RECRUITERS_PAGE_SIZE = 100;
+const SMART_RECRUITERS_DETAIL_CONCURRENCY = 10;
 
 type SmartLocation = Readonly<{
   city?: string;
@@ -37,7 +38,7 @@ type SmartPosting = Readonly<{
 
 type SmartListResponse = Readonly<{
   content?: readonly SmartPosting[];
-  pagination?: Readonly<{ continuationToken?: string }>;
+  totalFound?: number;
 }>;
 
 type SmartSection = Readonly<{ title?: string; content?: string }>;
@@ -101,10 +102,12 @@ export function createSmartRecruitersConnector(): JobSourceConnector {
         );
       }
       const listing: SmartPosting[] = [];
-      let continuationToken: string | undefined;
+      let offset = 0;
       for (let page = 0; page < 10; page += 1) {
-        const params = new URLSearchParams({ limit: String(SMART_RECRUITERS_PAGE_SIZE) });
-        if (continuationToken) params.set("continuationToken", continuationToken);
+        const params = new URLSearchParams({
+          limit: String(SMART_RECRUITERS_PAGE_SIZE),
+          offset: String(offset),
+        });
         const response = await fetchText(
           `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(company)}/postings?${params.toString()}`,
           { httpClient: context.httpClient },
@@ -119,14 +122,23 @@ export function createSmartRecruitersConnector(): JobSourceConnector {
           throw new JobFetchError("parser_changed", "smartrecruiters_list_missing_content");
         }
         listing.push(...payload.content);
-        continuationToken = payload.pagination?.continuationToken;
-        const hasMore = Boolean(continuationToken) && listing.length < context.maxJobs;
-        if (!hasMore) break;
+        const fetched = offset + payload.content.length;
+        const totalFound = typeof payload.totalFound === "number" ? payload.totalFound : fetched;
+        if (
+          listing.length >= context.maxJobs ||
+          payload.content.length === 0 ||
+          fetched >= totalFound
+        ) {
+          break;
+        }
+        offset = fetched;
       }
 
       const candidates = limited(listing, context.maxJobs);
-      const withDetails = await Promise.all(
-        candidates.map(async (posting) => {
+      const withDetails = await mapWithConcurrency(
+        candidates,
+        SMART_RECRUITERS_DETAIL_CONCURRENCY,
+        async (posting) => {
           if (!posting.id) return normalizeSmartPosting(posting, company, null);
           try {
             const response = await fetchText(
@@ -141,9 +153,9 @@ export function createSmartRecruitersConnector(): JobSourceConnector {
             }
             throw error;
           }
-        }),
+        },
       );
-      return withDetails.slice(0, MAX_SMART_RECRUITERS_DETAILS);
+      return withDetails;
     },
     async healthCheck(context: ConnectorContext): Promise<void> {
       const company = connectorToken(context.company, "smartRecruitersCompany");
