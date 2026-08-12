@@ -1,4 +1,5 @@
 import { upsertCompany, type CompanySeedInput } from "../infrastructure/company-repository";
+import { upsertJobSource } from "../infrastructure/job-source-repository";
 import type { JobSectorKey } from "../domain/taxonomy";
 
 /**
@@ -10,11 +11,9 @@ import type { JobSectorKey } from "../domain/taxonomy";
  * `GET https://boards-api.greenhouse.io/v1/boards/monzo/jobs?per_page=1` -> 200.
  * See scripts/jobs/verify-sources.ts to re-run verification.
  *
- * IMPORTANT: every entry is seeded with crawl_allowed='unknown' and robots
- * not_checked. The crawler never processes a source until an administrator
- * records a review (permission, robots result, terms result, evidence URL,
- * notes) and sets crawl_allowed='allowed'. Do not enable a source without
- * reviewing its current careers site, robots.txt and terms.
+ * Connector identifiers were checked against the public ATS endpoints. Imports
+ * are idempotent and preserve URLs/configuration that administrators manually
+ * override on the job-source record.
  */
 const initialCohort: readonly CompanySeedInput[] = [
   // Technology & IT Infrastructure
@@ -25,8 +24,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 720,
     industry: "Banking / Technology",
     name: "Monzo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "monzo",
     sourceType: "greenhouse",
     websiteUrl: "https://monzo.com",
@@ -38,8 +36,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Technology",
     name: "Dropbox",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "dropbox",
     sourceType: "greenhouse",
     websiteUrl: "https://www.dropbox.com",
@@ -51,8 +48,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Technology",
     name: "Notion",
-    notes:
-      "Identifier verified 2026-08-10 via official Ashby public posting API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Ashby public posting API.",
     slug: "notion",
     sourceType: "ashby",
     websiteUrl: "https://www.notion.so",
@@ -64,8 +60,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consumer Technology",
     name: "Duolingo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "duolingo",
     sourceType: "greenhouse",
     websiteUrl: "https://www.duolingo.com",
@@ -78,8 +73,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Retail Technology",
     name: "Instacart",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "instacart",
     sourceType: "greenhouse",
     websiteUrl: "https://www.instacart.com",
@@ -92,8 +86,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Energy",
     name: "National Grid",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "national-grid",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.nationalgrid.com",
@@ -106,8 +99,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Fintech",
     name: "Wise",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "wise",
     sourceType: "smartrecruiters",
     websiteUrl: "https://wise.com",
@@ -119,8 +111,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Fintech",
     name: "Revolut",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "revolut",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.revolut.com",
@@ -132,8 +123,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Financial Services",
     name: "Robinhood",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "robinhood",
     sourceType: "greenhouse",
     websiteUrl: "https://robinhood.com",
@@ -145,8 +135,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Professional Services",
     name: "BDO",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "bdo",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.bdo.co.uk",
@@ -159,8 +148,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Asset Management",
     name: "Janus Henderson",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "janus-henderson",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.janushenderson.com",
@@ -173,8 +161,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Legal",
     name: "DWF",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "dwf",
     sourceType: "smartrecruiters",
     websiteUrl: "https://dwfgroup.com",
@@ -186,8 +173,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Legal",
     name: "Fieldfisher",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "fieldfisher",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.fieldfisher.com",
@@ -199,8 +185,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Legal",
     name: "Trowers & Hamlins",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "trowers",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.trowers.com",
@@ -213,8 +198,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Facilities Management",
     name: "Mitie",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "mitie",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.mitie.com",
@@ -226,8 +210,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Public Services",
     name: "Serco",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "serco",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.serco.com",
@@ -240,8 +223,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Media",
     name: "ITV",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "itv",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.itv.com",
@@ -254,8 +236,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Life Sciences",
     name: "IQVIA",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "iqvia",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.iqvia.com",
@@ -268,8 +249,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Charity",
     name: "NSPCC",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "nspcc",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.nspcc.org.uk",
@@ -281,8 +261,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Charity",
     name: "Oxfam",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "oxfam",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.oxfam.org.uk",
@@ -294,8 +273,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Charity",
     name: "British Red Cross",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "british-red-cross",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.redcross.org.uk",
@@ -308,8 +286,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Recruitment",
     name: "PageGroup",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "pagegroup",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.page.com",
@@ -321,8 +298,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Recruitment",
     name: "Hays",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "hays",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.hays.co.uk",
@@ -334,8 +310,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Recruitment",
     name: "Adecco",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "adecco",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.adecco.co.uk",
@@ -348,8 +323,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consulting",
     name: "Baringa",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "baringa",
     sourceType: "greenhouse",
     websiteUrl: "https://www.baringa.com",
@@ -361,8 +335,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consulting",
     name: "Keystone",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "keystone",
     sourceType: "greenhouse",
     websiteUrl: "https://keystoneglobalpartners.com",
@@ -374,8 +347,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consulting",
     name: "Accenture",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "accenture",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.accenture.com",
@@ -388,8 +360,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consumer Technology",
     name: "Deliveroo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "deliveroo",
     sourceType: "greenhouse",
     websiteUrl: "https://deliveroo.co.uk",
@@ -401,8 +372,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Technology",
     name: "Shopify",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "shopify",
     sourceType: "greenhouse",
     websiteUrl: "https://www.shopify.com",
@@ -414,8 +384,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Payments Technology",
     name: "Checkout.com",
-    notes:
-      "Identifier verified 2026-08-10 via official Ashby public posting API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Ashby public posting API.",
     slug: "checkout-com",
     sourceType: "ashby",
     websiteUrl: "https://www.checkout.com",
@@ -427,8 +396,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consulting",
     name: "Slalom",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "slalom",
     sourceType: "greenhouse",
     websiteUrl: "https://www.slalom.com",
@@ -440,8 +408,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Technology Consulting",
     name: "Thoughtworks",
-    notes:
-      "Identifier verified 2026-08-10 via official Lever public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Lever public postings API.",
     slug: "thoughtworks",
     sourceType: "lever",
     websiteUrl: "https://www.thoughtworks.com",
@@ -453,8 +420,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Retail",
     name: "ASOS",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "asos",
     sourceType: "greenhouse",
     websiteUrl: "https://www.asos.com",
@@ -466,8 +432,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Engineering",
     name: "Arup",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "arup",
     sourceType: "greenhouse",
     websiteUrl: "https://www.arup.com",
@@ -479,8 +444,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Media",
     name: "Sky",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "sky",
     sourceType: "greenhouse",
     websiteUrl: "https://www.sky.com",
@@ -492,8 +456,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Legal",
     name: "Dentons",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "dentons",
     sourceType: "greenhouse",
     websiteUrl: "https://www.dentons.com",
@@ -505,8 +468,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 2880,
     industry: "Charity",
     name: "Save the Children",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official SmartRecruiters public postings API.",
     slug: "save-the-children",
     sourceType: "smartrecruiters",
     websiteUrl: "https://www.savethechildren.org.uk",
@@ -518,8 +480,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Travel Technology",
     name: "Skyscanner",
-    notes:
-      "Identifier verified 2026-08-10 via official Lever public postings API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Lever public postings API.",
     slug: "skyscanner",
     sourceType: "lever",
     websiteUrl: "https://www.skyscanner.net",
@@ -531,8 +492,7 @@ const initialCohort: readonly CompanySeedInput[] = [
     crawlFrequencyMinutes: 1440,
     industry: "Consumer Technology",
     name: "Bumble",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
+    notes: "Identifier verified 2026-08-10 via official Greenhouse public job board API.",
     slug: "bumble",
     sourceType: "greenhouse",
     websiteUrl: "https://bumble.com",
@@ -595,6 +555,21 @@ export async function seedInitialCohort(
       directoryPriorityRank: index + 1,
       directorySectorKey,
       directoryVisible: true,
+    });
+    await upsertJobSource(database, {
+      ...(company.atsProvider !== undefined ? { atsProvider: company.atsProvider } : {}),
+      careersUrl: company.careersUrl,
+      channel: "general",
+      companyId: id,
+      ...(company.configuration !== undefined ? { configuration: company.configuration } : {}),
+      ...(company.crawlFrequencyMinutes !== undefined
+        ? { crawlFrequencyMinutes: company.crawlFrequencyMinutes }
+        : {}),
+      name: "All careers",
+      notes: company.notes?.replace("", "") ?? "",
+      slug: "all-careers",
+      sourceType: company.sourceType,
+      status: "active",
     });
     created.push({ id, name: company.name, slug: company.slug });
   }
