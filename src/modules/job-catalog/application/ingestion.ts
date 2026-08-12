@@ -111,7 +111,7 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
   const configuration = options.configuration;
   const source = options.source;
 
-  const connector = createConnectorForSource(source.sourceType);
+  const connector = createConnectorForSource(source);
   const httpClient = createHttpClient({
     timeoutMs: configuration.timeoutMs,
     userAgent: configuration.userAgent,

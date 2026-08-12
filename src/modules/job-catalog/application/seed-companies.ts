@@ -22,6 +22,7 @@ export function jobSourceInputFor(company: ManifestCompany, companyId: string): 
       ? { crawlFrequencyMinutes: company.crawlFrequencyMinutes }
       : {}),
     name: "All careers",
+    ...(company.needsBrowser ? { needsBrowser: true } : {}),
     notes: company.verification.notes,
     slug: "all-careers",
     sourceType: company.sourceType,

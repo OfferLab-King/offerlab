@@ -22,6 +22,7 @@ export type ManifestCompany = Readonly<{
   directorySectorKey: JobSectorKey;
   industry: string;
   name: string;
+  needsBrowser?: boolean;
   slug: string;
   sourceType: SourceType;
   verification: ManifestVerification;
