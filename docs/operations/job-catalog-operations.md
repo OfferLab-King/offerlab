@@ -46,8 +46,42 @@ Relevant keys:
 | `JOB_ENRICHMENT_BATCH_LIMIT`                                | `20`                           | Jobs per enrichment run                                                       |
 | `JOB_ENRICHMENT_PROMPT_VERSION`                             | `1`                            | Prompt/schema version recorded on jobs                                        |
 | `JOB_LLM_ENABLED`                                           | `false`                        | Master enrichment switch                                                      |
+| `JOB_LOCAL_WORKER_POLL_INTERVAL_MS`                         | `5000`                         | Local `dev:jobs` poll interval; minimum `1000`                                |
+| `JOB_LOCAL_WORKER_BATCH_LIMIT`                              | `3`                            | Sources per local `dev:jobs` poll (1–25)                                      |
 | `JOB_CRAWLER_MODEL_DATA_APPROVED`                           | —                              | Required `true` in production when enrichment is on and DeepSeek keys are set |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | —                              | Shared DeepSeek config reused by enrichment                                   |
+
+## Local CMS-triggered crawling
+
+The CMS **Run now** control never crawls inside the web request. It records a
+durable run request on `app.job_source` (`run_requested_at` and the requesting
+administrator) and the worker executes it.
+
+For local development, run the web app and the crawler worker together:
+
+```bash
+pnpm dev:jobs
+```
+
+This starts Next.js and a local poller beside it. The poller invokes the same
+due-source worker as production (`pnpm jobs:crawl:due --limit=3`) every five
+seconds by default, so a CMS **Run now** request is picked up promptly and the
+page transitions through **Queued** → **Running** → latest result. The ordinary
+`pnpm dev` command does not execute queued work; the poller only runs when
+`JOB_CATALOG_ENABLED=true`.
+
+Tunables: `JOB_LOCAL_WORKER_POLL_INTERVAL_MS` (minimum 1000ms) and
+`JOB_LOCAL_WORKER_BATCH_LIMIT` (1–25, default 3). Polls never overlap, a failed
+poll is logged and retried on the next interval, and Ctrl+C stops Next.js and
+the worker together. Production keeps using the systemd service and timer below;
+the same source locks and due-worker logic remain authoritative in both modes.
+
+> **Local persistence warning:** a local database that contains persistent
+> accounts (such as an administrator identity), jobs, sources or crawl history
+> must never be reset or wiped. Never run `pnpm db:reset`, `pnpm validate`,
+> `pnpm db:seed`, `pnpm test:integration` or `pnpm test:e2e` against such a
+> database; use them only against disposable, purpose-built test databases.
+> `dev:jobs` itself never invokes reset, seed, migration or test commands.
 
 ## Commands
 
