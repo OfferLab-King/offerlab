@@ -1,4 +1,5 @@
 import type { DiscoveredJob, DiscoveredLocation } from "./deduplication";
+import { ukCityNameIn } from "./uk-cities";
 
 export type UkLocationStatus = "uk_confirmed" | "non_uk" | "ambiguous";
 
@@ -10,19 +11,34 @@ export type UkLocationEvaluation = Readonly<{
 }>;
 
 const ukCountryPattern =
-  /^(?:uk|u\.k\.|united kingdom|great britain|gb|england|scotland|wales|northern ireland)$/iu;
+  /\b(?:uk|u\.k\.|united kingdom|great britain|gb|england|scotland|wales|northern ireland)\b/iu;
 const explicitUkText =
-  /\b(?:uk|u\.k\.|united kingdom|great britain|england|scotland|wales|northern ireland|london|cardiff|edinburgh|belfast|uk-wide|across the uk|remote(?:ly)?\s+(?:in|within)\s+the uk|remote(?:ly)?\s*\(\s*(?:uk|u\.k\.|united kingdom)\s*\))(?![a-z])/iu;
+  /\b(?:uk|u\.k\.|united kingdom|great britain|england|scotland|wales|northern ireland|uk-wide|across the uk|remote(?:ly)?\s+(?:in|within)\s+the uk|remote(?:ly)?\s*\(\s*(?:uk|u\.k\.|united kingdom)\s*\))(?![a-z])/iu;
 const ukPostcode = /\b(?:[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/iu;
 const nonUkCountryPattern =
   /^(?:ireland|republic of ireland|united states|usa|canada|france|germany|spain|italy|netherlands|australia|india|singapore|china|japan|switzerland)$/iu;
 const ambiguousRemotePattern = /^remote(?:\s*[-–—/]?\s*(?:hybrid|anywhere|global))?$/iu;
 
+/**
+ * Foreign place signals that disambiguate same-named cities abroad (Perth,
+ * Birmingham, Cambridge, London, York, Newcastle, ...). City-name matching is
+ * UK-confirming only when none of these signals is present, and a structured
+ * non-UK country always overrides a city name.
+ */
+const foreignPlaceSignals =
+  /\b(?:united states|usa|us|america|nz|new zealand|canada|australia|germany|france|spain|italy|netherlands|ireland|republic of ireland|india|singapore|china|japan|switzerland|austria|belgium|poland|portugal|brazil|mexico|argentina|colombia|chile|peru|south africa|nigeria|kenya|ghana|egypt|uae|dubai|saudi arabia|qatar|kuwait|israel|turkey|greece|sweden|norway|denmark|finland|czechia|czech republic|hungary|romania|bulgaria|croatia|serbia|ukraine|russia|philippines|malaysia|indonesia|thailand|vietnam|south korea|hong kong|taiwan|pakistan|bangladesh|sri lanka|deutschland|frankreich|indien|irland|australien|kanada|spanien|italien|portugal|niederlande|österreich|schweiz|polen|brasilien|vereinigte staaten|japon|espagne|allemagne|canadá|mexique|brasil|estados unidos|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|ontario|quebec|alberta|british columbia|manitoba|saskatchewan|nova scotia|new brunswick|newfoundland|new south wales|victoria|queensland|tasmania|south australia|western australia)\b/iu;
+
 function isUkLocation(location: DiscoveredLocation): boolean {
+  const text = location.sourceText;
+  if (location.country) {
+    if (ukCountryPattern.test(location.country.trim())) return true;
+    if (explicitlyNonUk(location) || ukCityNameIn(text)) return false;
+    return Boolean(explicitUkText.test(text) || ukPostcode.test(text));
+  }
   return Boolean(
-    (location.country && ukCountryPattern.test(location.country.trim())) ||
-    explicitUkText.test(location.sourceText) ||
-    ukPostcode.test(location.sourceText),
+    explicitUkText.test(text) ||
+    ukPostcode.test(text) ||
+    (ukCityNameIn(text) && !foreignPlaceSignals.test(text)),
   );
 }
 
@@ -71,6 +87,15 @@ export function evaluateUkLocation(
       evidence: text.slice(0, 200),
       reason: "non_uk_location",
       status: "non_uk",
+      ukLocations: [],
+    };
+  }
+
+  if (text && ukCityNameIn(text) && !foreignPlaceSignals.test(text)) {
+    return {
+      evidence: text.slice(0, 200),
+      reason: "uk_location",
+      status: "uk_confirmed",
       ukLocations: [],
     };
   }

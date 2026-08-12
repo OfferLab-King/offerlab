@@ -1,6 +1,7 @@
 import { parse, type HTMLElement } from "node-html-parser";
 
 import { htmlToPlainText, truncateText } from "../../domain/html-text";
+import { ukCityNameIn } from "../../domain/uk-cities";
 import { canonicalizeJobUrl, urlHostname } from "../../domain/urls";
 import { JobFetchError } from "./errors";
 import { parseOptionalDate } from "./types";
@@ -141,8 +142,7 @@ export function extractJobDetail(html: string, link: JobListingLink): Discovered
   };
 }
 
-const LOCATION_CITY_PATTERN =
-  /(?:^|\b)(London|Manchester|Birmingham|Leeds|Glasgow|Edinburgh|Bristol|remote|hybrid)(?:\b|$)/iu;
+const REMOTE_LABEL_PATTERN = /^(?:remote|hybrid)/iu;
 
 function extractLocation(node: HTMLElement): string | null {
   for (const element of node.querySelectorAll("*")) {
@@ -151,13 +151,16 @@ function extractLocation(node: HTMLElement): string | null {
     const text = element.text.replace(/\s+/gu, " ").trim();
     if (!text || text.length > 160 || text.includes("{")) continue;
     const labeled = text.match(/(?:base\s*)?location\s*[:.-]?\s*([^]{1,100})/iu);
-    if (labeled && LOCATION_CITY_PATTERN.test(labeled[1]!)) {
+    if (labeled && (ukCityNameIn(labeled[1]!) || REMOTE_LABEL_PATTERN.test(labeled[1]!))) {
       return labeled[1]!.trim();
     }
-    const cityOnly = text.match(
-      /^(?:London|Manchester|Birmingham|Leeds|Glasgow|Edinburgh|Bristol)(?:\s+(?:or|,|&)\s+[A-Za-z][A-Za-z -]+)*$/iu,
-    );
-    if (cityOnly) return cityOnly[0].trim();
+    const parts = text.split(/\s+(?:or|,|&)\s+/u).map((part) => part.trim());
+    if (
+      parts.length > 0 &&
+      parts.every((part) => ukCityNameIn(part) || REMOTE_LABEL_PATTERN.test(part))
+    ) {
+      return text.trim();
+    }
   }
   return null;
 }

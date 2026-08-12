@@ -112,4 +112,87 @@ describe("UK location admission", () => {
       "ambiguous",
     );
   });
+
+  it.each([
+    "Aberdeen",
+    "Leeds",
+    "Newcastle upon Tyne",
+    "Stoke-on-Trent",
+    "Edinburgh or Glasgow",
+    "Belfast",
+    "Cardiff",
+    "Swansea",
+    "Inverness",
+    "Wrexham",
+    "Newry",
+    "London, Manchester, Birmingham",
+  ])("confirms UK city text %s", (locationText) => {
+    expect(evaluateUkLocation({ locationText, remoteType: null }).status).toBe("uk_confirmed");
+  });
+
+  it.each([
+    ["Perth, Australia"],
+    ["Birmingham, Alabama"],
+    ["Cambridge, Massachusetts"],
+    ["London, Canada"],
+    ["York, Pennsylvania"],
+    ["Newcastle, Australia"],
+    ["Dublin, Ireland"],
+    ["York, US"],
+    ["New York, us"],
+  ])("keeps same-named foreign cities out of the UK: %s", (locationText) => {
+    expect(evaluateUkLocation({ locationText, remoteType: null }).status).not.toBe("uk_confirmed");
+  });
+
+  it("never lets a city name override a structured non-UK country", () => {
+    expect(
+      evaluateUkLocation({
+        locationText: "Perth",
+        locations: [
+          {
+            city: "Perth",
+            country: "Australia",
+            hybrid: false,
+            onSite: true,
+            region: null,
+            remote: false,
+            sourceText: "Perth, Australia",
+          },
+        ],
+        remoteType: "on_site",
+      }).status,
+    ).toBe("non_uk");
+  });
+
+  it("confirms a structured location whose country is the full UK name", () => {
+    expect(
+      evaluateUkLocation({
+        locationText: "London",
+        locations: [
+          {
+            city: "London",
+            country: "United Kingdom of Great Britain and Northern Ireland",
+            hybrid: false,
+            onSite: true,
+            region: null,
+            remote: false,
+            sourceText: "London, United Kingdom",
+          },
+        ],
+        remoteType: "on_site",
+      }).status,
+    ).toBe("uk_confirmed");
+  });
+
+  it("confirms UK cities inside foreign-language country names", () => {
+    expect(
+      evaluateUkLocation({
+        locationText: "London, Großbritannien und Nordirland",
+        remoteType: null,
+      }).status,
+    ).toBe("uk_confirmed");
+    expect(
+      evaluateUkLocation({ locationText: "Frankfurt, Deutschland", remoteType: null }).status,
+    ).toBe("ambiguous");
+  });
 });

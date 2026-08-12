@@ -61,4 +61,19 @@ describe("extractJobLinks", () => {
     expect(job.title).toBe("Workday HCM Assistant Manager");
     expect(job.locationText).toBe("London");
   });
+
+  it("extracts any UK city from detail pages", () => {
+    const html = `
+      <html><body><main>
+        <h1>Corporate Tax Manager</h1>
+        <p>Location: Aberdeen</p>
+        <p>Manage tax advisory work.</p>
+      </main></body></html>
+    `;
+    const job = extractJobDetail(html, {
+      text: "Corporate Tax Manager",
+      url: "https://experienced.kpmgcareers.co.uk/job/Aberdeen-Corporate-Tax-Manager/1245722501",
+    });
+    expect(job.locationText).toBe("Aberdeen");
+  });
 });
