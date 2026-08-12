@@ -22,6 +22,18 @@ describe("source scheduler", () => {
     ).toBe(false);
   });
 
+  it("prioritises a manual request even when the daily schedule is in the future", () => {
+    const now = new Date("2026-08-01T12:00:00Z");
+    expect(
+      isSourceDue({ nextCheckAt: new Date("2026-08-02T12:00:00Z"), runRequestedAt: now }, now),
+    ).toBe(true);
+    const sorted = sortDueSources([
+      { id: "scheduled", nextCheckAt: now, runRequestedAt: null },
+      { id: "manual", nextCheckAt: new Date("2026-08-02T12:00:00Z"), runRequestedAt: now },
+    ]);
+    expect(sorted.map(({ id }) => id)).toEqual(["manual", "scheduled"]);
+  });
+
   it("jitters next checks around the frequency without drifting on average", () => {
     const now = new Date("2026-08-01T00:00:00Z");
     const values: number[] = [];

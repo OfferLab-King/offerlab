@@ -15,6 +15,7 @@ import { upsertCompany } from "../../src/modules/job-catalog/infrastructure/comp
 import {
   applyCrawlPlan,
   listJobsForCompany,
+  listJobsForSource,
 } from "../../src/modules/job-catalog/infrastructure/job-repository";
 
 const databaseUrl =
@@ -117,7 +118,7 @@ describe("job catalog", () => {
   it("isolates operational source records and allows source-scoped job identities", async () => {
     const company = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type)
-      values ('Multi Source Co', ${uniqueSlug("multi-source-co")}, 'https://example.com/careers', 'greenhouse')
+      values ('Multi Source Co', ${uniqueSlug("multi-source-co")}, ${`https://${uniqueSlug("multi-source")}.example.com/careers`}, 'greenhouse')
       returning id
     `;
     const sources = await migrationDatabase<{ id: string }[]>`
@@ -422,7 +423,87 @@ describe("job catalog", () => {
     const afterDeactivate = await asCrawler((database) => listJobsForCompany(database, companyId));
     expect(afterDeactivate.find((row) => row.external_job_id === "100")!.active).toBe(false);
   });
+
+  it("never deactivates jobs owned by another source for the same employer", async () => {
+    const companyId = await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://boards-${uniqueSlug("isolation")}.example.com`,
+        configuration: { greenhouseBoardToken: "example" },
+        name: "Source Isolation Co",
+        slug: uniqueSlug("source-isolation-co"),
+        sourceType: "greenhouse",
+      }),
+    );
+    const sources = await asCrawler(
+      (database) => database<{ id: string }[]>`
+        insert into app.job_source (company_id, slug, name, channel, careers_url, source_type)
+        values
+          (${companyId}::uuid, 'early', 'Early careers', 'early_careers', 'https://example.com/early', 'greenhouse'),
+          (${companyId}::uuid, 'professional', 'Professional', 'professional', 'https://example.com/professional', 'greenhouse')
+        returning id
+      `,
+    );
+    const early = discoveredJob("same-id", "Early career role");
+    const otherEarly = discoveredJob("other-early-id", "Other early career role");
+    const professional = discoveredJob("same-id", "Professional role");
+    const now = new Date("2026-08-12T00:00:00.000Z");
+
+    await asCrawler(async (database) => {
+      await applyCrawlPlan(database, companyId, planCrawlChanges([], [early, otherEarly]), {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now,
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[0]!.id,
+      });
+      await applyCrawlPlan(database, companyId, planCrawlChanges([], [professional]), {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now,
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[1]!.id,
+      });
+    });
+
+    const earlyRows = await asCrawler((database) => listJobsForSource(database, sources[0]!.id));
+    const missingEarly = planCrawlChanges(earlyRows.map(existingRecordForTest), [otherEarly], {
+      missingCrawlThreshold: 1,
+    });
+    await asCrawler((database) =>
+      applyCrawlPlan(database, companyId, missingEarly, {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now: new Date("2026-08-13T00:00:00.000Z"),
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[0]!.id,
+      }),
+    );
+
+    const earlyAfter = await asCrawler((database) => listJobsForSource(database, sources[0]!.id));
+    const professionalAfter = await asCrawler((database) =>
+      listJobsForSource(database, sources[1]!.id),
+    );
+    expect(earlyAfter.find((row) => row.external_job_id === "same-id")!.active).toBe(false);
+    expect(earlyAfter.find((row) => row.external_job_id === "other-early-id")!.active).toBe(true);
+    expect(professionalAfter[0]!.active).toBe(true);
+    expect(professionalAfter[0]!.missed_crawls).toBe(0);
+  });
 });
+
+function existingRecordForTest(row: Awaited<ReturnType<typeof listJobsForSource>>[number]) {
+  return {
+    active: row.active,
+    applicationUrl: row.application_url,
+    contentHash: row.content_hash,
+    externalJobId: row.external_job_id,
+    id: row.id,
+    lastSeenAt: row.last_seen_at,
+    locationText: row.location_text,
+    missedCrawls: row.missed_crawls,
+    sourceUrl: row.source_url,
+    title: row.title,
+  };
+}
 
 function testClassificationWrite(): JobClassificationWrite {
   return {

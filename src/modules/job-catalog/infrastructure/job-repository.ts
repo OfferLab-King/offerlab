@@ -67,6 +67,19 @@ export async function listJobsForCompany(
   `;
 }
 
+export async function listJobsForSource(
+  database: TransactionSql,
+  sourceId: string,
+): Promise<readonly ExistingJobRow[]> {
+  return database<ExistingJobRow[]>`
+    select id, slug, external_job_id, source_url, application_url, title,
+      location_text, active, content_hash, missed_crawls, last_seen_at,
+      classification_source, publication_status
+    from app.job
+    where source_id = ${sourceId}::uuid
+  `;
+}
+
 export type SlugAllocator = (discovered: DiscoveredJob, companySlug: string) => string;
 
 export async function applyCrawlPlan(
@@ -78,12 +91,15 @@ export async function applyCrawlPlan(
     now: Date;
     slugFor: SlugAllocator;
     classifyFor: (discovered: DiscoveredJob) => JobClassificationWrite;
+    sourceId?: string;
   }>,
 ): Promise<Readonly<{ newIds: string[]; updatedIds: string[]; reactivatedIds: string[] }>> {
   const newIds: string[] = [];
   const updatedIds: string[] = [];
   const reactivatedIds: string[] = [];
-  const existingRows = await listJobsForCompany(database, companyId);
+  const existingRows = options.sourceId
+    ? await listJobsForSource(database, options.sourceId)
+    : await listJobsForCompany(database, companyId);
   const rowsById = new Map(existingRows.map((row) => [row.id, row]));
   const usedSlugs = new Set(existingRows.map((job) => job.slug));
   const companySlug = await companySlugFor(database, companyId);
@@ -94,7 +110,7 @@ export async function applyCrawlPlan(
     const classification = options.classifyFor(discovered);
     const rows = await database<{ id: string }[]>`
         insert into app.job (
-          company_id, slug, external_job_id, source_url, application_url, title,
+          company_id, source_id, slug, external_job_id, source_url, application_url, title,
           location_text, description_text, posted_at, application_deadline,
           employment_type, remote_type, salary_min, salary_max, salary_currency,
           salary_period, content_hash, source_payload, enrichment_status,
@@ -104,7 +120,7 @@ export async function applyCrawlPlan(
           publication_status, classification_source, classification_version
         )
         values (
-          ${companyId}::uuid, ${slug}, ${discovered.externalJobId}, ${discovered.sourceUrl},
+          ${companyId}::uuid, ${options.sourceId ?? null}::uuid, ${slug}, ${discovered.externalJobId}, ${discovered.sourceUrl},
           ${discovered.applicationUrl}, ${discovered.title}, ${discovered.locationText || null},
           ${discovered.descriptionText || null}, ${discovered.postedAt}, ${discovered.applicationDeadline},
           ${discovered.employmentType}, ${discovered.remoteType}, ${discovered.salaryMin},
@@ -135,6 +151,7 @@ export async function applyCrawlPlan(
       options.now,
       false,
       classification,
+      options.sourceId,
     );
     if (classification) await replaceJobLocations(database, job.id, discovered);
     updatedIds.push(job.id);
@@ -153,6 +170,7 @@ export async function applyCrawlPlan(
       options.now,
       true,
       classification,
+      options.sourceId,
     );
     if (classification) await replaceJobLocations(database, job.id, discovered);
     reactivatedIds.push(job.id);
@@ -234,6 +252,7 @@ async function updateJobFromDiscovered(
   now: Date,
   reactivate: boolean,
   classification: JobClassificationWrite | null,
+  sourceId?: string,
 ): Promise<void> {
   await database`
     update app.job
@@ -287,7 +306,9 @@ async function updateJobFromDiscovered(
         classification_source = case when ${classification !== null} then ${classification?.classificationSource ?? "deterministic"} else classification_source end,
         classification_version = case when ${classification !== null} then classification_version + 1 else classification_version end,
         updated_at = now()
-    where id = ${existing.id}::uuid and company_id = ${companyId}::uuid
+    where id = ${existing.id}::uuid
+      and company_id = ${companyId}::uuid
+      and (${sourceId ?? null}::uuid is null or source_id = ${sourceId ?? null}::uuid)
   `;
 }
 

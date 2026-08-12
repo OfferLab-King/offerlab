@@ -1,6 +1,6 @@
 import { runSourceCrawl } from "../../src/modules/job-catalog/application/ingestion";
 import { readCrawlerConfiguration } from "../../src/modules/job-catalog/application/config";
-import { findCompanyBySlug } from "../../src/modules/job-catalog/infrastructure/company-repository";
+import { findJobSourceBySlugs } from "../../src/modules/job-catalog/infrastructure/job-source-repository";
 import {
   closeCrawlerDatabase,
   withCrawlerRole,
@@ -12,8 +12,8 @@ import { readCliOptions } from "./options";
 loadLocalEnvironment();
 
 const options = readCliOptions();
-if (!options.company) {
-  throw new Error("Usage: pnpm jobs:crawl --company=<slug> [--dry-run]");
+if (!options.company || !options.company.includes("/")) {
+  throw new Error("Usage: pnpm jobs:crawl --company=<company-slug>/<source-slug> [--dry-run]");
 }
 
 const configuration = readCrawlerConfiguration(process.env);
@@ -23,7 +23,10 @@ if (!configuration.catalogEnabled) {
   process.exit(0);
 }
 
-const company = await withCrawlerRole((database) => findCompanyBySlug(database, options.company!));
+const [companySlug, sourceSlug] = options.company.split("/", 2);
+const company = await withCrawlerRole((database) =>
+  findJobSourceBySlugs(database, companySlug!, sourceSlug!),
+);
 if (!company) {
   logger.error({ event: "job_crawl_company_unknown", company: options.company });
   await closeCrawlerDatabase();
@@ -32,14 +35,13 @@ if (!company) {
 
 logger.info({
   event: "job_crawl_company_started",
-  crawlAllowed: company.crawlAllowed,
-  crawlStatus: company.crawlStatus,
+  status: company.status,
   dryRun: options.dryRun,
-  source: company.slug,
+  source: `${company.companySlug}/${company.sourceSlug}`,
 });
 
 const outcome = await runSourceCrawl({
-  company,
+  source: company,
   configuration,
   dryRun: options.dryRun,
 });
@@ -47,7 +49,7 @@ const outcome = await runSourceCrawl({
 logger.info({
   event: "job_crawl_company_finished",
   ...outcome,
-  source: company.slug,
+  source: `${company.companySlug}/${company.sourceSlug}`,
 });
 
 await closeCrawlerDatabase();

@@ -19,10 +19,12 @@ export type IngestionRunSummary = Readonly<{
 export async function startIngestionRun(
   database: TransactionSql,
   companyId: string,
+  sourceId?: string,
+  triggerKind: "manual" | "scheduled" = "scheduled",
 ): Promise<string> {
   const rows = await database<{ id: string }[]>`
-    insert into app.job_ingestion_run (company_id, status)
-    values (${companyId}::uuid, 'running')
+    insert into app.job_ingestion_run (company_id, source_id, trigger_kind, status)
+    values (${companyId}::uuid, ${sourceId ?? null}::uuid, ${triggerKind}, 'running')
     returning id
   `;
   return rows[0]!.id;
@@ -86,10 +88,11 @@ export async function recordSourceEvent(
   kind: SourceEventKind,
   message: string | null,
   metadata: Readonly<Record<string, unknown>> = {},
+  sourceId?: string,
 ): Promise<void> {
   await database`
-    insert into app.job_source_event (company_id, kind, message, metadata)
-    values (${companyId}::uuid, ${kind}, ${message}, ${jsonParameter(database, metadata)})
+    insert into app.job_source_event (company_id, source_id, kind, message, metadata)
+    values (${companyId}::uuid, ${sourceId ?? null}::uuid, ${kind}, ${message}, ${jsonParameter(database, metadata)})
   `;
 }
 

@@ -1,7 +1,14 @@
 export const DEFAULT_CRAWL_JITTER_RATIO = 0.1;
 
-export function isSourceDue(company: Readonly<{ nextCheckAt: Date | null }>, now: Date): boolean {
-  return company.nextCheckAt === null || company.nextCheckAt.getTime() <= now.getTime();
+export function isSourceDue(
+  source: Readonly<{ nextCheckAt: Date | null; runRequestedAt?: Date | null }>,
+  now: Date,
+): boolean {
+  return (
+    (source.runRequestedAt !== null && source.runRequestedAt !== undefined) ||
+    source.nextCheckAt === null ||
+    source.nextCheckAt.getTime() <= now.getTime()
+  );
 }
 
 export function nextCheckAtWithJitter(
@@ -15,10 +22,15 @@ export function nextCheckAtWithJitter(
   return new Date(now.getTime() + offset);
 }
 
-export function sortDueSources<T extends { nextCheckAt: Date | null }>(
-  companies: readonly T[],
-): T[] {
+export function sortDueSources<
+  T extends { nextCheckAt: Date | null; runRequestedAt?: Date | null },
+>(companies: readonly T[]): T[] {
   return [...companies].sort((a, b) => {
+    if (a.runRequestedAt && !b.runRequestedAt) return -1;
+    if (!a.runRequestedAt && b.runRequestedAt) return 1;
+    if (a.runRequestedAt && b.runRequestedAt) {
+      return a.runRequestedAt.getTime() - b.runRequestedAt.getTime();
+    }
     if (a.nextCheckAt === null && b.nextCheckAt === null) return 0;
     if (a.nextCheckAt === null) return -1;
     if (b.nextCheckAt === null) return 1;

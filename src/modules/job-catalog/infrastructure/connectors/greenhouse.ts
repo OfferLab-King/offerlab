@@ -74,7 +74,11 @@ export function createGreenhouseConnector(): JobSourceConnector {
         if (!hasMore) break;
       }
       if (discovered.length === 0) {
-        logger.info({ event: "job_source_listing_empty", source: context.company.slug });
+        logger.info({
+          event: "job_source_listing_empty",
+          source:
+            "sourceSlug" in context.company ? context.company.sourceSlug : context.company.slug,
+        });
       }
       return discovered;
     },
