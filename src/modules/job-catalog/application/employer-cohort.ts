@@ -268,6 +268,34 @@ export const employerManifest: readonly ManifestCompany[] = [
     websiteUrl: "https://www.citi.com",
   },
   {
+    atsProvider: "Own careers platform (beesite API)",
+    careersUrl: "https://careers.db.com/professionals/search-roles",
+    configuration: {
+      capture: {
+        urlPatterns: ["**beesite.de/search/**"],
+        jobArrayPaths: ["SearchResult.SearchResultItems"],
+        apiUrl:
+          "https://api-deutschebank.beesite.de/search/?data=%7B%22LanguageCode%22%3A%22en%22%2C%22SearchParameters%22%3A%7B%22FirstItem%22%3A1%2C%22CountItem%22%3A100%2C%22Sort%22%3A%5B%7B%22Criterion%22%3A%22PublicationStartDate%22%2C%22Direction%22%3A%22DESC%22%7D%5D%7D%7D",
+      },
+    },
+    crawlFrequencyMinutes: 1440,
+    directorySectorKey: "financial_services",
+    industry: "Banking",
+    name: "Deutsche Bank",
+    needsBrowser: true,
+    slug: "deutsche-bank",
+    sourceType: "direct_html",
+    verification: {
+      status: "verified",
+      date: "2026-08-12",
+      evidenceUrl:
+        "https://api-deutschebank.beesite.de/search/?data=%7B%22LanguageCode%22%3A%22en%22%2C%22SearchParameters%22%3A%7B%22FirstItem%22%3A1%2C%22CountItem%22%3A100%7D%7D",
+      notes:
+        "Verified 2026-08-12: the careers SPA loads jobs from the official public beesite JSON API; a rendered capture run returned 100 live postings with official application URLs.",
+    },
+    websiteUrl: "https://www.db.com",
+  },
+  {
     atsProvider: "SmartRecruiters",
     careersUrl: "https://www.smartrecruiters.com/BDO",
     configuration: { smartRecruitersCompany: "BDO" },

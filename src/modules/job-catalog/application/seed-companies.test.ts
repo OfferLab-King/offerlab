@@ -15,7 +15,7 @@ describe("employer manifest integrity", () => {
     const names = employerManifest.map((entry) => entry.name);
     expect(new Set(slugs).size).toBe(slugs.length);
     expect(new Set(names).size).toBe(names.length);
-    expect(employerManifest).toHaveLength(42);
+    expect(employerManifest).toHaveLength(43);
   });
 
   it("derives unique gap-based directory priority ranks so manifest insertions never collide", () => {
@@ -34,6 +34,7 @@ describe("employer manifest integrity", () => {
     const verified = employerManifest.filter((entry) => entry.verification.status === "verified");
     expect(verified.map((entry) => entry.slug).sort()).toEqual([
       "bank-of-america",
+      "deutsche-bank",
       "dropbox",
       "duolingo",
       "instacart",
