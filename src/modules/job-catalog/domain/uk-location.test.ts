@@ -94,6 +94,13 @@ describe("UK location admission", () => {
     ).toBe("uk_confirmed");
   });
 
+  it.each(["UK", "U.K.", "London", "Cardiff", "Edinburgh", "Belfast"])(
+    "confirms unstructured UK location text %s",
+    (locationText) => {
+      expect(evaluateUkLocation({ locationText, remoteType: null }).status).toBe("uk_confirmed");
+    },
+  );
+
   it("does not treat parenthetical remote in another country as UK", () => {
     expect(evaluateUkLocation({ locationText: "Remote (Ireland)", remoteType: null }).status).toBe(
       "ambiguous",
