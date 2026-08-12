@@ -76,13 +76,84 @@ afterAll(async () => {
 });
 
 describe("job catalog", () => {
-  it("applies the schema", async () => {
-    const rows = await migrationDatabase<{ company: string | null; job: string | null }[]>`
+  it("applies the source-isolated schema", async () => {
+    const rows = await migrationDatabase<
+      {
+        company: string | null;
+        job: string | null;
+        job_source: string | null;
+      }[]
+    >`
       select
         to_regclass('app.company')::text as company,
-        to_regclass('app.job')::text as job
+        to_regclass('app.job')::text as job,
+        to_regclass('app.job_source')::text as job_source
     `;
-    expect(rows[0]).toEqual({ company: "app.company", job: "app.job" });
+    expect(rows[0]).toEqual({
+      company: "app.company",
+      job: "app.job",
+      job_source: "app.job_source",
+    });
+
+    const ownership = await migrationDatabase<
+      {
+        event_source: string | null;
+        job_source: string | null;
+        run_source: string | null;
+      }[]
+    >`
+      select
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job' and column_name = 'source_id') as job_source,
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job_ingestion_run' and column_name = 'source_id') as run_source,
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job_source_event' and column_name = 'source_id') as event_source
+    `;
+    expect(ownership[0]).toEqual({
+      event_source: "uuid",
+      job_source: "uuid",
+      run_source: "uuid",
+    });
+  });
+
+  it("isolates operational source records and allows source-scoped job identities", async () => {
+    const company = await migrationDatabase<{ id: string }[]>`
+      insert into app.company (name, slug, careers_url, source_type)
+      values ('Multi Source Co', ${uniqueSlug("multi-source-co")}, 'https://example.com/careers', 'greenhouse')
+      returning id
+    `;
+    const sources = await migrationDatabase<{ id: string }[]>`
+      insert into app.job_source (company_id, slug, name, channel, careers_url, source_type, status)
+      values
+        (${company[0]!.id}::uuid, 'early-careers', 'Early careers', 'early_careers', 'https://example.com/early', 'greenhouse', 'active'),
+        (${company[0]!.id}::uuid, 'professional', 'Professional', 'professional', 'https://example.com/professional', 'greenhouse', 'active')
+      returning id
+    `;
+
+    await migrationDatabase`
+      insert into app.job (company_id, source_id, slug, external_job_id, application_url, title, content_hash)
+      values
+        (${company[0]!.id}::uuid, ${sources[0]!.id}::uuid, ${uniqueSlug("shared-role-early")}, 'shared-1', 'https://example.com/early/apply', 'Early role', ${"c".repeat(64)}),
+        (${company[0]!.id}::uuid, ${sources[1]!.id}::uuid, ${uniqueSlug("shared-role-professional")}, 'shared-1', 'https://example.com/professional/apply', 'Professional role', ${"d".repeat(64)})
+    `;
+
+    const memberRows = await asUser(
+      userTwo,
+      (database) => database<{ count: number }[]>`select count(*)::int from app.job_source`,
+    );
+    expect(memberRows[0]!.count).toBe(0);
+
+    await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
+    try {
+      const adminRows = await asUser(
+        administrator,
+        (database) =>
+          database<
+            { count: number }[]
+          >`select count(*)::int from app.job_source where company_id = ${company[0]!.id}::uuid`,
+      );
+      expect(adminRows[0]!.count).toBe(2);
+    } finally {
+      await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
+    }
   });
 
   it("forces RLS on member saves and isolates saved jobs between users", async () => {
