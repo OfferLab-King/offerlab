@@ -1,0 +1,21 @@
+[Unit]
+Description=OfferLab targeted employer crawler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=offerlab
+Group=offerlab
+WorkingDirectory=/srv/offerlab/current
+EnvironmentFile=/etc/offerlab/jobs.env
+ExecStart=/usr/bin/corepack pnpm jobs:crawl:due --limit=25
+TimeoutStartSec=45min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/offerlab/shared
+
+[Install]
+WantedBy=multi-user.target

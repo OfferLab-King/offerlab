@@ -19,9 +19,7 @@ const database = postgres(databaseUrl, { max: 1, prepare: false });
 try {
   const created = await database.begin((transaction) => seedInitialCohort(transaction));
   for (const company of created) {
-    process.stdout.write(
-      `Seeded ${company.name} (${company.slug}) as crawl_allowed=unknown; verify and enable before crawling.\n`,
-    );
+    process.stdout.write(`Seeded ${company.name} (${company.slug}).\n`);
   }
 } finally {
   await database.end();

@@ -254,33 +254,59 @@ describe("job catalog", () => {
     ).rejects.toThrow();
   });
 
-  it("limits source operations to administrators", async () => {
-    const rows = await migrationDatabase<{ id: string }[]>`
+  it("limits source operations to administrators and supports run requests and URL correction", async () => {
+    const companies = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type)
       values ('Admin Source Co', ${uniqueSlug("admin-source-co")}, ${`https://admin-${uniqueSlug("careers")}.example.com`}, 'lever')
       returning id
     `;
+    const sources = await migrationDatabase<{ id: string }[]>`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, crawl_endpoint_url, source_type, status
+      ) values (
+        ${companies[0]!.id}::uuid, 'professional', 'Professional careers', 'professional',
+        'https://example.com/careers', 'https://example.com/api/jobs', 'lever', 'active'
+      ) returning id
+    `;
     await asUser(
       userTwo,
       (database) =>
-        database`update app.company set crawl_allowed = 'allowed' where id = ${rows[0]!.id}::uuid`,
+        database`update app.job_source set status = 'paused' where id = ${sources[0]!.id}::uuid`,
     );
-    const unchanged = await migrationDatabase<{ crawl_allowed: string }[]>`
-      select crawl_allowed from app.company where id = ${rows[0]!.id}::uuid
+    const unchanged = await migrationDatabase<{ status: string }[]>`
+      select status from app.job_source where id = ${sources[0]!.id}::uuid
     `;
-    expect(unchanged[0]!.crawl_allowed).toBe("unknown");
+    expect(unchanged[0]!.status).toBe("active");
 
     await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
     try {
       await asUser(
         administrator,
         (database) =>
-          database`update app.company set crawl_allowed = 'allowed' where id = ${rows[0]!.id}::uuid`,
+          database`update app.job_source
+            set careers_url = 'https://example.com/corrected',
+                run_requested_at = now(),
+                run_requested_by_user_id = ${administrator}::uuid,
+                manually_overridden = true
+            where id = ${sources[0]!.id}::uuid`,
       );
-      const changed = await migrationDatabase<{ crawl_allowed: string }[]>`
-        select crawl_allowed from app.company where id = ${rows[0]!.id}::uuid
+      const changed = await migrationDatabase<
+        {
+          careers_url: string;
+          manually_overridden: boolean;
+          run_requested_at: Date | null;
+          run_requested_by_user_id: string | null;
+        }[]
+      >`
+        select careers_url, manually_overridden, run_requested_at, run_requested_by_user_id
+        from app.job_source where id = ${sources[0]!.id}::uuid
       `;
-      expect(changed[0]!.crawl_allowed).toBe("allowed");
+      expect(changed[0]).toMatchObject({
+        careers_url: "https://example.com/corrected",
+        manually_overridden: true,
+        run_requested_by_user_id: administrator,
+      });
+      expect(changed[0]!.run_requested_at).toBeInstanceOf(Date);
     } finally {
       await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
     }

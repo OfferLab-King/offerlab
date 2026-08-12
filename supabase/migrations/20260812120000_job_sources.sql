@@ -234,6 +234,28 @@ create policy job_source_admin_access on app.job_source
 create policy job_source_crawler_access on app.job_source
   for all to offerlab_crawler using(true) with check(true);
 
+drop policy audit_event_insert_job_catalog on app.audit_event;
+create policy audit_event_insert_job_catalog on app.audit_event
+  for insert to offerlab_app with check(
+    actor_user_id = app.current_user_id() and metadata = '{}'::jsonb and (
+      (
+        entity_type = 'job_source'
+        and action in (
+          'job_source.created', 'job_source.updated', 'job_source.run_requested',
+          'job_source.paused', 'job_source.resumed', 'job_source.archived'
+        )
+        and exists(select 1 from app.job_source s where s.id = entity_id)
+      ) or (
+        entity_type = 'job'
+        and action in (
+          'job.publication_changed', 'job.classification_changed',
+          'job.eligibility_changed'
+        )
+        and exists(select 1 from app.job j where j.id = entity_id)
+      )
+    )
+  );
+
 grant select, insert, update, delete on app.job_source to offerlab_app;
 grant select, insert, update, delete on app.job_source to offerlab_crawler;
 grant select (source_id) on app.job to offerlab_app;

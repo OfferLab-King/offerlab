@@ -8,30 +8,26 @@ import {
   overrideJobClassificationForAdmin,
   overrideJobPublicationForAdmin,
   pauseCompanySource,
-  recordCompanySourceReview,
-  setCompanyCrawlPermission,
+  requestSourceRunForAdmin,
+  updateSourceUrlsForAdmin,
 } from "../../../modules/job-catalog/application/admin";
 
 const pauseSchema = z.object({
-  companyId: z.string().uuid(),
+  sourceId: z.string().uuid(),
   paused: z.enum(["true", "false"]),
 });
 
-const permissionSchema = z.object({
-  companyId: z.string().uuid(),
-  crawlAllowed: z.enum(["allowed", "unknown", "blocked"]),
+const sourceIdSchema = z.object({
+  sourceId: z.string().uuid(),
 });
 
-const reviewSchema = z.object({
-  companyId: z.string().uuid(),
-  evidenceUrl: z.preprocess(
+const sourceUrlsSchema = z.object({
+  sourceId: z.string().uuid(),
+  careersUrl: z.string().url().max(1000),
+  crawlEndpointUrl: z.preprocess(
     (value) => (value === "" ? undefined : value),
-    z.string().url().max(500).optional(),
+    z.string().url().max(1000).optional(),
   ),
-  reviewDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/u),
-  reviewNotes: z.string().max(2000).default(""),
-  robotsResult: z.enum(["allowed", "blocked", "unknown", "not_checked"]),
-  termsResult: z.enum(["allowed", "blocked", "unknown", "not_reviewed"]),
 });
 
 const eligibilityOverrideSchema = z.object({
@@ -54,39 +50,30 @@ const publicationOverrideSchema = z.object({
 export async function updateSourcePause(formData: FormData): Promise<void> {
   const administrator = await requireAdministrator();
   const parsed = pauseSchema.parse({
-    companyId: formData.get("companyId"),
+    sourceId: formData.get("sourceId"),
     paused: formData.get("paused"),
   });
-  await pauseCompanySource(administrator.userId, parsed.companyId, parsed.paused === "true");
+  await pauseCompanySource(administrator.userId, parsed.sourceId, parsed.paused === "true");
   revalidatePath("/admin/job-sources");
 }
 
-export async function updateCrawlPermission(formData: FormData): Promise<void> {
+export async function requestSourceRun(formData: FormData): Promise<void> {
   const administrator = await requireAdministrator();
-  const parsed = permissionSchema.parse({
-    companyId: formData.get("companyId"),
-    crawlAllowed: formData.get("crawlAllowed"),
-  });
-  await setCompanyCrawlPermission(administrator.userId, parsed.companyId, parsed.crawlAllowed);
+  const parsed = sourceIdSchema.parse({ sourceId: formData.get("sourceId") });
+  await requestSourceRunForAdmin(administrator.userId, parsed.sourceId);
   revalidatePath("/admin/job-sources");
 }
 
-export async function recordReview(formData: FormData): Promise<void> {
+export async function updateSourceUrls(formData: FormData): Promise<void> {
   const administrator = await requireAdministrator();
-  const parsed = reviewSchema.parse({
-    companyId: formData.get("companyId"),
-    evidenceUrl: formData.get("evidenceUrl"),
-    reviewDate: formData.get("reviewDate"),
-    reviewNotes: formData.get("reviewNotes") ?? "",
-    robotsResult: formData.get("robotsResult"),
-    termsResult: formData.get("termsResult"),
+  const parsed = sourceUrlsSchema.parse({
+    sourceId: formData.get("sourceId"),
+    careersUrl: formData.get("careersUrl"),
+    crawlEndpointUrl: formData.get("crawlEndpointUrl"),
   });
-  await recordCompanySourceReview(administrator.userId, parsed.companyId, {
-    evidenceUrl: parsed.evidenceUrl ?? null,
-    reviewDate: new Date(`${parsed.reviewDate}T00:00:00Z`),
-    reviewNotes: parsed.reviewNotes,
-    robotsResult: parsed.robotsResult,
-    termsResult: parsed.termsResult,
+  await updateSourceUrlsForAdmin(administrator.userId, parsed.sourceId, {
+    careersUrl: parsed.careersUrl,
+    crawlEndpointUrl: parsed.crawlEndpointUrl ?? null,
   });
   revalidatePath("/admin/job-sources");
 }

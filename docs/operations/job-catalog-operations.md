@@ -5,13 +5,14 @@ OfferLab job catalogue (module `src/modules/job-catalog`).
 
 ## Data model summary
 
-| Table                   | Purpose                                                                            | Roles                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `app.company`           | Source registry: careers URL, ATS type, crawl permission, frequency, failure state | safe-column `offerlab_app` read, `offerlab_crawler` write, admin write |
-| `app.job`               | Normalized jobs, deduplication keys, content hash, enrichment state                | `offerlab_app` read, `offerlab_crawler` write                          |
-| `app.job_ingestion_run` | Per-source crawl observability                                                     | administrator read, `offerlab_crawler` write                           |
-| `app.job_source_event`  | Source-level audit trail (failures, robots decisions, deactivations)               | administrator read, `offerlab_crawler` write                           |
-| `app.user_saved_job`    | Owner-scoped member saves (forced RLS)                                             | `offerlab_app` owner policies                                          |
+| Table                   | Purpose                                                                  | Roles                                                                  |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `app.company`           | Public employer identity and directory metadata                          | safe-column `offerlab_app` read, `offerlab_crawler` write, admin write |
+| `app.job_source`        | Careers channel, connector, schedule, URL health and manual run requests | administrator read/write, `offerlab_crawler` write                     |
+| `app.job`               | Normalized jobs, deduplication keys, content hash, enrichment state      | `offerlab_app` read, `offerlab_crawler` write                          |
+| `app.job_ingestion_run` | Per-source crawl observability                                           | administrator read, `offerlab_crawler` write                           |
+| `app.job_source_event`  | Source-level audit trail (failures, robots decisions, deactivations)     | administrator read, `offerlab_crawler` write                           |
+| `app.user_saved_job`    | Owner-scoped member saves (forced RLS)                                   | `offerlab_app` owner policies                                          |
 
 The crawler role `offerlab_crawler` is a no-login role. Production uses a separate
 `offerlab_crawler_login`; the web runtime login is deliberately not a member of
@@ -66,33 +67,27 @@ application database in the historical setup. The current production worker
 requires `JOB_CRAWLER_DATABASE_URL`; local development may use the local migration
 connection and still immediately assumes the restricted `offerlab_crawler` role.
 
-> Production operation is not approved by this runbook. Keep
-> `JOB_CATALOG_ENABLED=false` until founder approval extends the current JSearch
-> boundary and records the UK graduate-role inclusion policy. DeepSeek enrichment
-> additionally requires the AI strategy's evaluated prompt, provider, budget and
-> kill-switch release gates.
+Keep `JOB_CATALOG_ENABLED=false` during deployment and migration, then enable it
+after the registry, restricted worker credentials, monitoring and deterministic
+UK publication gate have been verified. Enrichment has a separate kill switch.
 
-## Adding a company
+## Adding an employer source
 
 1. Verify the employer's careers site and robots policy, and confirm the ATS
    board token (for Greenhouse/Lever/Ashby/SmartRecruiters the official public
    job-board APIs are used).
-2. Insert a row in `app.company` (or add it to the cohort in
-   `src/modules/job-catalog/application/seed-companies.ts` and re-run the seed).
-   Required: `name`, `slug`, `careers_url`, `source_type`, `crawl_frequency_minutes`.
+2. Create or reuse the `app.company` identity, then create one `app.job_source`
+   for each distinct channel (for example early careers and professional roles).
    Connector tokens live in `configuration`:
    - Greenhouse: `{"greenhouseBoardToken": "<board>"}`
    - Lever: `{"leverCompany": "<company>"}`
    - Ashby: `{"ashbyOrg": "<org>"}`
    - SmartRecruiters: `{"smartRecruitersCompany": "<company>"}`
    - Workday: `{"raasEndpoint": "<tenant raas url>"}`
-3. Record `crawl_allowed='allowed'` only after verifying the source. Until then
-   keep `'unknown'` — the crawler skips non-allowed sources.
-4. Verify with `pnpm jobs:crawl --company=<slug> --dry-run` first, then for real.
+3. Keep incomplete connector records paused; never guess an ATS identifier.
+4. Verify with `pnpm jobs:crawl --company=<slug> --source=<slug> --dry-run` first.
 5. Watch `pnpm jobs:status` for failures; repeated failures pause the source
-   automatically (`crawl_status='paused'`). Resume from
-   `/admin/job-sources` or with
-   `update app.company set crawl_status='healthy', consecutive_failures=0 where slug='<slug>';`
+   automatically. Resume or correct the source from `/admin/job-sources`.
 
 Frequency tier guidance: tier 1 (large high-value employers) 720 min,
 tier 2 (important) 1440 min, tier 3 (lower priority) 2880 min. The scheduler
@@ -102,8 +97,8 @@ adds ±10% jitter to every next-check time so sources do not burst together.
 
 The first source-onboarding programme is capped at 500 UK-relevant employers.
 `directory_priority_rank` is an internal processing order, not a public league
-table. `directory_visible` controls directory presence independently from
-`crawl_allowed`; neither directory visibility nor priority permits crawling.
+table. `directory_visible` controls directory presence independently from each
+source's operational status.
 
 Selection is refreshed at least annually and uses a documented combination of:
 
@@ -120,45 +115,45 @@ Selection is refreshed at least annually and uses a documented combination of:
 For each candidate record the evidence URL, evidence date, selection basis,
 official website and proposed sector. Before the candidate becomes a crawler
 source, separately verify the official careers URL and ATS identifier, review
-robots and terms, and record the permission decision. Never copy a commercial
+the connector endpoint. Never copy a commercial
 directory's descriptions, rankings, jobs, logos or private identifiers.
 
-The repository's initial visible tranche contains 39 bounded, identifier-
-verified official career sources. They remain `crawl_allowed=unknown` until the
-normal source review is completed. Expand this tranche toward 500 through the
-same reviewed import path; do not bulk-enable it.
+Expand the versioned cohort toward 500 through the same verified import path;
+activate only records with confirmed connector configuration.
 
 ## Scheduling on the deployment host
 
-The crawler is a CLI worker; run it with systemd. Two example units:
+The crawler is a CLI worker. Install the versioned units from
+`deploy/systemd/offerlab-jobs.service` and `deploy/systemd/offerlab-jobs.timer`.
+The timer polls every five minutes so CMS run requests are picked up promptly;
+each source still retains its own daily or explicitly configured schedule.
+
+Reference unit contents:
 
 `/etc/systemd/system/offerlab-jobs.service`:
 
 ```ini
 [Unit]
-Description=OfferLab job catalog crawler and enrichment worker
-After=network-online.target postgresql.service
+Description=OfferLab targeted employer crawler
+After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
 User=offerlab
-WorkingDirectory=/opt/offerlab
-EnvironmentFile=/opt/offerlab/.env.local
-ExecStart=/usr/bin/node /opt/offerlab/node_modules/.bin/tsx scripts/jobs/crawl-due.ts
-ExecStartPost=/usr/bin/node /opt/offerlab/node_modules/.bin/tsx scripts/jobs/enrich.ts --limit=50
-StandardOutput=append:/var/log/offerlab/jobs.log
-StandardError=append:/var/log/offerlab/jobs.log
+WorkingDirectory=/srv/offerlab/current
+EnvironmentFile=/etc/offerlab/jobs.env
+ExecStart=/usr/bin/corepack pnpm jobs:crawl:due --limit=25
 ```
 
 `/etc/systemd/system/offerlab-jobs.timer`:
 
 ```ini
 [Unit]
-Description=Run the OfferLab job crawler hourly
+Description=Poll OfferLab due and manually requested job sources
 [Timer]
-OnCalendar=*-*-* *:25:00
-RandomizedDelaySec=300
+OnCalendar=*:0/5
+RandomizedDelaySec=30
 Persistent=true
 [Install]
 WantedBy=timers.target
@@ -172,9 +167,7 @@ sudo systemctl enable --now offerlab-jobs.timer
 sudo journalctl -u offerlab-jobs.service -n 100   # inspect runs
 ```
 
-The timer uses a randomized start within the hour; per-source jitter spreads
-individual fetches further. `RandomizedDelaySec` plus `OnCalendar=*:25:00`
-avoids fixed-minute bursts.
+The timer adds a short randomized delay and per-source jitter spreads daily work.
 
 ## Deploying on AWS Lightsail (Ubuntu)
 
@@ -227,15 +220,15 @@ lives in Supabase, so the instance remains replaceable.
    # ExecStart=/usr/bin/node /opt/offerlab/node_modules/.bin/next start -p 3000
    ```
 
-6. Seed the initial cohort and enable sources deliberately:
+6. Import the versioned cohort and inspect source status:
 
    ```bash
    pnpm jobs:seed-companies --confirm-local
    pnpm jobs:status
    ```
 
-   Then record `crawl_allowed='allowed'` per source only after verifying terms
-   and board tokens (admin page `/admin/job-sources` or SQL).
+   Keep incomplete connector records paused. Confirm official URLs and board
+   identifiers before setting a source active in `/admin/job-sources`.
 
 7. Install the crawler timer (above), then verify:
 
@@ -255,7 +248,7 @@ lives in Supabase, so the instance remains replaceable.
 
 - `pnpm jobs:status` gives a snapshot of sources, runs and events.
 - `/admin/job-sources` (administrator) shows the same data in the browser and
-  can pause/resume sources and change crawl permission.
+  can request runs, pause/resume sources and correct source URLs.
 - Structured logs use `event` names such as `job_source_crawl_succeeded`,
   `job_source_crawl_failed`, `job_source_skipped`, `robots_txt_unavailable`,
   `job_enrichment_failed`. Sensitive fields (titles, URLs, slugs, companies)
@@ -268,11 +261,10 @@ lives in Supabase, so the instance remains replaceable.
 
 ## Honesty and safety rules
 
-- Never crawl a source with `crawl_allowed` other than `allowed`.
+- Crawl only active sources; paused, archived and repeatedly failing sources do not run.
 - Never bypass bot protection, CAPTCHAs or authentication walls; no stealth
   scraping, proxy rotation or fingerprint evasion.
-- robots.txt is an automated safety signal, not a complete legal permission
-  system; verify employer terms before enabling a source.
+- Never bypass bot protection, authentication or access controls.
 - Only successful, non-empty crawls can deactivate jobs (after the
   consecutive-miss threshold). Failed crawls never touch job activity.
 - User-facing pages show freshness only after a successful crawl and clearly
@@ -315,7 +307,7 @@ Every ingested or changed job passes through the deterministic pipeline
   roles at the same employer and similar current roles), sourced through the
   job-catalog application boundary and limited to public, non-expired roles.
 - **Administrator overrides** (admin page): eligibility, classification,
-  publication and source permission changes set
+  publication and source changes set
   `classification_source='administrator'`, bump `classification_version`, and
   write an audit event. Rows owned by an administrator are never reclassified
   or republished by the pipeline.
@@ -338,15 +330,15 @@ Every ingested or changed job passes through the deterministic pipeline
   editorial content is ingested; source descriptions are stored as plain text
   only and never rendered as HTML.
 
-## Source verification and permission review
+## Source verification and URL health
 
 The seeded registry covers every top-level sector using identifiers verified
 with single bounded, unauthenticated GETs against the official public ATS
 job-board APIs (`scripts/jobs/verify-sources.ts` lists the exact requests).
-Verification does **not** approve a source. Before enabling a source an
-administrator must record a review on `/admin/job-sources` (review date,
-robots result, terms result, evidence URL, notes) and set
-`crawl_allowed='allowed'`. Unknown and blocked sources never run.
+Landing pages and connector endpoints have independent health fields, including
+redirect destinations and invalid-since timestamps. Administrators can correct
+URLs and request a bounded run from `/admin/job-sources`; manual corrections are
+preserved by cohort imports. Incomplete or invalid records remain paused.
 
 JSearch remains temporarily disabled (`JSEARCH_ENABLED=false`); the member
 job-discovery page links into the catalogue and manual job targets continue to

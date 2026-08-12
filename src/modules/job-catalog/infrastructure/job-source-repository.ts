@@ -118,6 +118,68 @@ export async function listAllJobSources(database: TransactionSql): Promise<JobSo
   return rows.map(mapSource);
 }
 
+export type JobSourceAdminRow = Readonly<{
+  id: string;
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  source_slug: string;
+  source_name: string;
+  channel: string;
+  careers_url: string;
+  crawl_endpoint_url: string | null;
+  source_type: string;
+  status: string;
+  crawl_frequency_minutes: number;
+  last_checked_at: Date | null;
+  last_successful_check_at: Date | null;
+  next_check_at: Date | null;
+  run_requested_at: Date | null;
+  consecutive_failures: number;
+  landing_health_status: string;
+  landing_last_status_code: number | null;
+  landing_final_url: string | null;
+  landing_invalid_since: Date | null;
+  endpoint_health_status: string;
+  endpoint_last_status_code: number | null;
+  endpoint_final_url: string | null;
+  endpoint_invalid_since: Date | null;
+}>;
+
+export async function listJobSourcesForAdmin(
+  database: TransactionSql,
+): Promise<JobSourceAdminRow[]> {
+  return database<JobSourceAdminRow[]>`
+    select s.id, s.company_id, c.name as company_name, c.slug as company_slug,
+      s.slug as source_slug, s.name as source_name, s.channel, s.careers_url,
+      s.crawl_endpoint_url, s.source_type, s.status, s.crawl_frequency_minutes,
+      s.last_checked_at, s.last_successful_check_at, s.next_check_at,
+      s.run_requested_at, s.consecutive_failures, s.landing_health_status,
+      s.landing_last_status_code, s.landing_final_url, s.landing_invalid_since,
+      s.endpoint_health_status, s.endpoint_last_status_code, s.endpoint_final_url,
+      s.endpoint_invalid_since
+    from app.job_source s
+    join app.company c on c.id = s.company_id
+    order by s.status = 'active' desc, c.name, s.name
+  `;
+}
+
+export async function updateJobSourceUrls(
+  database: TransactionSql,
+  sourceId: string,
+  careersUrl: string,
+  crawlEndpointUrl: string | null,
+): Promise<boolean> {
+  const rows = await database<{ id: string }[]>`
+    update app.job_source
+    set careers_url = ${careersUrl}, crawl_endpoint_url = ${crawlEndpointUrl},
+        manually_overridden = true, updated_at = now()
+    where id = ${sourceId}::uuid
+    returning id
+  `;
+  return rows.length === 1;
+}
+
 export type SourceRunOutcome = Readonly<{
   automaticPauseReason?: string | null;
   consecutiveFailures: number;

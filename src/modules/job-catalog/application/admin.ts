@@ -3,13 +3,12 @@ import {
   withApplicationUser,
 } from "../../../infrastructure/database/runtime-connections";
 import {
-  listCompaniesForAdmin,
-  recordSourceReview,
-  setCompanyCrawlAllowed,
-  setCompanyPaused,
-  type CompanyAdminRow,
-  type SourceReviewInput,
-} from "../infrastructure/company-repository";
+  listJobSourcesForAdmin,
+  requestJobSourceRun,
+  setJobSourceStatus,
+  updateJobSourceUrls,
+  type JobSourceAdminRow,
+} from "../infrastructure/job-source-repository";
 import {
   listRecentEvents,
   listRecentRuns,
@@ -24,7 +23,7 @@ import {
 } from "../infrastructure/job-repository";
 
 export type JobCatalogAdminView = Readonly<{
-  companies: readonly CompanyAdminRow[];
+  sources: readonly JobSourceAdminRow[];
   classificationQueue: readonly ClassificationQueueRow[];
   eligibilityQueue: readonly EligibilityQueueRow[];
   recentEvents: readonly RecentEventRow[];
@@ -54,9 +53,9 @@ export type ClassificationQueueRow = Readonly<{
 
 export async function readJobCatalogAdmin(): Promise<JobCatalogAdminView> {
   return withApplicationRole(async (database) => {
-    const [companies, recentRuns, recentEvents, eligibilityQueue, classificationQueue] =
+    const [sources, recentRuns, recentEvents, eligibilityQueue, classificationQueue] =
       await Promise.all([
-        listCompaniesForAdmin(database),
+        listJobSourcesForAdmin(database),
         listRecentRuns(database, 25),
         listRecentEvents(database, 25),
         listEligibilityReviewQueue(database, 50),
@@ -64,7 +63,7 @@ export async function readJobCatalogAdmin(): Promise<JobCatalogAdminView> {
       ]);
     return {
       classificationQueue,
-      companies,
+      sources,
       eligibilityQueue,
       recentEvents,
       recentRuns,
@@ -90,45 +89,41 @@ async function insertAuditEvent(
 
 export async function pauseCompanySource(
   administratorUserId: string,
-  companyId: string,
+  sourceId: string,
   paused: boolean,
 ): Promise<void> {
   await withApplicationUser(administratorUserId, (database) =>
-    setCompanyPaused(database, companyId, paused),
+    setJobSourceStatus(database, sourceId, paused ? "paused" : "active"),
   );
   await insertAuditEvent(
     administratorUserId,
     paused ? "job_source.paused" : "job_source.resumed",
     "job_source",
-    companyId,
+    sourceId,
   );
 }
 
-export async function setCompanyCrawlPermission(
+export async function requestSourceRunForAdmin(
   administratorUserId: string,
-  companyId: string,
-  crawlAllowed: "allowed" | "unknown" | "blocked",
+  sourceId: string,
 ): Promise<void> {
-  await withApplicationUser(administratorUserId, (database) =>
-    setCompanyCrawlAllowed(database, companyId, crawlAllowed),
+  const requested = await withApplicationUser(administratorUserId, (database) =>
+    requestJobSourceRun(database, sourceId, administratorUserId),
   );
-  await insertAuditEvent(
-    administratorUserId,
-    "job_source.permission_changed",
-    "job_source",
-    companyId,
-  );
+  if (!requested) throw new Error("job_source_not_active");
+  await insertAuditEvent(administratorUserId, "job_source.run_requested", "job_source", sourceId);
 }
 
-export async function recordCompanySourceReview(
+export async function updateSourceUrlsForAdmin(
   administratorUserId: string,
-  companyId: string,
-  input: Omit<SourceReviewInput, "reviewerUserId">,
+  sourceId: string,
+  input: Readonly<{ careersUrl: string; crawlEndpointUrl: string | null }>,
 ): Promise<void> {
-  await withApplicationUser(administratorUserId, (database) =>
-    recordSourceReview(database, companyId, { ...input, reviewerUserId: administratorUserId }),
+  const updated = await withApplicationUser(administratorUserId, (database) =>
+    updateJobSourceUrls(database, sourceId, input.careersUrl, input.crawlEndpointUrl),
   );
-  await insertAuditEvent(administratorUserId, "job_source.reviewed", "job_source", companyId);
+  if (!updated) throw new Error("job_source_not_found");
+  await insertAuditEvent(administratorUserId, "job_source.updated", "job_source", sourceId);
 }
 
 export async function overrideJobClassificationForAdmin(
