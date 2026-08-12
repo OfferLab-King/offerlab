@@ -15,7 +15,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function context(): ConnectorContext {
+function context(overrides: Partial<ConnectorContext> = {}): ConnectorContext {
   return {
     ...stubContext({ configuration: { greenhouseBoardToken: "monzo" } }),
     company: stubContext({ configuration: { greenhouseBoardToken: "monzo" } }).company,
@@ -23,6 +23,7 @@ function context(): ConnectorContext {
     maxDetailPages: 10,
     maxJobs: 100,
     robotsGate: stubRobotsGate(),
+    ...overrides,
   } as ConnectorContext;
 }
 
@@ -75,6 +76,52 @@ describe("Greenhouse connector", () => {
     const limited = { ...context(), maxJobs: 1 };
     const jobs = await createGreenhouseConnector().discoverJobs(limited);
     expect(jobs).toHaveLength(1);
+  });
+
+  it("deduplicates repeated pages and stops when a page adds nothing new", async () => {
+    const page = (ids: number[]) =>
+      JSON.stringify({
+        meta: { total: ids.length },
+        jobs: ids.map((id) => ({ id, title: `Role ${id}` })),
+      });
+    const fullPage = Array.from({ length: 500 }, (_, index) => index + 1);
+    const fetchImplementation = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      const pageNumber = Number(new URL(url).searchParams.get("page") ?? "1");
+      const body = pageNumber === 1 ? page(fullPage) : page(fullPage.slice(0, 100));
+      return {
+        headers: new Headers({ "content-type": "application/json" }),
+        ok: true,
+        status: 200,
+        text: async () => body,
+      };
+    });
+    vi.stubGlobal("fetch", fetchImplementation);
+
+    const jobs = await createGreenhouseConnector().discoverJobs(context({ maxJobs: 600 }));
+
+    expect(jobs).toHaveLength(500);
+    const ids = jobs.map((job) => job.externalJobId);
+    expect(new Set(ids).size).toBe(500);
+    const listRequests = fetchImplementation.mock.calls
+      .map((call) => String(call[0]))
+      .filter((url) => url.includes("/jobs?"));
+    expect(listRequests).toHaveLength(2);
+  });
+
+  it("deduplicates duplicate external IDs within a single page", async () => {
+    const page = JSON.stringify({
+      meta: { total: 2 },
+      jobs: [
+        { id: 1, title: "Role One" },
+        { id: 2, title: "Role Two" },
+        { id: 1, title: "Role One (duplicate)" },
+      ],
+    });
+    const fetchImplementation = stubFetchResponses([{ body: page }]);
+    vi.stubGlobal("fetch", fetchImplementation);
+    const jobs = await createGreenhouseConnector().discoverJobs(context({ maxJobs: 500 }));
+    expect(jobs).toHaveLength(2);
   });
 
   it("surfaces HTTP 403 as a non-retryable forbidden error", async () => {
