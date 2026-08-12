@@ -52,9 +52,18 @@ async function runLockedEnrichmentBatch(
 ): Promise<EnrichmentBatchOutcome> {
   const configuration = options.configuration;
   const environment = options.environment ?? process.env;
-  const apiKey = environment.DEEPSEEK_API_KEY;
-  const baseUrl = environment.DEEPSEEK_BASE_URL;
-  const model = environment.DEEPSEEK_MODEL;
+  const providerName: "deepseek" | "opencode_go" =
+    environment.JOB_ENRICHMENT_PROVIDER === "opencode_go" ? "opencode_go" : "deepseek";
+  const apiKey =
+    providerName === "opencode_go" ? environment.OPENCODE_API_KEY : environment.DEEPSEEK_API_KEY;
+  const baseUrl =
+    environment.JOB_ENRICHMENT_BASE_URL ??
+    (providerName === "opencode_go"
+      ? "https://opencode.ai/zen/go/v1"
+      : environment.DEEPSEEK_BASE_URL);
+  const model =
+    environment.JOB_ENRICHMENT_MODEL ??
+    (providerName === "opencode_go" ? "deepseek-v4-flash" : environment.DEEPSEEK_MODEL);
   if (!apiKey || !baseUrl || !model) {
     logger.error({ event: "job_enrichment_not_configured" });
     return { completed: 0, failed: 0, processed: 0, skipped: 0 };
@@ -71,6 +80,7 @@ async function runLockedEnrichmentBatch(
     apiKey,
     baseUrl,
     model,
+    providerName,
     timeoutMs: 30_000,
   };
   const provider = createEnrichmentProvider(providerConfiguration);

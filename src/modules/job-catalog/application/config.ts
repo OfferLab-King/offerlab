@@ -21,6 +21,7 @@ export type EnrichmentConfiguration = Readonly<{
   llmEnabled: boolean;
   llmMaxConcurrency: number;
   promptVersion: number;
+  provider: "deepseek" | "opencode_go";
 }>;
 
 const DEFAULT_USER_AGENT =
@@ -69,5 +70,6 @@ export function readEnrichmentConfiguration(environment: Environment): Enrichmen
       environment.JOB_ENRICHMENT_PROMPT_VERSION,
       JOB_ENRICHMENT_PROMPT_VERSION,
     ),
+    provider: environment.JOB_ENRICHMENT_PROVIDER === "opencode_go" ? "opencode_go" : "deepseek",
   };
 }

@@ -14,7 +14,17 @@ describe("job catalog configuration", () => {
     expect(crawler.llmEnabled).toBe(false);
     expect(enrichment.catalogEnabled).toBe(false);
     expect(enrichment.llmEnabled).toBe(false);
+    expect(enrichment.provider).toBe("deepseek");
     expect(isJobCatalogEnabled({})).toBe(false);
+  });
+
+  it("selects OpenCode Go without changing deterministic crawler settings", () => {
+    const enrichment = readEnrichmentConfiguration({
+      JOB_ENRICHMENT_PROVIDER: "opencode_go",
+      JOB_LLM_ENABLED: "true",
+    });
+    expect(enrichment.provider).toBe("opencode_go");
+    expect(enrichment.llmEnabled).toBe(true);
   });
 
   it("requires explicit true flags to enable the catalog and model", () => {
