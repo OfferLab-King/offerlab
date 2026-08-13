@@ -114,8 +114,7 @@ export function employerWebsiteCandidateUrl(url: string): boolean {
 }
 
 type UniqueCompanyMatch =
-  | Readonly<{ outcome: "none" | "ambiguous" }>
-  | Readonly<{ companyId: string; outcome: "unique" }>;
+  Readonly<{ outcome: "none" | "ambiguous" }> | Readonly<{ companyId: string; outcome: "unique" }>;
 
 function uniqueCompanyMatch(companyIds: readonly string[]): UniqueCompanyMatch {
   const unique = [...new Set(companyIds)];

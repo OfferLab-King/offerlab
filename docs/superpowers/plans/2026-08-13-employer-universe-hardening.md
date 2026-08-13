@@ -22,6 +22,7 @@
 ### Task 1: Preserve and validate canonical employer selections
 
 **Files:**
+
 - Modify: `src/modules/applications/application/request.ts`
 - Modify: `src/modules/applications/application/request.test.ts`
 - Modify: `src/app/member/applications/application-form.tsx`
@@ -30,6 +31,7 @@
 - Modify: `tests/integration/member-employer-integration.test.ts`
 
 **Interfaces:**
+
 - Produces: `applicationFormRequestBody(form: FormData, version?: number): Record<string, unknown>` including `companyId`.
 - Produces: `EmployerCompanyField` prop `defaultCompanyId: string | null`.
 - Repository invariant: a selected ID is retained only when it resolves through `app.employer_public_profile`; a valid selection stores the canonical name, while an unresolved ID falls back to unlinked free text.
@@ -112,10 +114,12 @@ git commit -m "fix: preserve canonical employer links"
 ### Task 2: Refuse ambiguous employer identity evidence
 
 **Files:**
+
 - Modify: `src/modules/employer-research/domain/identity-match.ts`
 - Modify: `src/modules/employer-research/domain/identity-match.test.ts`
 
 **Interfaces:**
+
 - Preserves: `matchCanonicalEmployer(...): IdentityMatch`.
 - Changes: every evidence stage returns a company only when exactly one distinct company matches; zero or multiple distinct matches continue to later evidence or finish as `ambiguous` without insertion-order selection.
 
@@ -158,10 +162,12 @@ git commit -m "fix: reject ambiguous employer identity matches"
 ### Task 3: Count only current employer research snapshots
 
 **Files:**
+
 - Modify: `src/modules/employer-research/infrastructure/discovery-repository.ts`
 - Modify: `tests/integration/employer-source-discovery.test.ts`
 
 **Interfaces:**
+
 - Preserves: `readPlatformCoverageData(database): Promise<PlatformCoverageSourceData>`.
 - Changes: `snapshots` contains at most one row per non-null company ID, selected by `research_date desc, dataset_version desc`.
 
@@ -212,6 +218,7 @@ git commit -m "fix: deduplicate employer capability analytics"
 ### Task 4: Complete the evidence-based hardening review
 
 **Files:**
+
 - Create only if findings warrant it: `docs/reviews/2026-08-13-employer-universe-hardening.md`
 - Modify only files required by additional confirmed defects.
 
@@ -230,6 +237,7 @@ List fixed findings, affected files/tests, any unresolved risk with explicit unc
 ### Task 5: Run final verification once
 
 **Files:**
+
 - No planned source changes.
 
 - [ ] **Step 1: Start and replay the established disposable Supabase project**

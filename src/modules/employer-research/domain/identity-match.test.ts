@@ -164,8 +164,18 @@ describe("matchCanonicalEmployer", () => {
         evidenceWebsiteUrl: "https://shared.example.com/careers",
         existingAliases: [],
         existingCompanies: [
-          { id: "w1", name: "First Website Co", slug: "first-website", websiteUrl: "https://shared.example.com" },
-          { id: "w2", name: "Second Website Co", slug: "second-website", websiteUrl: "https://shared.example.com/jobs" },
+          {
+            id: "w1",
+            name: "First Website Co",
+            slug: "first-website",
+            websiteUrl: "https://shared.example.com",
+          },
+          {
+            id: "w2",
+            name: "Second Website Co",
+            slug: "second-website",
+            websiteUrl: "https://shared.example.com/jobs",
+          },
         ],
       },
     ],

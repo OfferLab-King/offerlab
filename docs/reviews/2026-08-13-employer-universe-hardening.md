@@ -6,14 +6,14 @@
 
 ## Fixed findings
 
-| Area | Finding | Regression coverage |
-| --- | --- | --- |
-| Canonical identity | Application requests dropped selected employer IDs; existing links were also lost on unrelated edits. Server writes accepted mismatched IDs and names. | Existing request unit tests and member-employer integration coverage |
-| Canonical identity | Career job-target upserts left stale employer IDs and accepted mismatched IDs and names. | Existing member-employer integration coverage |
-| Identity matching | Duplicate normalized names, slugs, aliases, or website hosts were resolved by row order instead of rejected as ambiguous. | Parameterised existing identity-match tests |
-| Analytics | Historical research snapshots inflated employer platform coverage. | Existing source-discovery integration coverage |
-| Analytics | Paused and archived job sources were counted as live across discovery, capability, research, and public-profile reads. | Existing source-discovery, admin-detail, and public-profile integration coverage; forward migration `20260813180000` |
-| Source lifecycle | Re-verifying a promoted candidate downgraded it to `verified`. | Existing source-promotion idempotency coverage |
+| Area               | Finding                                                                                                                                                | Regression coverage                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Canonical identity | Application requests dropped selected employer IDs; existing links were also lost on unrelated edits. Server writes accepted mismatched IDs and names. | Existing request unit tests and member-employer integration coverage                                                 |
+| Canonical identity | Career job-target upserts left stale employer IDs and accepted mismatched IDs and names.                                                               | Existing member-employer integration coverage                                                                        |
+| Identity matching  | Duplicate normalized names, slugs, aliases, or website hosts were resolved by row order instead of rejected as ambiguous.                              | Parameterised existing identity-match tests                                                                          |
+| Analytics          | Historical research snapshots inflated employer platform coverage.                                                                                     | Existing source-discovery integration coverage                                                                       |
+| Analytics          | Paused and archived job sources were counted as live across discovery, capability, research, and public-profile reads.                                 | Existing source-discovery, admin-detail, and public-profile integration coverage; forward migration `20260813180000` |
+| Source lifecycle   | Re-verifying a promoted candidate downgraded it to `verified`.                                                                                         | Existing source-promotion idempotency coverage                                                                       |
 
 ## Reviewed without a confirmed defect
 
