@@ -11,6 +11,12 @@ type ShutdownOptions = Readonly<{
   escalationDelayMs?: number;
   killProcessGroup?: (processGroupId: number, signal: NodeJS.Signals) => void;
 }>;
+type ProcessGroupCloseOptions = Readonly<{
+  processGroupExists?: (processGroupId: number) => boolean;
+  killProcessGroup?: (processGroupId: number, signal: NodeJS.Signals) => void;
+  pollIntervalMs?: number;
+  termGracePeriodMs?: number;
+}>;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -25,6 +31,45 @@ export class LocalBypassShutdownRequested extends Error {
 
 export function signalExitCode(signal: NodeJS.Signals): number {
   return 128 + (constants.signals[signal] ?? 1);
+}
+
+function systemProcessGroupExists(processGroupId: number): boolean {
+  try {
+    process.kill(-processGroupId, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
+}
+
+export async function waitForProcessGroupClose(
+  processGroupId: number,
+  options: ProcessGroupCloseOptions = {},
+): Promise<void> {
+  const processGroupExists = options.processGroupExists ?? systemProcessGroupExists;
+  const killProcessGroup = options.killProcessGroup ?? process.kill;
+  const pollIntervalMs = options.pollIntervalMs ?? 25;
+  const termGracePeriodMs = options.termGracePeriodMs ?? 5_000;
+  const pause = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+
+  if (!processGroupExists(processGroupId)) return;
+  try {
+    killProcessGroup(-processGroupId, "SIGTERM");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return;
+  }
+  const termDeadline = Date.now() + termGracePeriodMs;
+  while (processGroupExists(processGroupId) && Date.now() < termDeadline) await pause();
+  if (!processGroupExists(processGroupId)) return;
+
+  while (processGroupExists(processGroupId)) {
+    try {
+      killProcessGroup(-processGroupId, "SIGKILL");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ESRCH") return;
+    }
+    await pause();
+  }
 }
 
 export function waitForLocalBypassChildClose(child: ChildProcess): Promise<ChildClose> {

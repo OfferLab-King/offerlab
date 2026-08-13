@@ -9,6 +9,7 @@ import {
   LocalBypassShutdownRequested,
   signalExitCode,
   waitForLocalBypassChildClose,
+  waitForProcessGroupClose,
   watchLocalBypassShutdown,
 } from "./local-bypass-signals";
 
@@ -16,39 +17,6 @@ const databaseUrl = process.env.LOCAL_BYPASS_GUARDIAN_DATABASE_URL;
 const lockKey = process.env.LOCAL_BYPASS_GUARDIAN_LOCK_KEY;
 const port = process.env.LOCAL_BYPASS_GUARDIAN_PORT;
 const nextServerScript = fileURLToPath(new URL("./local-bypass-next-server.ts", import.meta.url));
-
-function processGroupExists(processGroupId: number): boolean {
-  try {
-    process.kill(-processGroupId, 0);
-    return true;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
-    if ((error as NodeJS.ErrnoException).code === "EPERM") return true;
-    throw error;
-  }
-}
-
-async function waitForProcessGroupClose(processGroupId: number): Promise<void> {
-  if (!processGroupExists(processGroupId)) return;
-  try {
-    process.kill(-processGroupId, "SIGTERM");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
-  }
-  const termDeadline = Date.now() + 5_000;
-  while (processGroupExists(processGroupId) && Date.now() < termDeadline) {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  if (!processGroupExists(processGroupId)) return;
-  process.kill(-processGroupId, "SIGKILL");
-  const killDeadline = Date.now() + 5_000;
-  while (processGroupExists(processGroupId) && Date.now() < killDeadline) {
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  if (processGroupExists(processGroupId)) {
-    throw new Error("The local bypass Next.js process group did not close after SIGKILL.");
-  }
-}
 
 function requiredValue(value: string | undefined, name: string): string {
   if (value) return value;

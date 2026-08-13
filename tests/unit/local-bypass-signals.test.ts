@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LocalBypassShutdownRequested,
   waitForLocalBypassChildClose,
+  waitForProcessGroupClose,
   watchLocalBypassShutdown,
   type LocalBypassSignalSource,
 } from "../../scripts/local-bypass-signals";
@@ -20,6 +21,25 @@ afterEach(() => {
 });
 
 describe("local bypass signal watcher", () => {
+  it("keeps supervising a surviving process group instead of failing open", async () => {
+    vi.useFakeTimers();
+    let killAttempts = 0;
+    const closed = waitForProcessGroupClose(1234, {
+      killProcessGroup: (_processGroupId, signal) => {
+        if (signal === "SIGKILL") killAttempts += 1;
+      },
+      pollIntervalMs: 10,
+      processGroupExists: () => killAttempts < 3,
+      termGracePeriodMs: 10,
+    });
+    const closureExpectation = expect(closed).resolves.toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(100);
+
+    await closureExpectation;
+    expect(killAttempts).toBe(3);
+  });
+
   it("holds setup and cleanup signals until the watcher closes", () => {
     const signals = new EventEmitter() as LocalBypassSignalSource & EventEmitter;
     const shutdown = watchLocalBypassShutdown(signals);
