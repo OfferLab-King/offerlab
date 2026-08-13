@@ -514,7 +514,40 @@ export async function findEmployerDetail(
       select alias, alias_type as "aliasType", source
       from app.employer_alias where company_id = ${companyId}::uuid order by alias
     `,
-    database<EmployerDetailSnapshot[]>`
+    database<
+      {
+        id: string;
+        companyId: string | null;
+        canonicalName: string;
+        datasetVersion: string;
+        researchDate: Date;
+        priorityTier: string;
+        internalRank: number;
+        crawlerWave: string | null;
+        employerValueScore: string | null;
+        crawlerReadinessScore: string | null;
+        crawlerPriorityScore: string | null;
+        sponsorshipScore: string | null;
+        earlyCareerScore: string | null;
+        scaleScore: string | null;
+        brandMarketScore: string | null;
+        ukRelevanceScore: string | null;
+        sector: string | null;
+        subsector: string | null;
+        employeeBand: string | null;
+        employeeScope: string | null;
+        employeeSource: string | null;
+        employeeConfidence: string | null;
+        ownershipType: string | null;
+        ticker: string | null;
+        exchange: string | null;
+        identityConfidence: string | null;
+        researchStatus: string;
+        evidenceUrls: readonly string[];
+        notes: string | null;
+        atsPlatform: string | null;
+      }[]
+    >`
       select id, company_id as "companyId", canonical_name as "canonicalName",
         dataset_version as "datasetVersion", research_date as "researchDate",
         priority_tier as "priorityTier", internal_rank as "internalRank",
@@ -569,14 +602,33 @@ export async function findEmployerDetail(
   ]);
   const company = companies[0];
   if (!company) return null;
+  const snapshot = snapshots[0];
   return {
     ...company,
     aliases,
-    snapshot: snapshots[0] ?? null,
+    snapshot: snapshot
+      ? {
+          ...snapshot,
+          employerValueScore: score(snapshot.employerValueScore),
+          crawlerReadinessScore: score(snapshot.crawlerReadinessScore),
+          crawlerPriorityScore: score(snapshot.crawlerPriorityScore),
+          sponsorshipScore: score(snapshot.sponsorshipScore),
+          earlyCareerScore: score(snapshot.earlyCareerScore),
+          scaleScore: score(snapshot.scaleScore),
+          brandMarketScore: score(snapshot.brandMarketScore),
+          ukRelevanceScore: score(snapshot.ukRelevanceScore),
+        }
+      : null,
     sponsors,
     candidates,
     liveSources: sources,
   };
+}
+
+function score(value: string | null): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export type SourceCapabilityStats = Readonly<{

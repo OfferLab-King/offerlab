@@ -7,7 +7,11 @@ import {
 import {
   listAliasTextByCompany,
   listEmployerResearchRows,
+  findEmployerDetail,
+  readSourceCapabilityStats,
+  type EmployerDetailRow,
   type ResearchViewRow,
+  type SourceCapabilityStats,
 } from "../infrastructure/research-repository";
 import {
   applyCandidatePromotions,
@@ -96,9 +100,10 @@ export async function readSourceDiscovery(
   coverage: readonly PlatformCoverageRow[];
   queue: readonly DiscoveryCandidate[];
   totals: Readonly<Record<string, number>>;
+  stats: SourceCapabilityStats;
 }> {
   return withApplicationUser(administratorUserId, async (database) => {
-    const [coverageData, queue] = await Promise.all([
+    const [coverageData, queue, stats] = await Promise.all([
       readPlatformCoverageData(database),
       listDiscoveryCandidates(database, {
         candidateId: null,
@@ -109,9 +114,10 @@ export async function readSourceDiscovery(
         search: filters.search,
         limit: 500,
       }),
+      readSourceCapabilityStats(database),
     ]);
     const coverage = computePlatformCoverage(coverageData);
-    return { coverage: coverage.rows, queue, totals: coverage.totals };
+    return { coverage: coverage.rows, queue, totals: coverage.totals, stats };
   });
 }
 
@@ -138,4 +144,21 @@ export async function promoteCandidateForAdmin(
     if (applied.alreadyPresent === 1) return { outcome: "already_present" };
     return { outcome: "not_promotable" };
   });
+}
+
+export async function readEmployerDetailForAdmin(
+  administratorUserId: string,
+  companyId: string,
+): Promise<EmployerDetailRow | null> {
+  return withApplicationUser(administratorUserId, (database) =>
+    findEmployerDetail(database, companyId),
+  );
+}
+
+export async function readSourceCapabilityStatsForAdmin(
+  administratorUserId: string,
+): Promise<SourceCapabilityStats> {
+  return withApplicationUser(administratorUserId, (database) =>
+    readSourceCapabilityStats(database),
+  );
 }

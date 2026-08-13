@@ -19,7 +19,10 @@ export default async function SourceDiscoveryPage({
   const administrator = await requireAdministrator();
   const query = await searchParams;
   const filters = parseDiscoveryQueueFilters(query);
-  const { coverage, queue, totals } = await readSourceDiscovery(administrator.userId, filters);
+  const { coverage, queue, totals, stats } = await readSourceDiscovery(
+    administrator.userId,
+    filters,
+  );
 
   return (
     <main className="cms-page">
@@ -34,6 +37,93 @@ export default async function SourceDiscoveryPage({
           </p>
         </div>
       </header>
+
+      <section className="cms-operations-section" aria-labelledby="capability-heading">
+        <div className="cms-section-heading">
+          <div>
+            <h2 id="capability-heading">Universe and crawler capability</h2>
+          </div>
+        </div>
+        <dl className="cms-detail-grid">
+          <div>
+            <dt>Employers with careers URL</dt>
+            <dd>{stats.employersWithCareersUrl}</dd>
+          </div>
+          <div>
+            <dt>Verified candidates</dt>
+            <dd>{stats.verifiedCandidates}</dd>
+          </div>
+          <div>
+            <dt>Platform-identified candidates</dt>
+            <dd>{stats.platformIdentifiedCandidates}</dd>
+          </div>
+          <div>
+            <dt>Employers with live source</dt>
+            <dd>{stats.employersWithLiveSource}</dd>
+          </div>
+          <div>
+            <dt>Employers with jobs</dt>
+            <dd>{stats.employersWithJobs}</dd>
+          </div>
+          <div>
+            <dt>Live sources</dt>
+            <dd>{stats.liveSources}</dd>
+          </div>
+          <div>
+            <dt>Browser sources</dt>
+            <dd>{stats.browserSources}</dd>
+          </div>
+          <div>
+            <dt>HTTP sources</dt>
+            <dd>{stats.httpSources}</dd>
+          </div>
+        </dl>
+        {stats.sourcesByType.length > 0 && (
+          <div className="cms-table-scroll">
+            <table className="cms-data-table">
+              <thead>
+                <tr>
+                  <th>Source type</th>
+                  <th>Mode</th>
+                  <th>Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.sourcesByType.map((entry) => (
+                  <tr key={`${entry.sourceType}-${entry.needsBrowser}`}>
+                    <td>{entry.sourceType}</td>
+                    <td>{entry.needsBrowser ? "Browser" : "HTTP"}</td>
+                    <td>{entry.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {stats.jobsByAts.length > 0 && (
+          <>
+            <h3 className="cms-detail-subheading">Jobs by ATS provider</h3>
+            <div className="cms-table-scroll">
+              <table className="cms-data-table">
+                <thead>
+                  <tr>
+                    <th>ATS provider</th>
+                    <th>Jobs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.jobsByAts.map((row) => (
+                    <tr key={row.atsProvider ?? "unknown"}>
+                      <td>{row.atsProvider ?? "Not recorded"}</td>
+                      <td>{row.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
 
       <section className="cms-operations-section" aria-labelledby="coverage-heading">
         <div className="cms-section-heading">
