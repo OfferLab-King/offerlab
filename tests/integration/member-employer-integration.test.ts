@@ -9,7 +9,10 @@ import {
 } from "../../src/modules/job-catalog/application/saved-employers";
 import { searchEmployersForAutocomplete } from "../../src/modules/job-catalog/application/catalog";
 import { parseApplicationInput } from "../../src/modules/applications/domain/application";
-import { createApplication } from "../../src/modules/applications/infrastructure/application-repository";
+import {
+  createApplication,
+  updateApplication,
+} from "../../src/modules/applications/infrastructure/application-repository";
 import { saveCareerJobTarget } from "../../src/modules/career-documents/infrastructure/career-repository";
 
 const databaseUrl =
@@ -157,31 +160,129 @@ describe("application canonical employer linkage", () => {
     if (createdFree.outcome !== "created") throw new Error("expected created");
     expect(createdFree.application.companyId).toBeNull();
   });
+
+  it("canonicalizes valid selections, rejects false links, and preserves a link on update", async () => {
+    const { id: companyId } = await setupVisibleEmployer("Canonical Application Co");
+    const values = {
+      appliedDate: null,
+      applicationDeadline: null,
+      company: "Tampered company name",
+      companyId,
+      industry: "financial_services" as const,
+      location: "London",
+      nextStageDeadline: null,
+      notes: null,
+      opportunityType: "graduate_scheme" as const,
+      role: "Graduate Analyst",
+      stage: "preparing" as const,
+    };
+    const created = await asUser(userOne, (database) =>
+      createApplication(database, userOne, values),
+    );
+    expect(created).toMatchObject({
+      application: { company: "Canonical Application Co", companyId },
+      outcome: "created",
+    });
+    if (!("application" in created)) throw new Error("expected created application");
+
+    const updated = await asUser(userOne, (database) =>
+      updateApplication(database, userOne, created.application.id, 1, {
+        ...values,
+        company: "Canonical Application Co",
+        role: "Graduate Consultant",
+      }),
+    );
+    expect(updated).toMatchObject({
+      application: { company: "Canonical Application Co", companyId },
+      outcome: "updated",
+    });
+
+    const falseLink = await asUser(userOne, (database) =>
+      createApplication(database, userOne, {
+        ...values,
+        company: "Free Text Employer",
+        companyId: "00000000-0000-4000-8000-000000000999",
+      }),
+    );
+    expect(falseLink).toMatchObject({
+      application: { company: "Free Text Employer", companyId: null },
+      outcome: "created",
+    });
+  });
 });
 
 describe("career job target canonical employer linkage", () => {
-  it("stores a nullable canonical company id", async () => {
+  it("stores and updates a nullable canonical company id", async () => {
     const { id: companyId } = await setupVisibleEmployer("Target Linked Co");
+    const providerJobId = uniqueSlug("target-link");
     const target = await asUser(userOne, (database) =>
       saveCareerJobTarget(database, userOne, {
         applyUrl: null,
         companyId,
-        companyName: "Target Linked Co",
+        companyName: "Tampered target name",
         description: "Graduate programme description for testing.",
         employmentType: "full_time",
-        fetchedAt: null,
+        fetchedAt: new Date("2026-08-13T12:00:00Z"),
         location: "London",
-        provider: "manual",
-        providerJobId: null,
+        provider: "jsearch",
+        providerJobId,
         publishedAt: null,
         roleTitle: "Graduate Programme",
         sourcePublisher: null,
         sourceUrl: null,
       }),
     );
-    const row = await migrationDatabase<{ company_id: string | null }[]>`
-      select company_id from app.career_job_target where id = ${target.id}::uuid
+    const row = await migrationDatabase<{ company_id: string | null; company_name: string }[]>`
+      select company_id, company_name from app.career_job_target where id = ${target.id}::uuid
     `;
-    expect(row[0]!.company_id).toBe(companyId);
+    expect(row[0]).toEqual({ company_id: companyId, company_name: "Target Linked Co" });
+
+    const { id: replacementCompanyId } = await setupVisibleEmployer("Replacement Target Co");
+    await asUser(userOne, (database) =>
+      saveCareerJobTarget(database, userOne, {
+        applyUrl: null,
+        companyId: replacementCompanyId,
+        companyName: "Replacement Target Co",
+        description: "Updated graduate programme description for testing.",
+        employmentType: "full_time",
+        fetchedAt: new Date("2026-08-13T13:00:00Z"),
+        location: "Manchester",
+        provider: "jsearch",
+        providerJobId,
+        publishedAt: null,
+        roleTitle: "Updated Graduate Programme",
+        sourcePublisher: null,
+        sourceUrl: null,
+      }),
+    );
+    const updated = await migrationDatabase<{ company_id: string | null; company_name: string }[]>`
+      select company_id, company_name from app.career_job_target where id = ${target.id}::uuid
+    `;
+    expect(updated[0]).toEqual({
+      company_id: replacementCompanyId,
+      company_name: "Replacement Target Co",
+    });
+
+    await asUser(userOne, (database) =>
+      saveCareerJobTarget(database, userOne, {
+        applyUrl: null,
+        companyId: "00000000-0000-4000-8000-000000000998",
+        companyName: "Free Text Target Co",
+        description: "Free-text fallback description.",
+        employmentType: "full_time",
+        fetchedAt: new Date("2026-08-13T14:00:00Z"),
+        location: "Bristol",
+        provider: "jsearch",
+        providerJobId,
+        publishedAt: null,
+        roleTitle: "Free-text Graduate Programme",
+        sourcePublisher: null,
+        sourceUrl: null,
+      }),
+    );
+    const unlinked = await migrationDatabase<{ company_id: string | null; company_name: string }[]>`
+      select company_id, company_name from app.career_job_target where id = ${target.id}::uuid
+    `;
+    expect(unlinked[0]).toEqual({ company_id: null, company_name: "Free Text Target Co" });
   });
 });

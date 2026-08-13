@@ -13,6 +13,7 @@ import {
 import {
   listDiscoveryCandidates,
   listEmployersMissingCandidates,
+  markCandidateVerified,
   promoteCandidateToSource,
   readPlatformCoverageData,
 } from "../../src/modules/employer-research/infrastructure/discovery-repository";
@@ -153,6 +154,28 @@ describe("source discovery pipeline", () => {
     `;
     expect(candidateRow[0]!.status).toBe("promoted");
 
+    const promotedCandidates = await migrationDatabase.begin((transaction) =>
+      listDiscoveryCandidates(transaction, {
+        candidateId,
+        companySlug: null,
+        tier: null,
+        platform: null,
+        status: null,
+        search: null,
+        limit: 1,
+      }),
+    );
+    expect(promotedCandidates[0]!.liveSources).toBe(0);
+    expect(promotedCandidates[0]!.atsProviders).toBeNull();
+
+    await migrationDatabase.begin((transaction) =>
+      markCandidateVerified(transaction, candidateId, "https://verified.example.com/careers"),
+    );
+    const reverified = await migrationDatabase<{ status: string }[]>`
+      select status from app.job_source_candidate where id = ${candidateId}::uuid
+    `;
+    expect(reverified[0]!.status).toBe("promoted");
+
     const second = await migrationDatabase.begin((t) => applyCandidatePromotions(t, plans, true));
     expect(second.created).toBe(0);
     expect(second.alreadyPresent).toBe(1);
@@ -194,14 +217,37 @@ describe("source discovery pipeline", () => {
   });
 
   it("computes platform coverage from research, candidate and live evidence", async () => {
-    await setupCompanyAndCandidate({
+    const { companyId } = await setupCompanyAndCandidate({
       candidateUrl: `https://jobs.lever.co/acme-coverage-${uniqueSlug("l")}`,
       platformHint: "Lever",
       tier: "P1",
       atsPlatform: "Workday",
       researchStatus: "verified_platform",
     });
+    await migrationDatabase`
+      insert into app.employer_research_snapshot (
+        company_id, canonical_name, dataset_version, research_date, priority_tier,
+        internal_rank, research_status, ats_platform
+      ) values (
+        ${companyId}::uuid, 'Historical Coverage Co', ${`historical-${uniqueSlug("h")}`},
+        '2026-08-11'::date, 'P3', ${Math.floor(Math.random() * 1000) + 2000},
+        'verified_platform', 'Greenhouse'
+      )
+    `;
+    await migrationDatabase`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, source_type, status, ats_provider
+      ) values (
+        ${companyId}::uuid, ${uniqueSlug("paused-coverage")}, 'Paused coverage source', 'general',
+        ${`https://paused-${uniqueSlug("coverage")}.example.com/careers`}, 'greenhouse', 'paused',
+        'Greenhouse'
+      )
+    `;
     const data = await migrationDatabase.begin((t) => readPlatformCoverageData(t));
+    expect(data.snapshots.filter((snapshot) => snapshot.companyId === companyId)).toEqual([
+      { atsPlatform: "Workday", companyId, tier: "P1" },
+    ]);
+    expect(data.jobSources.filter((source) => source.companyId === companyId)).toEqual([]);
     const coverage = computePlatformCoverage(data);
     expect(coverage.totals.employers).toBeGreaterThan(0);
     expect(coverage.totals.p0 + coverage.totals.p1).toBeGreaterThan(0);

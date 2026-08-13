@@ -122,4 +122,66 @@ describe("matchCanonicalEmployer", () => {
     expect(match.grade).toBe("ambiguous");
     expect(match.companyId).toBeNull();
   });
+
+  it.each([
+    [
+      "normalized names",
+      {
+        canonicalName: "Acme Ltd",
+        existingAliases: [],
+        existingCompanies: [
+          { id: "n1", name: "Acme", slug: "acme-one", websiteUrl: null },
+          { id: "n2", name: "Acme plc", slug: "acme-two", websiteUrl: null },
+        ],
+      },
+    ],
+    [
+      "slugs",
+      {
+        canonicalName: "Target Brand",
+        existingAliases: [],
+        existingCompanies: [
+          { id: "s1", name: "First Company", slug: "target-brand", websiteUrl: null },
+          { id: "s2", name: "Second Company", slug: "target-brand", websiteUrl: null },
+        ],
+      },
+    ],
+    [
+      "aliases",
+      {
+        canonicalName: "Shared Trading Name",
+        existingAliases: [
+          { alias: "Shared Trading Name", companyId: "a1" },
+          { alias: "Shared Trading Name", companyId: "a2" },
+        ],
+        existingCompanies: [],
+      },
+    ],
+    [
+      "website hosts",
+      {
+        canonicalName: "Website Match",
+        evidenceWebsiteUrl: "https://shared.example.com/careers",
+        existingAliases: [],
+        existingCompanies: [
+          {
+            id: "w1",
+            name: "First Website Co",
+            slug: "first-website",
+            websiteUrl: "https://shared.example.com",
+          },
+          {
+            id: "w2",
+            name: "Second Website Co",
+            slug: "second-website",
+            websiteUrl: "https://shared.example.com/jobs",
+          },
+        ],
+      },
+    ],
+  ] as const)("refuses multiple companies matching by %s", (_evidence, input) => {
+    const match = matchCanonicalEmployer(input);
+    expect(match).toMatchObject({ companyId: null, grade: "ambiguous" });
+    expect(match.reason).toContain("multiple");
+  });
 });

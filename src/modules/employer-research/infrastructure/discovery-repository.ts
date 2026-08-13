@@ -64,9 +64,11 @@ export async function listDiscoveryCandidates(
       jc.research_status as "researchStatus",
       jc.ats_verification_status as "atsVerificationStatus",
       jc.verified_at as "verifiedAt",
-      (select count(*)::int from app.job_source js where js.company_id = c.id) as "liveSources",
+      (select count(*)::int from app.job_source js
+        where js.company_id = c.id and js.status = 'active') as "liveSources",
       (select string_agg(distinct js2.ats_provider, ', ' order by js2.ats_provider)
-        from app.job_source js2 where js2.company_id = c.id) as "atsProviders"
+        from app.job_source js2
+        where js2.company_id = c.id and js2.status = 'active') as "atsProviders"
     from app.job_source_candidate jc
     join app.company c on c.id = jc.company_id
     left join latest_snapshot s on s.company_id = c.id
@@ -135,8 +137,11 @@ export async function readPlatformCoverageData(
 ): Promise<PlatformCoverageSourceData> {
   const [snapshots, candidates, jobSources] = await Promise.all([
     database<{ companyId: string | null; tier: string | null; atsPlatform: string | null }[]>`
-      select company_id as "companyId", priority_tier as tier, ats_platform as "atsPlatform"
+      select distinct on (company_id)
+        company_id as "companyId", priority_tier as tier, ats_platform as "atsPlatform"
       from app.employer_research_snapshot
+      where company_id is not null
+      order by company_id, research_date desc, dataset_version desc
     `,
     database<{ companyId: string | null; platformHint: string | null; status: string }[]>`
       select company_id as "companyId", platform_hint as "platformHint", status
@@ -145,6 +150,7 @@ export async function readPlatformCoverageData(
     database<{ companyId: string | null; atsProvider: string | null }[]>`
       select company_id as "companyId", ats_provider as "atsProvider"
       from app.job_source
+      where status = 'active'
     `,
   ]);
   return { snapshots, candidates, jobSources };
@@ -208,7 +214,7 @@ export async function markCandidateVerified(
   await database`
     update app.job_source_candidate
     set ats_verification_status = 'verified',
-        status = 'verified',
+        status = case when status = 'promoted' then status else 'verified' end,
         verified_at = now(),
         evidence = case
           when evidence is null or evidence = '' then ${evidenceNote}

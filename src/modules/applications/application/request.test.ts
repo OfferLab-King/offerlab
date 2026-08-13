@@ -1,8 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { APPLICATION_JSON_BODY_LIMIT_BYTES, readApplicationJson } from "./request";
+import {
+  APPLICATION_JSON_BODY_LIMIT_BYTES,
+  applicationFormRequestBody,
+  readApplicationJson,
+} from "./request";
 
 describe("application JSON request boundary", () => {
+  it("includes the selected canonical employer in the application payload", () => {
+    const form = new FormData();
+    form.set("company", "Displayed text");
+    form.set("companyId", "00000000-0000-4000-8000-000000000123");
+    form.set("role", "Graduate Analyst");
+    form.set("opportunityType", "graduate_scheme");
+    form.set("stage", "preparing");
+
+    expect(applicationFormRequestBody(form, 3)).toMatchObject({
+      company: "Displayed text",
+      companyId: "00000000-0000-4000-8000-000000000123",
+      role: "Graduate Analyst",
+      version: 3,
+    });
+  });
+
   it("accepts bounded JSON", async () => {
     const request = new Request("http://localhost/api/member/applications", {
       body: JSON.stringify({ company: "Example" }),

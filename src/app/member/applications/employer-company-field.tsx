@@ -12,16 +12,18 @@ type EmployerOption = Readonly<{
 const MIN_QUERY_LENGTH = 2;
 
 export function EmployerCompanyField({
+  defaultCompanyId,
   defaultValue,
   describedBy,
   invalid,
 }: Readonly<{
+  defaultCompanyId: string | null;
   defaultValue: string;
   describedBy?: string | undefined;
   invalid: boolean;
 }>) {
   const [value, setValue] = useState(defaultValue);
-  const [companyId, setCompanyId] = useState("");
+  const [companyId, setCompanyId] = useState(defaultCompanyId ?? "");
   const [options, setOptions] = useState<readonly EmployerOption[]>([]);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);

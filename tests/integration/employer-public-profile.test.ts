@@ -91,19 +91,28 @@ afterAll(async () => {
 
 describe("employer public profile view", () => {
   it("exposes public facts to the app role but never research internals", async () => {
-    await setupEmployer({
+    const { companyId } = await setupEmployer({
       name: "Public Facts Co",
       careersUrl: `https://public-facts-${uniqueSlug("u")}.example.com/careers`,
       industry: "financial_services",
       employeeBand: "10,000–49,999",
       hasSponsor: true,
     });
+    await migrationDatabase`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, source_type, status
+      ) values (
+        ${companyId}::uuid, ${uniqueSlug("paused-public")}, 'Paused public source', 'general',
+        ${`https://paused-public-${uniqueSlug("u")}.example.com`}, 'custom', 'paused'
+      )
+    `;
     const rows = await migrationDatabase.begin((t) => listEmployerPublicDirectory(t));
     const row = rows.find((entry) => entry.name === "Public Facts Co")!;
     expect(row.employer_industry_key).toBe("financial_services");
     expect(row.employee_band).toBe("10,000–49,999");
     expect(row.has_sponsor).toBe(true);
     expect(row.sponsor_snapshot_date).not.toBeNull();
+    expect(row.live_sources).toBe(0);
     const columns = Object.keys(row);
     for (const internal of [
       "priority_tier",
