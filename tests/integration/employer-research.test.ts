@@ -292,9 +292,10 @@ describe("employer research import pipeline", () => {
 
   it("never alters existing live job_source rows", async () => {
     const runKey = uniqueSlug("preserved");
+    const companyName = `Preserved Source Co ${runKey}`;
     const company = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type)
-      values ('Preserved Source Co', ${uniqueSlug("preserved-company")},
+      values (${companyName}, ${uniqueSlug("preserved-company")},
         ${`https://preserved-${runKey}.example.com/careers`}, 'greenhouse')
       returning id
     `;
@@ -312,7 +313,7 @@ describe("employer research import pipeline", () => {
     const rows = [
       researchRow({
         rank: 401,
-        canonicalEmployer: "Preserved Source Co",
+        canonicalEmployer: companyName,
         primarySponsorLegalEntity: null,
         identityConfidence: "High",
         careerSearchUrl: `https://preserved-${runKey}.example.com/careers`,
