@@ -75,6 +75,7 @@ export function EmployerCompanyField({
         aria-expanded={open}
         aria-invalid={invalid}
         autoComplete="off"
+        id="company"
         maxLength={120}
         name="company"
         onChange={(event) => {
