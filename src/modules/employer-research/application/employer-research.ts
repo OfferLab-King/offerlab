@@ -9,6 +9,13 @@ import {
   listEmployerResearchRows,
   type ResearchViewRow,
 } from "../infrastructure/research-repository";
+import { computePlatformCoverage, type PlatformCoverageRow } from "./source-discovery";
+import {
+  listDiscoveryCandidates,
+  readPlatformCoverageData,
+  type DiscoveryCandidate,
+} from "../infrastructure/discovery-repository";
+import type { DiscoveryQueueFilters } from "./source-discovery-view";
 
 export type EmployerResearchSummary = Readonly<{
   total: number;
@@ -74,5 +81,30 @@ export async function readEmployerResearch(
       ownerships: distinct(rows.map((row) => row.ownership)),
     };
     return { rows: filtered, summary, facets };
+  });
+}
+
+export async function readSourceDiscovery(
+  administratorUserId: string,
+  filters: DiscoveryQueueFilters,
+): Promise<{
+  coverage: readonly PlatformCoverageRow[];
+  queue: readonly DiscoveryCandidate[];
+  totals: Readonly<Record<string, number>>;
+}> {
+  return withApplicationUser(administratorUserId, async (database) => {
+    const [coverageData, queue] = await Promise.all([
+      readPlatformCoverageData(database),
+      listDiscoveryCandidates(database, {
+        companySlug: null,
+        tier: filters.tier,
+        platform: filters.platform,
+        status: filters.status,
+        search: filters.search,
+        limit: 500,
+      }),
+    ]);
+    const coverage = computePlatformCoverage(coverageData);
+    return { coverage: coverage.rows, queue, totals: coverage.totals };
   });
 }

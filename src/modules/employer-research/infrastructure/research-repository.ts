@@ -180,7 +180,8 @@ export async function upsertResearchSnapshot(
         listing_ownership_score, source_leverage_score, sector, subsector,
         finance_asset_class, employee_count, employee_band, employee_scope,
         employee_source, employee_confidence, ownership_type, ownership_confidence,
-        ticker, exchange, identity_confidence, research_status, evidence_urls, notes
+        ticker, exchange, identity_confidence, research_status, evidence_urls, notes,
+        ats_platform, ats_verification_status
       ) values (
         ${values.companyId ?? null}::uuid, ${values.canonicalName}, ${values.datasetVersion},
         ${values.researchDate}::date, ${values.priorityTier}, ${values.internalRank}, ${values.crawlerWave},
@@ -192,7 +193,8 @@ export async function upsertResearchSnapshot(
         ${values.employeeBand}, ${values.employeeScope}, ${values.employeeSource},
         ${values.employeeConfidence}, ${values.ownershipType}, ${values.ownershipConfidence},
         ${values.ticker}, ${values.exchange}, ${values.identityConfidence},
-        ${values.researchStatus}, ${jsonParameter(database, values.evidenceUrls)}, ${values.notes}
+        ${values.researchStatus}, ${jsonParameter(database, values.evidenceUrls)}, ${values.notes},
+        ${values.atsPlatform}, ${values.atsVerificationStatus}
       )
     `;
     return "inserted";
@@ -208,6 +210,8 @@ export async function upsertResearchSnapshot(
         crawler_readiness_score = ${values.crawlerReadinessScore},
         crawler_priority_score = ${values.crawlerPriorityScore},
         research_status = ${values.researchStatus},
+        ats_platform = ${values.atsPlatform},
+        ats_verification_status = ${values.atsVerificationStatus},
         updated_at = now()
     where id = ${row.id}::uuid
   `;
@@ -257,6 +261,8 @@ function snapshotValues(
     researchStatus: input.row.researchStatus ?? "not_researched",
     evidenceUrls: [...input.row.evidenceUrls],
     notes: input.row.notes,
+    atsPlatform: input.row.atsPlatform,
+    atsVerificationStatus: input.row.atsVerificationStatus,
   };
 }
 
