@@ -1,4 +1,5 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { constants } from "node:os";
 import postgres from "postgres";
 
 import {
@@ -21,6 +22,86 @@ function roleDatabaseUrl(databaseUrl: string, role: string): string {
   url.username = role;
   url.password = "postgres";
   return url.toString();
+}
+
+type ChildExit = Readonly<{ code: number | null; signal: NodeJS.Signals | null }>;
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function waitForChildExit(child: ChildProcess): Promise<ChildExit> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    child.once("error", (error) => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`Next.js development server failed to start: ${errorMessage(error)}`));
+    });
+    child.once("exit", (code, signal) => {
+      if (settled) return;
+      settled = true;
+      resolve({ code, signal });
+    });
+  });
+}
+
+function signalExitCode(signal: NodeJS.Signals): number {
+  return 128 + (constants.signals[signal] ?? 1);
+}
+
+async function runNextDevelopmentServer(
+  environment: NodeJS.ProcessEnv,
+  port: string,
+): Promise<number> {
+  const child = spawn("pnpm", ["exec", "next", "dev", "--hostname", "127.0.0.1", "--port", port], {
+    detached: true,
+    env: environment,
+    stdio: "inherit",
+  });
+  let forwardedSignal: NodeJS.Signals | null = null;
+  const forwardSignal = (signal: NodeJS.Signals): void => {
+    if (forwardedSignal) return;
+    forwardedSignal = signal;
+    if (child.pid === undefined) return;
+    try {
+      process.kill(-child.pid, signal);
+    } catch {
+      child.kill(signal);
+    }
+  };
+  const handleSigint = (): void => forwardSignal("SIGINT");
+  const handleSigterm = (): void => forwardSignal("SIGTERM");
+  process.on("SIGINT", handleSigint);
+  process.on("SIGTERM", handleSigterm);
+
+  let childExit: ChildExit;
+  try {
+    childExit = await waitForChildExit(child);
+  } finally {
+    process.off("SIGINT", handleSigint);
+    process.off("SIGTERM", handleSigterm);
+  }
+
+  if (forwardedSignal) {
+    const childResult = childExit.signal
+      ? `signal ${childExit.signal}`
+      : `exit code ${childExit.code ?? "unknown"}`;
+    process.stdout.write(
+      `Local bypass shutdown forwarded ${forwardedSignal}; Next.js ended with ${childResult}.\n`,
+    );
+    return signalExitCode(forwardedSignal);
+  }
+  if (childExit.signal) {
+    throw new Error(`Next.js development server stopped from signal ${childExit.signal}.`);
+  }
+  if (childExit.code === null) {
+    throw new Error("Next.js development server exited without an exit code or signal.");
+  }
+  if (childExit.code !== 0) {
+    process.stderr.write(`Next.js development server exited with code ${childExit.code}.\n`);
+  }
+  return childExit.code;
 }
 
 const bypassRole = parseLocalAuthBypassArguments(process.argv.slice(2));
@@ -48,6 +129,7 @@ if (!isLoopbackUrl(databaseUrl) || !isLoopbackUrl(supabaseUrl)) {
 }
 
 const database = postgres(databaseUrl, { max: 1, prepare: false });
+let launcherFailure: unknown;
 try {
   const rows = await database<{ available: boolean }[]>`
     select exists(
@@ -72,36 +154,55 @@ try {
   const accessPath = bypassRole === "administrator" ? "/admin" : "/member";
   process.stdout.write(`Local test access enabled at ${appUrl}${accessPath}\n`);
 
-  const result = spawnSync(
-    "pnpm",
-    ["exec", "next", "dev", "--hostname", "127.0.0.1", "--port", port],
+  process.exitCode = await runNextDevelopmentServer(
     {
-      env: {
-        ...process.env,
-        APP_ENV: "local",
-        AUTH_RATE_LIMIT_SECRET:
-          process.env.AUTH_RATE_LIMIT_SECRET ?? "local-bypass-rate-limit-secret",
-        DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_runtime_login"),
-        IDENTITY_SYNC_DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_identity_sync_login"),
-        LOCAL_AUTH_BYPASS_ENABLED: "true",
-        LOCAL_AUTH_BYPASS_ROLE: bypassRole,
-        LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
-        NEXT_PUBLIC_APP_URL: appUrl,
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
-        NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
-        NODE_ENV: "development",
-      },
-      stdio: "inherit",
+      ...process.env,
+      APP_ENV: "local",
+      AUTH_RATE_LIMIT_SECRET:
+        process.env.AUTH_RATE_LIMIT_SECRET ?? "local-bypass-rate-limit-secret",
+      DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_runtime_login"),
+      IDENTITY_SYNC_DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_identity_sync_login"),
+      LOCAL_AUTH_BYPASS_ENABLED: "true",
+      LOCAL_AUTH_BYPASS_ROLE: bypassRole,
+      LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
+      NEXT_PUBLIC_APP_URL: appUrl,
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
+      NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+      NODE_ENV: "development",
     },
+    port,
   );
-  process.exitCode = result.status ?? 1;
+} catch (error) {
+  launcherFailure = error;
 } finally {
-  if (bypassRole === "administrator") {
-    await database`
-      update app."user"
-      set role = 'member', updated_at = now()
-      where id = ${localAuthBypassMember.userId}::uuid
-    `;
+  let restorationFailure: unknown;
+  let connectionCloseFailure: unknown;
+  try {
+    if (bypassRole === "administrator") {
+      await database`
+        update app."user"
+        set role = 'member', updated_at = now()
+        where id = ${localAuthBypassMember.userId}::uuid
+      `;
+    }
+  } catch (error) {
+    restorationFailure = error;
+  } finally {
+    try {
+      await database.end();
+    } catch (error) {
+      connectionCloseFailure = error;
+    }
   }
-  await database.end();
+
+  const failures = [launcherFailure, restorationFailure, connectionCloseFailure].filter(
+    (failure): failure is NonNullable<typeof failure> => failure !== undefined,
+  );
+  if (failures.length === 1) throw failures[0];
+  if (failures.length > 1) {
+    throw new AggregateError(
+      failures,
+      "The local bypass launcher failed and cleanup was incomplete.",
+    );
+  }
 }
