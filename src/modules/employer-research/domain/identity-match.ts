@@ -113,6 +113,26 @@ export function employerWebsiteCandidateUrl(url: string): boolean {
   return !isSharedAtsHostname(hostname);
 }
 
+type UniqueCompanyMatch =
+  | Readonly<{ outcome: "none" | "ambiguous" }>
+  | Readonly<{ companyId: string; outcome: "unique" }>;
+
+function uniqueCompanyMatch(companyIds: readonly string[]): UniqueCompanyMatch {
+  const unique = [...new Set(companyIds)];
+  if (unique.length === 0) return { outcome: "none" };
+  if (unique.length > 1) return { outcome: "ambiguous" };
+  return { companyId: unique[0]!, outcome: "unique" };
+}
+
+function ambiguousMatch(normalizedName: string, evidence: string): IdentityMatch {
+  return {
+    companyId: null,
+    grade: "ambiguous",
+    normalizedName,
+    reason: `multiple companies match ${evidence}; retain for review`,
+  };
+}
+
 export function matchCanonicalEmployer(
   input: Readonly<{
     canonicalName: string;
@@ -122,14 +142,17 @@ export function matchCanonicalEmployer(
   }>,
 ): IdentityMatch {
   const normalizedName = normalizeEmployerName(input.canonicalName);
-  const normalizedNameSet = new Map(
-    input.existingCompanies.map((company) => [normalizeEmployerName(company.name), company.id]),
+  const nameMatch = uniqueCompanyMatch(
+    input.existingCompanies
+      .filter((company) => normalizeEmployerName(company.name) === normalizedName)
+      .map((company) => company.id),
   );
-
-  const exact = normalizedNameSet.get(normalizedName);
-  if (exact) {
+  if (nameMatch.outcome === "ambiguous") {
+    return ambiguousMatch(normalizedName, "normalized employer name");
+  }
+  if (nameMatch.outcome === "unique") {
     return {
-      companyId: exact,
+      companyId: nameMatch.companyId,
       grade: "exact",
       normalizedName,
       reason: "exact normalized name match",
@@ -137,14 +160,35 @@ export function matchCanonicalEmployer(
   }
 
   const slug = slugifyEmployerName(input.canonicalName);
-  const slugMatch = input.existingCompanies.find((company) => company.slug === slug);
-  if (slugMatch) {
-    return { companyId: slugMatch.id, grade: "exact", normalizedName, reason: "slug match" };
+  const slugMatch = uniqueCompanyMatch(
+    input.existingCompanies.filter((company) => company.slug === slug).map((company) => company.id),
+  );
+  if (slugMatch.outcome === "ambiguous") {
+    return ambiguousMatch(normalizedName, "employer slug");
+  }
+  if (slugMatch.outcome === "unique") {
+    return {
+      companyId: slugMatch.companyId,
+      grade: "exact",
+      normalizedName,
+      reason: "slug match",
+    };
   }
 
   const aliasKey = input.canonicalName.trim().toLowerCase();
-  const aliasMatch = input.existingAliases.find((alias) => alias.alias.toLowerCase() === aliasKey);
-  if (aliasMatch) {
+  const aliasMatch = uniqueCompanyMatch(
+    input.existingAliases
+      .filter(
+        (alias) =>
+          alias.alias.toLowerCase() === aliasKey ||
+          normalizeEmployerName(alias.alias) === normalizedName,
+      )
+      .map((alias) => alias.companyId),
+  );
+  if (aliasMatch.outcome === "ambiguous") {
+    return ambiguousMatch(normalizedName, "employer alias");
+  }
+  if (aliasMatch.outcome === "unique") {
     return {
       companyId: aliasMatch.companyId,
       grade: "alias",
@@ -152,41 +196,23 @@ export function matchCanonicalEmployer(
       reason: `alias match: ${input.canonicalName}`,
     };
   }
-  const aliasNormalized = input.existingAliases.find(
-    (alias) => normalizeEmployerName(alias.alias) === normalizedName,
-  );
-  if (aliasNormalized) {
-    return {
-      companyId: aliasNormalized.companyId,
-      grade: "alias",
-      normalizedName,
-      reason: `normalized alias match: ${input.canonicalName}`,
-    };
-  }
 
   const websiteHost = websiteHostname(input.evidenceWebsiteUrl);
   if (websiteHost && !isSharedAtsHostname(websiteHost)) {
-    const websiteMatch = input.existingCompanies.find(
-      (company) => websiteHostname(company.websiteUrl) === websiteHost,
+    const websiteMatch = uniqueCompanyMatch(
+      input.existingCompanies
+        .filter((company) => websiteHostname(company.websiteUrl) === websiteHost)
+        .map((company) => company.id),
     );
-    if (websiteMatch) {
+    if (websiteMatch.outcome === "ambiguous") {
+      return ambiguousMatch(normalizedName, `website host ${websiteHost}`);
+    }
+    if (websiteMatch.outcome === "unique") {
       return {
-        companyId: websiteMatch.id,
+        companyId: websiteMatch.companyId,
         grade: "website",
         normalizedName,
         reason: `website host match: ${websiteHost}`,
-      };
-    }
-  }
-
-  for (const company of input.existingCompanies) {
-    const companyNormalized = normalizeEmployerName(company.name);
-    if (companyNormalized.length > 0 && companyNormalized === normalizedName) {
-      return {
-        companyId: company.id,
-        grade: "normalized",
-        normalizedName,
-        reason: "normalized name match",
       };
     }
   }
