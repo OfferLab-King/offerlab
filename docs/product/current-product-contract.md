@@ -31,9 +31,9 @@ The current implementation contract covers:
   employers' official public career websites and official public ATS job-board APIs, organised
   by sector, subsector and opportunity type, covering general and experienced roles as well as
   graduate and other early-career opportunities, with deterministic listing eligibility and
-  publication pipelines, source permission review, owner-scoped member saves, honest freshness
+  publication pipelines, independently monitored official sources, owner-scoped member saves, honest freshness
   and official application links (see amended ADR 0023);
-- one combined Employers & sectors directory, with a separately permission-gated priority cohort
+- one combined Employers & sectors directory, with a priority cohort
   of up to 500 UK-relevant employers and honest zero-current-role states; legacy standalone sector
   routes redirect into this directory;
 - content-free, database-enforced member and account request ceilings for outbound job search;
@@ -69,7 +69,10 @@ in this contract still apply.
 - In-product payments require a separate decision covering provider, pricing records, refunds, tax/accounting boundaries, entitlements and operational ownership. Stripe is not currently approved.
 - A production AI provider requires the privacy, evaluation, model, cost and kill-switch gates in `ai-product-strategy.md`. AI-assisted job classification and enrichment additionally require the eligibility-pipeline gates in the founder's 10 August 2026 decision.
 - JSearch production use requires a fresh recorded decision: the founder's 10 August 2026 decision temporarily disables it in favour of the OfferLab catalogue. Re-enabling JSearch requires recorded approval of the provider's commercial display, retention and automated-use terms.
-- Production operation of the job catalogue requires the `JOB_CATALOG_ENABLED` gate and per-source permission reviews; production crawling and AI enrichment are not approved by this contract alone.
+- Production operation of the job catalogue requires the `JOB_CATALOG_ENABLED` gate. Official,
+  unauthenticated public employer sources do not require a separate manual permission gate.
+  OpenCode Go or other hosted AI enrichment remains separately controlled by the documented model,
+  privacy, evaluation, cost and kill-switch gates.
 
 ### Not approved
 
@@ -79,8 +82,6 @@ in this contract still apply.
   numerator, denominator and non-predictive limitation;
 - scraping, crawling or republishing LinkedIn, Indeed, Glassdoor, Reed, Bright Network or any
   other commercial job aggregator without explicit founder approval of that source;
-- automated ingestion from authenticated pages, private APIs, or any source with bot-protection
-  bypass;
 - silent AI or coach edits to member source records; a grounded suggested revision is permitted
   only as a comparison that the member explicitly copies and then saves;
 - an open tutor marketplace, automatic tutor/peer matching or unrestricted member-created rooms;

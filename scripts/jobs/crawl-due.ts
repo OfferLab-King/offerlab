@@ -1,6 +1,6 @@
 import { runSourceCrawl } from "../../src/modules/job-catalog/application/ingestion";
 import { readCrawlerConfiguration } from "../../src/modules/job-catalog/application/config";
-import { listDueCompanies } from "../../src/modules/job-catalog/infrastructure/company-repository";
+import { listDueJobSources } from "../../src/modules/job-catalog/infrastructure/job-source-repository";
 import { withCrawlerRole } from "../../src/modules/job-catalog/infrastructure/crawler-database";
 import {
   closeCrawlerDatabase,
@@ -31,7 +31,7 @@ const locked = await withGlobalCrawlLock("due-run", async () => {
   }
 
   const dueCompanies = await withCrawlerRole((database) =>
-    listDueCompanies(database, now, options.limit),
+    listDueJobSources(database, now, options.limit),
   );
 
   logger.info({
@@ -47,12 +47,12 @@ const locked = await withGlobalCrawlLock("due-run", async () => {
     while (queue.length > 0) {
       const company = queue.shift()!;
       const outcome = await runSourceCrawl({
-        company,
+        source: company,
         configuration,
         dryRun: options.dryRun,
         now,
       });
-      results.push({ outcome, slug: company.slug });
+      results.push({ outcome, slug: `${company.companySlug}/${company.sourceSlug}` });
     }
   });
   await Promise.all(workers);

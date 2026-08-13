@@ -1,5 +1,9 @@
 import { requireAdministrator } from "../../../modules/identity-access/application/authorization";
 import { readJobCatalogAdmin } from "../../../modules/job-catalog/application/admin";
+import type {
+  LatestSourceRunResult,
+  SourceOperationalState,
+} from "../../../modules/job-catalog/domain/source-operational-state";
 import {
   opportunityTypes,
   opportunityTypeLabels,
@@ -14,42 +18,77 @@ import {
   overrideClassification,
   overrideEligibility,
   overridePublication,
-  recordReview,
-  updateCrawlPermission,
+  requestSourceRun,
   updateSourcePause,
+  updateSourceUrls,
 } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const statusLabels = {
-  failing: "Failing",
-  healthy: "Healthy",
+  active: "Active",
+  archived: "Archived",
   paused: "Paused",
-  warning: "Warning",
 } as const;
 
-const robotsLabels = {
-  allowed: "Allowed",
-  blocked: "Blocked",
-  not_checked: "Not checked",
-  unknown: "Unknown",
-} as const;
+function LatestResult({ latest }: { latest: LatestSourceRunResult }) {
+  if (latest.kind === "succeeded") {
+    return (
+      <p>
+        Last run succeeded · discovered {latest.jobsDiscovered} · new {latest.jobsNew} · updated{" "}
+        {latest.jobsUpdated} · deactivated {latest.jobsDeactivated} ·{" "}
+        {latest.finishedAt.toISOString()}
+      </p>
+    );
+  }
+  return (
+    <p className="cms-run-error">
+      Last run failed · {latest.errorCode ?? "unknown"} · {latest.finishedAt.toISOString()}
+    </p>
+  );
+}
 
-const termsLabels = {
-  allowed: "Allowed",
-  blocked: "Blocked",
-  not_reviewed: "Not reviewed",
-  unknown: "Unknown",
-} as const;
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
+function SourceState({ state, sourceId }: { state: SourceOperationalState; sourceId: string }) {
+  switch (state.kind) {
+    case "queued":
+      return (
+        <>
+          <span className="status-badge">Queued</span>
+          <p className="hint">Run requested · the worker will pick it up.</p>
+        </>
+      );
+    case "running":
+      return (
+        <>
+          <span className="status-badge">Running</span>
+          <p className="hint">Crawl started at {state.startedAt.toISOString()}.</p>
+        </>
+      );
+    case "paused":
+      return <p className="hint">Paused · crawls are disabled until the source is resumed.</p>;
+    case "archived":
+      return <p className="hint">Archived · crawls are disabled.</p>;
+    case "ready":
+      return (
+        <>
+          <form action={requestSourceRun} className="cms-job-source-form">
+            <input name="sourceId" type="hidden" value={sourceId} />
+            <button type="submit">Run now</button>
+          </form>
+          {state.latest ? (
+            <LatestResult latest={state.latest} />
+          ) : (
+            <p className="hint">Never run.</p>
+          )}
+        </>
+      );
+  }
 }
 
 export default async function JobSourcesPage() {
-  await requireAdministrator();
-  const view = await readJobCatalogAdmin();
+  const administrator = await requireAdministrator();
+  const view = await readJobCatalogAdmin(administrator.userId);
 
   return (
     <main className="cms-page admin-jobs-page">
@@ -58,9 +97,9 @@ export default async function JobSourcesPage() {
           <p className="eyebrow">Administrator operations</p>
           <h1>Job sources</h1>
           <p>
-            Sources are only crawled when marked &ldquo;Crawling allowed&rdquo; and a review is
-            recorded. Verify each employer&apos;s official careers site, ATS and terms before
-            enabling. Run crawls from the server with <code> pnpm jobs:crawl:due</code>.
+            Maintain each employer&apos;s official early-career and professional sources, inspect
+            URL health, or request an immediate run. Network crawling never runs inside the web
+            request.
           </p>
         </div>
       </header>
@@ -68,22 +107,28 @@ export default async function JobSourcesPage() {
       <section className="cms-operations-section" aria-labelledby="sources">
         <div className="cms-section-heading">
           <div>
-            <h2 id="sources">Source registry and permission review</h2>
-            <p>Permission, review provenance and crawl health for each employer source.</p>
+            <h2 id="sources">Employer source registry</h2>
+            <p>Independent schedule, health and controls for every official employer source.</p>
+            <p className="hint">
+              Run now records a durable crawl request; crawling happens outside the web process.
+              Local development: start the worker with <code>pnpm dev:jobs</code>. Production: the
+              installed worker service handles the same queue.
+            </p>
           </div>
         </div>
         <ul className="cms-job-source-list">
-          {view.companies.map((company) => (
+          {view.sources.map((company) => (
             <li className="cms-operation-card cms-job-source" key={company.id}>
               <div className="cms-job-source-head">
-                <h3>{company.name}</h3>
+                <h3>
+                  {company.company_name} · {company.source_name}
+                </h3>
                 <span className="status-badge">
-                  {statusLabels[company.crawl_status as keyof typeof statusLabels] ??
-                    company.crawl_status}
+                  {statusLabels[company.status as keyof typeof statusLabels] ?? company.status}
                 </span>
               </div>
               <p>
-                {company.source_type} · {company.ats_provider ?? "no ATS"} · every{" "}
+                {company.channel.replaceAll("_", " ")} · {company.source_type} · every{" "}
                 {company.crawl_frequency_minutes} minutes
               </p>
               <dl className="cms-job-source-facts">
@@ -110,95 +155,64 @@ export default async function JobSourcesPage() {
                   <dd>{company.consecutive_failures}</dd>
                 </div>
                 <div>
-                  <dt>Review date</dt>
+                  <dt>Landing page</dt>
                   <dd>
-                    {company.review_date
-                      ? company.review_date.toISOString().slice(0, 10)
-                      : "not reviewed"}
+                    {company.landing_health_status}
+                    {company.landing_last_status_code
+                      ? ` · ${company.landing_last_status_code}`
+                      : ""}
                   </dd>
                 </div>
                 <div>
-                  <dt>Robots</dt>
+                  <dt>Crawl endpoint</dt>
                   <dd>
-                    {robotsLabels[company.robots_result as keyof typeof robotsLabels] ??
-                      company.robots_result}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Terms</dt>
-                  <dd>
-                    {termsLabels[company.terms_result as keyof typeof termsLabels] ??
-                      company.terms_result}
+                    {company.endpoint_health_status}
+                    {company.endpoint_last_status_code
+                      ? ` · ${company.endpoint_last_status_code}`
+                      : ""}
                   </dd>
                 </div>
               </dl>
-              <form action={updateCrawlPermission} className="cms-job-source-form">
-                <input name="companyId" type="hidden" value={company.id} />
-                <label>
-                  Crawl permission
-                  <select defaultValue={company.crawl_allowed} name="crawlAllowed">
-                    <option value="allowed">Crawling allowed</option>
-                    <option value="unknown">Permission unknown</option>
-                    <option value="blocked">Blocked</option>
-                  </select>
-                </label>
-                <button type="submit">Update permission</button>
-              </form>
-              <form action={updateSourcePause} className="cms-job-source-form">
-                <input name="companyId" type="hidden" value={company.id} />
-                <input
-                  name="paused"
-                  type="hidden"
-                  value={company.crawl_status === "paused" ? "false" : "true"}
-                />
-                <button className="button-link secondary" type="submit">
-                  {company.crawl_status === "paused" ? "Resume source" : "Pause source"}
-                </button>
-              </form>
+              <div className="cms-job-source-state">
+                <SourceState sourceId={company.id} state={company.operationalState} />
+                <form action={updateSourcePause} className="cms-job-source-form">
+                  <input name="sourceId" type="hidden" value={company.id} />
+                  <input
+                    name="paused"
+                    type="hidden"
+                    value={company.status === "paused" ? "false" : "true"}
+                  />
+                  <button
+                    className="button-link secondary"
+                    type="submit"
+                    disabled={company.status === "archived"}
+                  >
+                    {company.status === "paused" ? "Resume source" : "Pause source"}
+                  </button>
+                </form>
+              </div>
               <details className="cms-review-details">
-                <summary>Record source review</summary>
-                <form action={recordReview} className="cms-review-form">
-                  <input name="companyId" type="hidden" value={company.id} />
+                <summary>Edit official source URLs</summary>
+                <form action={updateSourceUrls} className="cms-review-form">
+                  <input name="sourceId" type="hidden" value={company.id} />
                   <label>
-                    Review date
-                    <input defaultValue={today()} name="reviewDate" type="date" />
-                  </label>
-                  <label>
-                    Robots.txt result
-                    <select defaultValue={company.robots_result} name="robotsResult">
-                      <option value="allowed">Allowed</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="unknown">Unknown</option>
-                      <option value="not_checked">Not checked</option>
-                    </select>
-                  </label>
-                  <label>
-                    Terms result
-                    <select defaultValue={company.terms_result} name="termsResult">
-                      <option value="allowed">Allowed</option>
-                      <option value="blocked">Blocked</option>
-                      <option value="unknown">Unknown</option>
-                      <option value="not_reviewed">Not reviewed</option>
-                    </select>
-                  </label>
-                  <label>
-                    Evidence / reference URL
+                    Public careers page
                     <input
-                      defaultValue={company.evidence_url ?? ""}
-                      name="evidenceUrl"
+                      defaultValue={company.careers_url}
+                      name="careersUrl"
+                      type="url"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Machine-readable endpoint (optional)
+                    <input
+                      defaultValue={company.crawl_endpoint_url ?? ""}
+                      name="crawlEndpointUrl"
                       type="url"
                     />
                   </label>
-                  <label>
-                    Review notes
-                    <textarea
-                      defaultValue={company.review_notes}
-                      maxLength={2000}
-                      name="reviewNotes"
-                      rows={3}
-                    />
-                  </label>
-                  <button type="submit">Save review</button>
+                  <button type="submit">Save URLs</button>
                 </form>
               </details>
             </li>

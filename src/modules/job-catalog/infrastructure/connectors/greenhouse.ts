@@ -5,7 +5,6 @@ import { JobFetchError } from "./errors";
 import { fetchText } from "./http-client";
 import {
   connectorToken,
-  limited,
   parseOptionalDate,
   type ConnectorContext,
   type DiscoveredJob,
@@ -50,11 +49,12 @@ export function createGreenhouseConnector(): JobSourceConnector {
       }
       const baseUrl = `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(token)}/jobs`;
       const discovered: DiscoveredJob[] = [];
+      const seenExternalIds = new Set<string>();
       for (let page = 1; page <= MAX_GREENHOUSE_PAGES; page += 1) {
         const params = new URLSearchParams({
           content: "true",
           page: String(page),
-          per_page: "100",
+          per_page: "500",
         });
         const response = await fetchText(`${baseUrl}?${params.toString()}`, {
           httpClient: context.httpClient,
@@ -68,13 +68,23 @@ export function createGreenhouseConnector(): JobSourceConnector {
         if (!Array.isArray(payload.jobs)) {
           throw new JobFetchError("parser_changed", "greenhouse_list_missing_jobs");
         }
-        const pageJobs = payload.jobs.map((job) => normalizeGreenhouseJob(job, token));
-        discovered.push(...limited(pageJobs, context.maxJobs - discovered.length));
-        const hasMore = payload.jobs.length >= 100 && discovered.length < context.maxJobs;
-        if (!hasMore) break;
+        let added = 0;
+        for (const job of payload.jobs.map((item) => normalizeGreenhouseJob(item, token))) {
+          if (discovered.length >= context.maxJobs) break;
+          if (job.externalJobId !== null && seenExternalIds.has(job.externalJobId)) continue;
+          if (job.externalJobId !== null) seenExternalIds.add(job.externalJobId);
+          discovered.push(job);
+          added += 1;
+        }
+        const returnedFullPage = payload.jobs.length >= 500;
+        if (added === 0 || discovered.length >= context.maxJobs || !returnedFullPage) break;
       }
       if (discovered.length === 0) {
-        logger.info({ event: "job_source_listing_empty", source: context.company.slug });
+        logger.info({
+          event: "job_source_listing_empty",
+          source:
+            "sourceSlug" in context.company ? context.company.sourceSlug : context.company.slug,
+        });
       }
       return discovered;
     },

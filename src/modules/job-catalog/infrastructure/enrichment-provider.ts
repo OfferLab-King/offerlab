@@ -16,6 +16,7 @@ export type EnrichmentConfiguration = Readonly<{
   apiKey: string;
   baseUrl: string;
   model: string;
+  providerName?: "deepseek" | "opencode_go";
   timeoutMs?: number;
 }>;
 
@@ -104,7 +105,7 @@ export function createEnrichmentProvider(
           if (!response.ok) {
             logger.warn({
               event: "job_enrichment_provider_failed",
-              provider: "deepseek",
+              provider: configuration.providerName ?? "deepseek",
               statusCode: response.status,
             });
             throw new JobFetchError("source_unavailable", "enrichment_provider_unavailable", {
@@ -172,7 +173,7 @@ export function createEnrichmentProvider(
             latencyMs,
             model: configuration.model,
             outputTokens,
-            provider: "deepseek",
+            provider: configuration.providerName ?? "deepseek",
             version: JOB_ENRICHMENT_PROMPT_VERSION,
           });
           return {

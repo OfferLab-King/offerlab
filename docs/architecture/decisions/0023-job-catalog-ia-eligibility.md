@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-10
-- Amended: 2026-08-11
+- Amended: 2026-08-12
 
 ## Context
 
@@ -33,14 +33,14 @@ only, never a data source.
    queue); `ineligible` → `suppressed`. Rows whose `classification_source =
 'administrator'` are never reclassified or republished automatically.
    Career level is retained as classification evidence but is not a publication
-   gate. A current job listing from a reviewed source may be eligible whether it
+   gate. A current job listing from a verified official source may be eligible whether it
    is graduate, general or experienced-hire work. Ambiguous source records still
    require review. Only `eligible`, `published`, `active` jobs are publicly
    queryable.
-3. **Source permission review provenance.** `app.company` records review date,
-   reviewer, robots result, terms result, evidence URL and review notes. Only
-   `crawl_allowed = 'allowed'` sources are crawled; `unknown` and `blocked`
-   sources never run.
+3. **Independent official sources.** `app.company` records public employer
+   identity while `app.job_source` records independently scheduled official
+   early-career, professional, apprenticeship or general sources. Active,
+   unauthenticated public employer sources require no separate permission gate.
 4. **Multiple locations.** New `app.job_location` table (city, region, country,
    source text, remote/hybrid/on-site flags, position) so one requisition can
    appear in several locations without duplicate job records.
@@ -63,24 +63,24 @@ only, never a data source.
    subsector and company browsing. The former `/jobs/sectors/**` pages are
    permanent compatibility redirects, not a second presentation of the same
    taxonomy. Job-list sector filters remain URL-backed on `/jobs`.
-9. **Directory metadata is not source permission.** `app.company` stores an
+9. **Directory metadata is not source state.** `app.company` stores an
    editorial `directory_sector_key`, optional internal
    `directory_priority_rank` (1–500) and `directory_visible`. These fields let
    a reviewed priority employer appear honestly with zero current roles. They
-   never change `crawl_allowed`, eligibility or publication. Public directory
+   never changes source status, eligibility or publication. Public directory
    queries union visible zero-role employers with employers that have current
    eligible published jobs.
 
 ## Consequences
 
-- Reviewed whole-company feeds may populate the catalogue across career levels;
-  source permission, active state and publication status remain mandatory.
+- Verified whole-company feeds may populate the catalogue across career levels;
+  source active state, UK admission and publication status remain mandatory.
 - Deterministic classification is auditable and reproducible; every public job
   has machine-readable eligibility reasons and evidence.
 - Administrator overrides are explicit, owner-attributed, versioned and
   audited.
-- Unverified sources stay dormant; the initial registry covers every top-level
-  sector only where an official identifier could be verified (gaps documented).
+- Incomplete sources stay inactive; the first rollout prioritises approximately
+  100 verified UK-relevant employers and supports expansion to 500.
 - The combined directory may be broader than the current job catalogue, but it
   labels zero-role employers and never manufactures vacancy counts.
 - The pipeline is an expansion of ADR 0022; that ADR remains valid for the
@@ -89,5 +89,4 @@ only, never a data source.
 ## Notes for operators
 
 See `docs/operations/job-catalog-operations.md`. Production activation requires
-`JOB_CATALOG_ENABLED=true`, per-source permission reviews, and the AI gates
-before any enrichment runs.
+`JOB_CATALOG_ENABLED=true`; the AI gates remain required before enrichment runs.

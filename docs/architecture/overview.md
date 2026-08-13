@@ -28,10 +28,11 @@ There is no separate backend deployment. Route handlers and server actions are a
   server-only adapter; private saved targets are handed to the Career documents module through its
   public application boundary. Content-free database reservations enforce member and provider-
   account request ceilings across web instances.
-- **Job catalog:** a public UK early-career job catalogue sourced from employer career sites and
-  supported ATS job-board APIs. Database-backed source registry with explicit crawl permission and
-  review provenance, sector/subsector/opportunity-type taxonomy, a deterministic eligibility and
-  publication pipeline, change detection, optional strict-schema DeepSeek enrichment,
+- **Job catalog:** a public UK job catalogue across career levels, sourced from employer career
+  sites and supported ATS job-board APIs. Public employer identities own independently scheduled
+  official sources, with deterministic UK-location admission, sector/subsector/opportunity-type
+  taxonomy, a deterministic eligibility and publication pipeline, change detection, and optional
+  provider-neutral strict-schema OpenCode Go / DeepSeek enrichment,
   deduplicated storage, owner-scoped member saves, and public SEO-friendly discovery. Crawling
   runs as a least-privilege CLI worker (`offerlab_crawler`), never inside the web process. Only
   eligible, published, active roles are publicly visible.

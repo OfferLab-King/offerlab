@@ -1,15 +1,17 @@
+import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
+import type { SourceStatus } from "../domain/source";
 import {
-  withApplicationRole,
-  withApplicationUser,
-} from "../../../infrastructure/database/runtime-connections";
+  deriveSourceOperationalState,
+  type LatestSourceRun,
+  type SourceOperationalState,
+} from "../domain/source-operational-state";
 import {
-  listCompaniesForAdmin,
-  recordSourceReview,
-  setCompanyCrawlAllowed,
-  setCompanyPaused,
-  type CompanyAdminRow,
-  type SourceReviewInput,
-} from "../infrastructure/company-repository";
+  listJobSourcesForAdmin,
+  requestJobSourceRun,
+  setJobSourceStatus,
+  updateJobSourceUrls,
+  type JobSourceAdminRow,
+} from "../infrastructure/job-source-repository";
 import {
   listRecentEvents,
   listRecentRuns,
@@ -23,8 +25,13 @@ import {
   type ClassificationOverrideInput,
 } from "../infrastructure/job-repository";
 
+export type JobSourceAdminViewRow = JobSourceAdminRow &
+  Readonly<{
+    operationalState: SourceOperationalState;
+  }>;
+
 export type JobCatalogAdminView = Readonly<{
-  companies: readonly CompanyAdminRow[];
+  sources: readonly JobSourceAdminViewRow[];
   classificationQueue: readonly ClassificationQueueRow[];
   eligibilityQueue: readonly EligibilityQueueRow[];
   recentEvents: readonly RecentEventRow[];
@@ -52,11 +59,13 @@ export type ClassificationQueueRow = Readonly<{
   updated_at: Date;
 }>;
 
-export async function readJobCatalogAdmin(): Promise<JobCatalogAdminView> {
-  return withApplicationRole(async (database) => {
-    const [companies, recentRuns, recentEvents, eligibilityQueue, classificationQueue] =
+export async function readJobCatalogAdmin(
+  administratorUserId: string,
+): Promise<JobCatalogAdminView> {
+  return withApplicationUser(administratorUserId, async (database) => {
+    const [sources, recentRuns, recentEvents, eligibilityQueue, classificationQueue] =
       await Promise.all([
-        listCompaniesForAdmin(database),
+        listJobSourcesForAdmin(database),
         listRecentRuns(database, 25),
         listRecentEvents(database, 25),
         listEligibilityReviewQueue(database, 50),
@@ -64,12 +73,34 @@ export async function readJobCatalogAdmin(): Promise<JobCatalogAdminView> {
       ]);
     return {
       classificationQueue,
-      companies,
+      sources: sources.map((source) => ({
+        ...source,
+        operationalState: deriveSourceOperationalState({
+          status: source.status as SourceStatus,
+          runRequestedAt: source.run_requested_at,
+          latestRun: latestRunOf(source),
+        }),
+      })),
       eligibilityQueue,
       recentEvents,
       recentRuns,
     };
   });
+}
+
+function latestRunOf(source: JobSourceAdminRow): LatestSourceRun | null {
+  if (!source.latest_run_started_at) return null;
+  return {
+    status: source.latest_run_status as LatestSourceRun["status"],
+    startedAt: source.latest_run_started_at,
+    finishedAt: source.latest_run_finished_at,
+    jobsDeactivated: source.latest_run_jobs_deactivated,
+    jobsDiscovered: source.latest_run_jobs_discovered,
+    jobsNew: source.latest_run_jobs_new,
+    jobsUnchanged: source.latest_run_jobs_unchanged,
+    jobsUpdated: source.latest_run_jobs_updated,
+    errorSummary: source.latest_run_error_summary,
+  };
 }
 
 async function insertAuditEvent(
@@ -90,45 +121,42 @@ async function insertAuditEvent(
 
 export async function pauseCompanySource(
   administratorUserId: string,
-  companyId: string,
+  sourceId: string,
   paused: boolean,
 ): Promise<void> {
   await withApplicationUser(administratorUserId, (database) =>
-    setCompanyPaused(database, companyId, paused),
+    setJobSourceStatus(database, sourceId, paused ? "paused" : "active"),
   );
   await insertAuditEvent(
     administratorUserId,
     paused ? "job_source.paused" : "job_source.resumed",
     "job_source",
-    companyId,
+    sourceId,
   );
 }
 
-export async function setCompanyCrawlPermission(
+export async function requestSourceRunForAdmin(
   administratorUserId: string,
-  companyId: string,
-  crawlAllowed: "allowed" | "unknown" | "blocked",
+  sourceId: string,
 ): Promise<void> {
-  await withApplicationUser(administratorUserId, (database) =>
-    setCompanyCrawlAllowed(database, companyId, crawlAllowed),
+  const result = await withApplicationUser(administratorUserId, (database) =>
+    requestJobSourceRun(database, sourceId, administratorUserId),
   );
-  await insertAuditEvent(
-    administratorUserId,
-    "job_source.permission_changed",
-    "job_source",
-    companyId,
-  );
+  if (result === "unavailable") throw new Error("job_source_not_active");
+  if (result === "already_requested") return;
+  await insertAuditEvent(administratorUserId, "job_source.run_requested", "job_source", sourceId);
 }
 
-export async function recordCompanySourceReview(
+export async function updateSourceUrlsForAdmin(
   administratorUserId: string,
-  companyId: string,
-  input: Omit<SourceReviewInput, "reviewerUserId">,
+  sourceId: string,
+  input: Readonly<{ careersUrl: string; crawlEndpointUrl: string | null }>,
 ): Promise<void> {
-  await withApplicationUser(administratorUserId, (database) =>
-    recordSourceReview(database, companyId, { ...input, reviewerUserId: administratorUserId }),
+  const updated = await withApplicationUser(administratorUserId, (database) =>
+    updateJobSourceUrls(database, sourceId, input.careersUrl, input.crawlEndpointUrl),
   );
-  await insertAuditEvent(administratorUserId, "job_source.reviewed", "job_source", companyId);
+  if (!updated) throw new Error("job_source_not_found");
+  await insertAuditEvent(administratorUserId, "job_source.updated", "job_source", sourceId);
 }
 
 export async function overrideJobClassificationForAdmin(

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isSourceDue, nextCheckAtWithJitter, sortDueSources } from "./scheduler";
+import {
+  isSourceDue,
+  nextCheckAfterFailure,
+  nextCheckAtWithJitter,
+  sortDueSources,
+} from "./scheduler";
 
 describe("source scheduler", () => {
   it("treats never-checked sources as due", () => {
@@ -20,6 +25,18 @@ describe("source scheduler", () => {
         new Date("2026-08-01T12:00:00Z"),
       ),
     ).toBe(false);
+  });
+
+  it("prioritises a manual request even when the daily schedule is in the future", () => {
+    const now = new Date("2026-08-01T12:00:00Z");
+    expect(
+      isSourceDue({ nextCheckAt: new Date("2026-08-02T12:00:00Z"), runRequestedAt: now }, now),
+    ).toBe(true);
+    const sorted = sortDueSources([
+      { id: "scheduled", nextCheckAt: now, runRequestedAt: null },
+      { id: "manual", nextCheckAt: new Date("2026-08-02T12:00:00Z"), runRequestedAt: now },
+    ]);
+    expect(sorted.map(({ id }) => id)).toEqual(["manual", "scheduled"]);
   });
 
   it("jitters next checks around the frequency without drifting on average", () => {
@@ -48,5 +65,50 @@ describe("source scheduler", () => {
       "2026-08-02T00:00:00.000Z",
       "2026-08-03T00:00:00.000Z",
     ]);
+  });
+});
+
+describe("nextCheckAfterFailure", () => {
+  const now = new Date("2026-08-12T12:00:00Z");
+
+  it("keeps the normal jittered frequency for non-throttle failures", () => {
+    const next = nextCheckAfterFailure({
+      crawlFrequencyMinutes: 1440,
+      consecutiveFailures: 2,
+      now,
+      throttleLike: false,
+    });
+    const hours = (next.getTime() - now.getTime()) / 3_600_000;
+    expect(hours).toBeGreaterThan(21.6);
+    expect(hours).toBeLessThan(26.4);
+  });
+
+  it("backs off exponentially for throttle-like failures", () => {
+    expect(
+      nextCheckAfterFailure({
+        crawlFrequencyMinutes: 1440,
+        consecutiveFailures: 1,
+        now,
+        throttleLike: true,
+      }).getTime() - now.getTime(),
+    ).toBe(2 * 3_600_000);
+    expect(
+      nextCheckAfterFailure({
+        crawlFrequencyMinutes: 1440,
+        consecutiveFailures: 3,
+        now,
+        throttleLike: true,
+      }).getTime() - now.getTime(),
+    ).toBe(8 * 3_600_000);
+  });
+
+  it("caps the throttle backoff at 24 hours", () => {
+    const next = nextCheckAfterFailure({
+      crawlFrequencyMinutes: 1440,
+      consecutiveFailures: 10,
+      now,
+      throttleLike: true,
+    });
+    expect(next.getTime() - now.getTime()).toBe(24 * 3_600_000);
   });
 });

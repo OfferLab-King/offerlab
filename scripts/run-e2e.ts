@@ -63,23 +63,29 @@ const roleDatabaseUrl = (role: string) => {
   url.password = "postgres";
   return url.toString();
 };
-async function reserveAvailablePort(): Promise<string> {
-  if (process.env.E2E_PORT) return process.env.E2E_PORT;
-  const server = createServer();
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
+/**
+ * The E2E app runs on a fixed port so Supabase email-verification links can
+ * redirect back to it under any gotrue version: the port must be allow-listed
+ * in supabase/config.toml (additional_redirect_urls) and match the playwright
+ * configuration default.
+ */
+const e2ePort = process.env.E2E_PORT ?? "3106";
+
+async function isPortInUse(port: number): Promise<boolean> {
+  return await new Promise<boolean>((resolve) => {
+    const server = createServer();
+    server.once("error", () => resolve(true));
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => resolve(false));
+    });
   });
-  const address = server.address();
-  if (!address || typeof address === "string") throw new Error("Could not reserve an E2E port.");
-  const port = String(address.port);
-  await new Promise<void>((resolve, reject) =>
-    server.close((error) => (error ? reject(error) : resolve())),
-  );
-  return port;
 }
 
-const e2ePort = await reserveAvailablePort();
+if (!process.env.E2E_PORT && (await isPortInUse(Number(e2ePort)))) {
+  throw new Error(
+    `E2E port ${e2ePort} is already in use. Stop the leftover E2E server or set E2E_PORT explicitly.`,
+  );
+}
 const e2eAnswerCoachProvider = process.env.E2E_ANSWER_COACH_PROVIDER ?? "local";
 const e2eUsesDeepSeek = e2eAnswerCoachProvider === "deepseek";
 const e2eDistDirectory = `.next-e2e-${e2ePort}`;

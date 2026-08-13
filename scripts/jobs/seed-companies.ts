@@ -1,5 +1,7 @@
 import postgres from "postgres";
+import { employerManifest } from "../../src/modules/job-catalog/application/employer-cohort";
 import { seedInitialCohort } from "../../src/modules/job-catalog/application/seed-companies";
+import { clearDirectoryPriorityRanks } from "../../src/modules/job-catalog/infrastructure/company-repository";
 import { isLocalDatabaseUrl } from "../learn-demo-content";
 import { loadLocalEnvironment } from "../shared/load-local-environment";
 
@@ -17,11 +19,15 @@ if (!isLocalDatabaseUrl(databaseUrl))
 
 const database = postgres(databaseUrl, { max: 1, prepare: false });
 try {
-  const created = await database.begin((transaction) => seedInitialCohort(transaction));
-  for (const company of created) {
-    process.stdout.write(
-      `Seeded ${company.name} (${company.slug}) as crawl_allowed=unknown; verify and enable before crawling.\n`,
+  const created = await database.begin(async (transaction) => {
+    await clearDirectoryPriorityRanks(
+      transaction,
+      employerManifest.map((company) => company.slug),
     );
+    return seedInitialCohort(transaction);
+  });
+  for (const company of created) {
+    process.stdout.write(`Seeded ${company.name} (${company.slug}).\n`);
   }
 } finally {
   await database.end();

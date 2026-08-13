@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:bypass": "tsx scripts/run-local-bypass.ts",
+    "dev:jobs": "tsx scripts/dev-with-jobs.ts",
     "build": "next build",
     "start": "next start",
     "format": "prettier --write .",
@@ -44,6 +45,7 @@
     "jobs:enrich": "tsx scripts/jobs/enrich.ts",
     "jobs:seed-companies": "tsx scripts/jobs/seed-companies.ts",
     "jobs:status": "tsx scripts/jobs/status.ts",
+    "jobs:clean-synthetic-catalog": "tsx scripts/jobs/clean-synthetic-catalog.ts",
     "jobs:reclassify": "tsx scripts/jobs/reclassify.ts",
     "jobs:verify-sources": "tsx scripts/jobs/verify-sources.ts",
     "security:audit": "pnpm audit --audit-level high",
@@ -58,6 +60,7 @@
     "node-html-parser": "9.0.1",
     "pdfjs-dist": "6.2.108",
     "pino": "10.3.1",
+    "playwright": "1.61.1",
     "postgres": "3.4.9",
     "react": "19.2.7",
     "react-dom": "19.2.7",

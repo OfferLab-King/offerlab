@@ -87,6 +87,8 @@ export async function fetchText(
     headers?: Readonly<Record<string, string>>;
     httpClient: HttpClient;
     retryable?: boolean;
+    method?: "GET" | "POST";
+    body?: string;
   }>,
 ): Promise<HttpResponse> {
   if (!isSafeWebUrl(url)) {
@@ -99,7 +101,16 @@ export async function fetchText(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), options.httpClient.timeoutMs);
     try {
-      const response = await fetchWithBoundedRedirects(url, options.httpClient, controller.signal);
+      const request: { body?: string; method: "GET" | "POST" } = {
+        method: options.method ?? "GET",
+      };
+      if (options.body !== undefined) request.body = options.body;
+      const response = await fetchWithBoundedRedirects(
+        url,
+        options.httpClient,
+        controller.signal,
+        request,
+      );
       if (response.status === 403) {
         logger.warn({
           event: "job_fetch_forbidden",
@@ -112,7 +123,9 @@ export async function fetchText(
         throw new JobFetchError("http_404", "http_404_not_found", { statusCode: 404 });
       }
       if (response.status === 429) {
+        const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get("retry-after"));
         throw new JobFetchError("http_429", "http_429_rate_limited", {
+          ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
           retryable: true,
           statusCode: 429,
         });
@@ -131,7 +144,7 @@ export async function fetchText(
       lastError = error;
       const shouldRetry = error instanceof JobFetchError ? error.retryable && retryable : retryable;
       if (shouldRetry && attempt < attempts - 1) {
-        const delay = backoffDelay(attempt);
+        const delay = retryDelayMs(error, attempt);
         logger.warn({
           attempt: attempt + 1,
           delayMs: delay,
@@ -151,22 +164,42 @@ export async function fetchText(
   throw lastError ?? new JobFetchError("source_unavailable", "source_unavailable");
 }
 
+function retryDelayMs(error: unknown, attempt: number): number {
+  if (error instanceof JobFetchError && error.retryAfterSeconds !== undefined) {
+    return Math.min(Math.max(error.retryAfterSeconds, 0), 3_600) * 1_000;
+  }
+  return backoffDelay(attempt);
+}
+
+export function parseRetryAfterSeconds(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isInteger(seconds) && seconds >= 0) return seconds;
+  const date = Date.parse(value);
+  if (Number.isFinite(date)) return Math.max(0, Math.ceil((date - Date.now()) / 1_000));
+  return undefined;
+}
+
 async function fetchWithBoundedRedirects(
   initialUrl: string,
   httpClient: HttpClient,
   signal: AbortSignal,
+  request: Readonly<{ body?: string; method: "GET" | "POST" }>,
 ): Promise<Response> {
   let currentUrl = initialUrl;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
     await httpClient.assertSafeUrl(currentUrl);
-    const response = await fetch(currentUrl, {
+    const init: RequestInit = {
       headers: {
         accept: "*/*",
         "user-agent": httpClient.userAgent,
       },
+      method: request.method,
       redirect: "manual",
       signal,
-    });
+    };
+    if (request.body !== undefined) init.body = request.body;
+    const response = await fetch(currentUrl, init);
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
       if (!location) return response;

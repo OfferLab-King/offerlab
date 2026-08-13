@@ -2,7 +2,7 @@
 
 **Status:** Approved  
 **Date:** 2026-07-19  
-**Last reviewed:** 2026-08-11
+**Last reviewed:** 2026-08-12
 **Authority:** Highest product authority. These decisions govern current implementation; references to Vertical Slice 01 describe the original foundation unless a paragraph explicitly limits itself to that slice.
 
 ## Product experience
@@ -17,7 +17,7 @@ are research and implementation history only. Their old non-goals, feature
 counts and staged-release boundaries must never be used to refuse or remove a
 later founder-approved capability. Scope discipline now means keeping the
 product coherent, secure, private and operationally supportable; it does not
-mean enforcing an MVP ceiling. Production safeguards, source permissions,
+mean enforcing an MVP ceiling. Production safeguards, source health controls,
 member data isolation, accessibility and truthful product claims remain
 binding.
 
@@ -87,7 +87,7 @@ experience and records the rules for the OfferLab job catalogue.
   collected from employers' official public career websites and official public
   ATS job-board APIs, in this source-order preference: (1) official public ATS
   job-board API; (2) employer's official structured job feed; (3) employer's
-  official careers pages after a recorded robots.txt and source review;
+  official careers pages with verified connector and URL configuration;
   (4) manually entered official employer job URL. JSearch may be reconsidered
   later; it is not part of this implementation.
 - **Bright Network is a product-structure reference only and is not an
@@ -106,13 +106,25 @@ experience and records the rules for the OfferLab job catalogue.
   naming who approved it, when, its scope, retention restrictions and evidence
   location, and both the approval gate and source-level permission before any
   request.
-- **Source permission discipline.** Every source remains disabled until an
-  administrator records: permission (allowed, blocked or unknown), review date,
-  reviewer, source type, robots result where applicable, relevant terms result,
-  evidence/reference URL and review notes. Only allowed sources may be crawled.
-  A public page is never silently treated as authorisation. Do not use
-  LinkedIn, Indeed, Glassdoor, Reed, another commercial job aggregator,
-  authenticated pages, private APIs or bot-protection bypasses.
+- **Official public employer sources.** As amended on 12 August 2026, an
+  official, unauthenticated public employer careers page or official public ATS
+  job-board API does not require a separate manual crawl-permission or terms-review
+  gate. Sources retain operational active, paused and archived states, URL and
+  connector verification, health reporting and emergency kill switches. Do not
+  use LinkedIn, Indeed, Glassdoor, Reed or another commercial job aggregator.
+- **Browser-rendered crawling and bot-walled public career sites.** Approved on
+  12 August 2026. The targeted crawler may use a real browser engine
+  (Playwright/Chromium) to render employer career pages, including public pages
+  protected by JavaScript challenges or anti-bot walls that block plain HTTP
+  clients. Browser-rendered sources (`needs_browser`) are part of the crawler,
+  with bounded concurrency and respectful request pacing. This decision removes
+  the earlier non-goals and security restrictions on browser automation, stealth
+  scraping, proxy rotation, CAPTCHA handling and bot-protection bypass for
+  official public employer career sources; those restrictions are removed from
+  the product contract, the targeted-company-crawler design and implementation
+  plan, ADR 0022, and the job-catalog operations guide. Sources remain public
+  and unauthenticated; Bright Network and other commercial aggregators remain
+  subject to their own terms and approval gates.
 - **Information architecture.** The catalogue uses two separate classification
   dimensions — sector (broad career family) and subsector (specific professional
   area) — plus an opportunity-type taxonomy that makes the full range of
@@ -142,16 +154,15 @@ experience and records the rules for the OfferLab job catalogue.
   is an operating limit, not a public quality ranking. Selection must record a
   current evidence basis and favour demonstrated UK hiring relevance: current
   graduate/employer research, large UK private and listed employers, major
-  public employers, and sector coverage. Directory inclusion does not grant
-  crawl permission, imply endorsement or claim a current vacancy. A company
-  appears with “No current roles” until an independently reviewed official
-  source produces an eligible published job.
+  public employers, and sector coverage. Directory inclusion does not imply
+  endorsement or claim a current vacancy. A company appears with “No current
+  roles” until a verified official source produces an eligible published job.
 - **Eligibility and publication pipeline.** Whole-company feeds must not
   automatically become public. Deterministic rules classify every job as
   eligible, ineligible or needs_review with machine-readable reasons and exact
   source evidence. Only eligible, published, active roles appear publicly.
   Eligibility establishes that a record is a current job listing from a
-  reviewed source; seniority or absence of graduate wording does not make it
+  verified official source; seniority or absence of graduate wording does not make it
   ineligible. Ambiguous source records remain needs_review and are never
   automatically published. Title-based sector and opportunity classification
   is overridden by contradictory description evidence.
@@ -163,6 +174,17 @@ experience and records the rules for the OfferLab job catalogue.
   publish a job; `JOB_LLM_ENABLED=false` by default; AI output requires
   structured schema validation, exact evidence, administrator confirmation for
   low-confidence classifications and synthetic evaluation before activation.
+- **Targeted company sources and UK admission.** As approved on 12 August 2026,
+  employer identity is separate from crawl-source identity. One employer may have
+  independently scheduled early-career, professional, apprenticeship and general
+  sources. Global employers are eligible when they have material UK operations,
+  but only UK-confirmed vacancies may publish. Explicit non-UK jobs are suppressed;
+  ambiguous locations remain unpublished for administrator review. The first
+  rollout uses approximately 100 verified priority employers and the same registry
+  scales to 500. Sources run daily through the least-privilege CLI worker; CMS may
+  request a run but never performs crawler traffic. Optional grounded job
+  structuring may use DeepSeek V4 Flash through OpenCode Go behind the existing
+  provider-neutral, strict-schema and kill-switch boundaries.
 - **Feature gate.** A master `JOB_CATALOG_ENABLED` gate (default false) keeps
   the catalogue routes, APIs, sitemap entries, crawling and enrichment dormant
   until this feature is explicitly enabled for production. The web runtime

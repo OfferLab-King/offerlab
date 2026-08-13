@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll OfferLab due and manually requested job sources
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+RandomizedDelaySec=30
+Unit=offerlab-jobs.service
+
+[Install]
+WantedBy=timers.target

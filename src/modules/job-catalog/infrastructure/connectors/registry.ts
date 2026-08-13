@@ -1,6 +1,7 @@
-import type { SourceType } from "../../domain/source";
+import type { JobSource, SourceType } from "../../domain/source";
 import { JobFetchError } from "./errors";
 import { createAshbyConnector } from "./ashby";
+import { createBrowserHtmlConnector } from "./browser-html";
 import { createGenericHtmlConnector } from "./generic-html";
 import { createGreenhouseConnector } from "./greenhouse";
 import { createLeverConnector } from "./lever";
@@ -18,10 +19,13 @@ const connectors = new Map<SourceType, () => JobSourceConnector>([
   ["custom", createGenericHtmlConnector],
 ]);
 
-export function createConnectorForSource(sourceType: SourceType): JobSourceConnector {
-  const factory = connectors.get(sourceType);
+export function createConnectorForSource(source: JobSource): JobSourceConnector {
+  if (source.needsBrowser) {
+    return createBrowserHtmlConnector();
+  }
+  const factory = connectors.get(source.sourceType);
   if (!factory) {
-    throw new JobFetchError("unsupported", `no connector for source type ${sourceType}`);
+    throw new JobFetchError("unsupported", `no connector for source type ${source.sourceType}`);
   }
   return factory();
 }

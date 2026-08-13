@@ -15,7 +15,9 @@ import { upsertCompany } from "../../src/modules/job-catalog/infrastructure/comp
 import {
   applyCrawlPlan,
   listJobsForCompany,
+  listJobsForSource,
 } from "../../src/modules/job-catalog/infrastructure/job-repository";
+import { listJobSourcesForAdmin } from "../../src/modules/job-catalog/infrastructure/job-source-repository";
 
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
@@ -76,13 +78,84 @@ afterAll(async () => {
 });
 
 describe("job catalog", () => {
-  it("applies the schema", async () => {
-    const rows = await migrationDatabase<{ company: string | null; job: string | null }[]>`
+  it("applies the source-isolated schema", async () => {
+    const rows = await migrationDatabase<
+      {
+        company: string | null;
+        job: string | null;
+        job_source: string | null;
+      }[]
+    >`
       select
         to_regclass('app.company')::text as company,
-        to_regclass('app.job')::text as job
+        to_regclass('app.job')::text as job,
+        to_regclass('app.job_source')::text as job_source
     `;
-    expect(rows[0]).toEqual({ company: "app.company", job: "app.job" });
+    expect(rows[0]).toEqual({
+      company: "app.company",
+      job: "app.job",
+      job_source: "app.job_source",
+    });
+
+    const ownership = await migrationDatabase<
+      {
+        event_source: string | null;
+        job_source: string | null;
+        run_source: string | null;
+      }[]
+    >`
+      select
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job' and column_name = 'source_id') as job_source,
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job_ingestion_run' and column_name = 'source_id') as run_source,
+        (select data_type from information_schema.columns where table_schema = 'app' and table_name = 'job_source_event' and column_name = 'source_id') as event_source
+    `;
+    expect(ownership[0]).toEqual({
+      event_source: "uuid",
+      job_source: "uuid",
+      run_source: "uuid",
+    });
+  });
+
+  it("isolates operational source records and allows source-scoped job identities", async () => {
+    const company = await migrationDatabase<{ id: string }[]>`
+      insert into app.company (name, slug, careers_url, source_type)
+      values ('Multi Source Co', ${uniqueSlug("multi-source-co")}, ${`https://${uniqueSlug("multi-source")}.example.com/careers`}, 'greenhouse')
+      returning id
+    `;
+    const sources = await migrationDatabase<{ id: string }[]>`
+      insert into app.job_source (company_id, slug, name, channel, careers_url, source_type, status)
+      values
+        (${company[0]!.id}::uuid, 'early-careers', 'Early careers', 'early_careers', 'https://example.com/early', 'greenhouse', 'active'),
+        (${company[0]!.id}::uuid, 'professional', 'Professional', 'professional', 'https://example.com/professional', 'greenhouse', 'active')
+      returning id
+    `;
+
+    await migrationDatabase`
+      insert into app.job (company_id, source_id, slug, external_job_id, application_url, title, content_hash)
+      values
+        (${company[0]!.id}::uuid, ${sources[0]!.id}::uuid, ${uniqueSlug("shared-role-early")}, 'shared-1', 'https://example.com/early/apply', 'Early role', ${"c".repeat(64)}),
+        (${company[0]!.id}::uuid, ${sources[1]!.id}::uuid, ${uniqueSlug("shared-role-professional")}, 'shared-1', 'https://example.com/professional/apply', 'Professional role', ${"d".repeat(64)})
+    `;
+
+    const memberRows = await asUser(
+      userTwo,
+      (database) => database<{ count: number }[]>`select count(*)::int from app.job_source`,
+    );
+    expect(memberRows[0]!.count).toBe(0);
+
+    await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
+    try {
+      const adminRows = await asUser(
+        administrator,
+        (database) =>
+          database<
+            { count: number }[]
+          >`select count(*)::int from app.job_source where company_id = ${company[0]!.id}::uuid`,
+      );
+      expect(adminRows[0]!.count).toBe(2);
+    } finally {
+      await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
+    }
   });
 
   it("forces RLS on member saves and isolates saved jobs between users", async () => {
@@ -182,33 +255,75 @@ describe("job catalog", () => {
     ).rejects.toThrow();
   });
 
-  it("limits source operations to administrators", async () => {
-    const rows = await migrationDatabase<{ id: string }[]>`
+  it("limits source operations to administrators and supports run requests and URL correction", async () => {
+    const companies = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type)
       values ('Admin Source Co', ${uniqueSlug("admin-source-co")}, ${`https://admin-${uniqueSlug("careers")}.example.com`}, 'lever')
       returning id
     `;
+    const sources = await migrationDatabase<{ id: string }[]>`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, crawl_endpoint_url, source_type, status
+      ) values (
+        ${companies[0]!.id}::uuid, 'professional', 'Professional careers', 'professional',
+        'https://example.com/careers', 'https://example.com/api/jobs', 'lever', 'active'
+      ) returning id
+    `;
     await asUser(
       userTwo,
       (database) =>
-        database`update app.company set crawl_allowed = 'allowed' where id = ${rows[0]!.id}::uuid`,
+        database`update app.job_source set status = 'paused' where id = ${sources[0]!.id}::uuid`,
     );
-    const unchanged = await migrationDatabase<{ crawl_allowed: string }[]>`
-      select crawl_allowed from app.company where id = ${rows[0]!.id}::uuid
+    const unchanged = await migrationDatabase<{ status: string }[]>`
+      select status from app.job_source where id = ${sources[0]!.id}::uuid
     `;
-    expect(unchanged[0]!.crawl_allowed).toBe("unknown");
+    expect(unchanged[0]!.status).toBe("active");
 
     await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
     try {
       await asUser(
         administrator,
         (database) =>
-          database`update app.company set crawl_allowed = 'allowed' where id = ${rows[0]!.id}::uuid`,
+          database`update app.job_source
+            set careers_url = 'https://example.com/corrected',
+                run_requested_at = now(),
+                run_requested_by_user_id = ${administrator}::uuid,
+                manually_overridden = true
+            where id = ${sources[0]!.id}::uuid`,
       );
-      const changed = await migrationDatabase<{ crawl_allowed: string }[]>`
-        select crawl_allowed from app.company where id = ${rows[0]!.id}::uuid
+      const changed = await migrationDatabase<
+        {
+          careers_url: string;
+          manually_overridden: boolean;
+          run_requested_at: Date | null;
+          run_requested_by_user_id: string | null;
+        }[]
+      >`
+        select careers_url, manually_overridden, run_requested_at, run_requested_by_user_id
+        from app.job_source where id = ${sources[0]!.id}::uuid
       `;
-      expect(changed[0]!.crawl_allowed).toBe("allowed");
+      expect(changed[0]).toMatchObject({
+        careers_url: "https://example.com/corrected",
+        manually_overridden: true,
+        run_requested_by_user_id: administrator,
+      });
+      expect(changed[0]!.run_requested_at).toBeInstanceOf(Date);
+    } finally {
+      await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
+    }
+  });
+
+  it("requires an authenticated administrator identity to read source operations", async () => {
+    await migrationDatabase`update app."user" set role = 'administrator' where id = ${administrator}::uuid`;
+    try {
+      const withoutIdentity = await runtimeDatabase.begin(async (database) => {
+        await database`set local role offerlab_app`;
+        return listJobSourcesForAdmin(database);
+      });
+      expect(withoutIdentity).toHaveLength(0);
+
+      const withIdentity = await asUser(administrator, listJobSourcesForAdmin);
+      expect(withIdentity.length).toBeGreaterThan(0);
     } finally {
       await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
     }
@@ -351,7 +466,87 @@ describe("job catalog", () => {
     const afterDeactivate = await asCrawler((database) => listJobsForCompany(database, companyId));
     expect(afterDeactivate.find((row) => row.external_job_id === "100")!.active).toBe(false);
   });
+
+  it("never deactivates jobs owned by another source for the same employer", async () => {
+    const companyId = await asCrawler((database) =>
+      upsertCompany(database, {
+        careersUrl: `https://boards-${uniqueSlug("isolation")}.example.com`,
+        configuration: { greenhouseBoardToken: "example" },
+        name: "Source Isolation Co",
+        slug: uniqueSlug("source-isolation-co"),
+        sourceType: "greenhouse",
+      }),
+    );
+    const sources = await asCrawler(
+      (database) => database<{ id: string }[]>`
+        insert into app.job_source (company_id, slug, name, channel, careers_url, source_type)
+        values
+          (${companyId}::uuid, 'early', 'Early careers', 'early_careers', 'https://example.com/early', 'greenhouse'),
+          (${companyId}::uuid, 'professional', 'Professional', 'professional', 'https://example.com/professional', 'greenhouse')
+        returning id
+      `,
+    );
+    const early = discoveredJob("same-id", "Early career role");
+    const otherEarly = discoveredJob("other-early-id", "Other early career role");
+    const professional = discoveredJob("same-id", "Professional role");
+    const now = new Date("2026-08-12T00:00:00.000Z");
+
+    await asCrawler(async (database) => {
+      await applyCrawlPlan(database, companyId, planCrawlChanges([], [early, otherEarly]), {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now,
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[0]!.id,
+      });
+      await applyCrawlPlan(database, companyId, planCrawlChanges([], [professional]), {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now,
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[1]!.id,
+      });
+    });
+
+    const earlyRows = await asCrawler((database) => listJobsForSource(database, sources[0]!.id));
+    const missingEarly = planCrawlChanges(earlyRows.map(existingRecordForTest), [otherEarly], {
+      missingCrawlThreshold: 1,
+    });
+    await asCrawler((database) =>
+      applyCrawlPlan(database, companyId, missingEarly, {
+        classifyFor: () => testClassificationWrite(),
+        missingCrawlThreshold: 1,
+        now: new Date("2026-08-13T00:00:00.000Z"),
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: sources[0]!.id,
+      }),
+    );
+
+    const earlyAfter = await asCrawler((database) => listJobsForSource(database, sources[0]!.id));
+    const professionalAfter = await asCrawler((database) =>
+      listJobsForSource(database, sources[1]!.id),
+    );
+    expect(earlyAfter.find((row) => row.external_job_id === "same-id")!.active).toBe(false);
+    expect(earlyAfter.find((row) => row.external_job_id === "other-early-id")!.active).toBe(true);
+    expect(professionalAfter[0]!.active).toBe(true);
+    expect(professionalAfter[0]!.missed_crawls).toBe(0);
+  });
 });
+
+function existingRecordForTest(row: Awaited<ReturnType<typeof listJobsForSource>>[number]) {
+  return {
+    active: row.active,
+    applicationUrl: row.application_url,
+    contentHash: row.content_hash,
+    externalJobId: row.external_job_id,
+    id: row.id,
+    lastSeenAt: row.last_seen_at,
+    locationText: row.location_text,
+    missedCrawls: row.missed_crawls,
+    sourceUrl: row.source_url,
+    title: row.title,
+  };
+}
 
 function testClassificationWrite(): JobClassificationWrite {
   return {

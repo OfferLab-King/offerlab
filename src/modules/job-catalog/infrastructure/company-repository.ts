@@ -209,6 +209,22 @@ export type CompanySeedInput = Readonly<{
   websiteUrl?: string | null;
 }>;
 
+/**
+ * Clears directory priority ranks for the given slugs so the idempotent
+ * cohort import can re-assign gap-based ranks without transiently colliding
+ * with the unique rank constraint while rows are re-ranked one by one.
+ */
+export async function clearDirectoryPriorityRanks(
+  database: TransactionSql,
+  slugs: readonly string[],
+): Promise<void> {
+  await database`
+    update app.company
+    set directory_priority_rank = null, updated_at = now()
+    where slug = any(${slugs})
+  `;
+}
+
 export async function upsertCompany(
   database: TransactionSql,
   input: CompanySeedInput,

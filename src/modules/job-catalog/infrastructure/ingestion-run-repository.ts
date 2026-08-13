@@ -19,10 +19,12 @@ export type IngestionRunSummary = Readonly<{
 export async function startIngestionRun(
   database: TransactionSql,
   companyId: string,
+  sourceId?: string,
+  triggerKind: "manual" | "scheduled" = "scheduled",
 ): Promise<string> {
   const rows = await database<{ id: string }[]>`
-    insert into app.job_ingestion_run (company_id, status)
-    values (${companyId}::uuid, 'running')
+    insert into app.job_ingestion_run (company_id, source_id, trigger_kind, status)
+    values (${companyId}::uuid, ${sourceId ?? null}::uuid, ${triggerKind}, 'running')
     returning id
   `;
   return rows[0]!.id;
@@ -86,10 +88,11 @@ export async function recordSourceEvent(
   kind: SourceEventKind,
   message: string | null,
   metadata: Readonly<Record<string, unknown>> = {},
+  sourceId?: string,
 ): Promise<void> {
   await database`
-    insert into app.job_source_event (company_id, kind, message, metadata)
-    values (${companyId}::uuid, ${kind}, ${message}, ${jsonParameter(database, metadata)})
+    insert into app.job_source_event (company_id, source_id, kind, message, metadata)
+    values (${companyId}::uuid, ${sourceId ?? null}::uuid, ${kind}, ${message}, ${jsonParameter(database, metadata)})
   `;
 }
 
@@ -107,6 +110,7 @@ export type RecentRunRow = Readonly<{
   jobs_updated: number;
   started_at: Date;
   status: string;
+  source_name: string | null;
 }>;
 
 export async function listRecentRuns(
@@ -114,11 +118,12 @@ export async function listRecentRuns(
   limit: number,
 ): Promise<RecentRunRow[]> {
   return database<RecentRunRow[]>`
-    select r.company_id, c.name as company_name, r.started_at, r.finished_at,
+    select r.company_id, c.name as company_name, s.name as source_name, r.started_at, r.finished_at,
       r.status, r.jobs_discovered, r.jobs_new, r.jobs_updated, r.jobs_unchanged,
       r.jobs_deactivated, r.error_count, r.error_summary, r.duration_ms
     from app.job_ingestion_run r
     join app.company c on c.id = r.company_id
+    left join app.job_source s on s.id = r.source_id
     order by r.started_at desc
     limit ${limit}
   `;
@@ -130,6 +135,7 @@ export type RecentEventRow = Readonly<{
   kind: string;
   message: string | null;
   occurred_at: Date;
+  source_name: string | null;
 }>;
 
 export async function listRecentEvents(
@@ -137,9 +143,10 @@ export async function listRecentEvents(
   limit: number,
 ): Promise<RecentEventRow[]> {
   return database<RecentEventRow[]>`
-    select e.company_id, c.name as company_name, e.kind, e.message, e.occurred_at
+    select e.company_id, c.name as company_name, s.name as source_name, e.kind, e.message, e.occurred_at
     from app.job_source_event e
     join app.company c on c.id = e.company_id
+    left join app.job_source s on s.id = e.source_id
     order by e.occurred_at desc
     limit ${limit}
   `;

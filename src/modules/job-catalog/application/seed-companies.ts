@@ -1,601 +1,70 @@
 import { upsertCompany, type CompanySeedInput } from "../infrastructure/company-repository";
-import type { JobSectorKey } from "../domain/taxonomy";
+import { upsertJobSource, type JobSourceWrite } from "../infrastructure/job-source-repository";
+import { employerManifest, MANIFEST_VERSION, type ManifestCompany } from "./employer-cohort";
 
 /**
- * Initial UK early-career source registry, covering every top-level sector.
+ * Imports the versioned UK-relevant employer cohort idempotently.
  *
- * VERIFICATION (2026-08-10): every identifier below was confirmed with a single
- * bounded, unauthenticated GET against the employer's official public ATS
- * job-board API (the same endpoint their public careers page uses), e.g.
- * `GET https://boards-api.greenhouse.io/v1/boards/monzo/jobs?per_page=1` -> 200.
- * See scripts/jobs/verify-sources.ts to re-run verification.
- *
- * IMPORTANT: every entry is seeded with crawl_allowed='unknown' and robots
- * not_checked. The crawler never processes a source until an administrator
- * records a review (permission, robots result, terms result, evidence URL,
- * notes) and sets crawl_allowed='allowed'. Do not enable a source without
- * reviewing its current careers site, robots.txt and terms.
+ * Only endpoints whose verification is currently `verified` are imported as
+ * active sources. `stale` and `unverified` endpoints import as PAUSED and are
+ * never activated by an import. Existing sources keep their status and any
+ * administrator URL/configuration overrides (the repository preserves
+ * `manually_overridden` values and never rewrites `status` on conflict).
  */
-const initialCohort: readonly CompanySeedInput[] = [
-  // Technology & IT Infrastructure
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/monzo",
-    configuration: { greenhouseBoardToken: "monzo" },
-    crawlFrequencyMinutes: 720,
-    industry: "Banking / Technology",
-    name: "Monzo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "monzo",
-    sourceType: "greenhouse",
-    websiteUrl: "https://monzo.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/dropbox",
-    configuration: { greenhouseBoardToken: "dropbox" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Technology",
-    name: "Dropbox",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "dropbox",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.dropbox.com",
-  },
-  {
-    atsProvider: "Ashby",
-    careersUrl: "https://jobs.ashbyhq.com/notion",
-    configuration: { ashbyOrg: "notion" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Technology",
-    name: "Notion",
-    notes:
-      "Identifier verified 2026-08-10 via official Ashby public posting API. Requires permission review before crawling.",
-    slug: "notion",
-    sourceType: "ashby",
-    websiteUrl: "https://www.notion.so",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/duolingo",
-    configuration: { greenhouseBoardToken: "duolingo" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consumer Technology",
-    name: "Duolingo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "duolingo",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.duolingo.com",
-  },
-  // Consumer, FMCG & Retail
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/instacart",
-    configuration: { greenhouseBoardToken: "instacart" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Retail Technology",
-    name: "Instacart",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "instacart",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.instacart.com",
-  },
-  // Engineering, Energy & Infrastructure
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/NationalGrid",
-    configuration: { smartRecruitersCompany: "NationalGrid" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Energy",
-    name: "National Grid",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "national-grid",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.nationalgrid.com",
-  },
-  // Financial Services
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Wise",
-    configuration: { smartRecruitersCompany: "Wise" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Fintech",
-    name: "Wise",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "wise",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://wise.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Revolut",
-    configuration: { smartRecruitersCompany: "Revolut" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Fintech",
-    name: "Revolut",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "revolut",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.revolut.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/robinhood",
-    configuration: { greenhouseBoardToken: "robinhood" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Financial Services",
-    name: "Robinhood",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "robinhood",
-    sourceType: "greenhouse",
-    websiteUrl: "https://robinhood.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/BDO",
-    configuration: { smartRecruitersCompany: "BDO" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Professional Services",
-    name: "BDO",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "bdo",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.bdo.co.uk",
-  },
-  // Investment Banking & Asset Management
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/JanusHenderson",
-    configuration: { smartRecruitersCompany: "JanusHenderson" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Asset Management",
-    name: "Janus Henderson",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "janus-henderson",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.janushenderson.com",
-  },
-  // Law
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/DWF",
-    configuration: { smartRecruitersCompany: "DWF" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Legal",
-    name: "DWF",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "dwf",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://dwfgroup.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Fieldfisher",
-    configuration: { smartRecruitersCompany: "Fieldfisher" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Legal",
-    name: "Fieldfisher",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "fieldfisher",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.fieldfisher.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Trowers",
-    configuration: { smartRecruitersCompany: "Trowers" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Legal",
-    name: "Trowers & Hamlins",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "trowers",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.trowers.com",
-  },
-  // Management & Operations
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Mitie",
-    configuration: { smartRecruitersCompany: "Mitie" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Facilities Management",
-    name: "Mitie",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "mitie",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.mitie.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Serco",
-    configuration: { smartRecruitersCompany: "Serco" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Public Services",
-    name: "Serco",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "serco",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.serco.com",
-  },
-  // Marketing, Media & PR
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/ITV",
-    configuration: { smartRecruitersCompany: "ITV" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Media",
-    name: "ITV",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "itv",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.itv.com",
-  },
-  // Pharmaceuticals & Science
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/IQVIA",
-    configuration: { smartRecruitersCompany: "IQVIA" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Life Sciences",
-    name: "IQVIA",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "iqvia",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.iqvia.com",
-  },
-  // Public Sector & Charity
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/NSPCC",
-    configuration: { smartRecruitersCompany: "NSPCC" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Charity",
-    name: "NSPCC",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "nspcc",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.nspcc.org.uk",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Oxfam",
-    configuration: { smartRecruitersCompany: "Oxfam" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Charity",
-    name: "Oxfam",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "oxfam",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.oxfam.org.uk",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/BritishRedCross",
-    configuration: { smartRecruitersCompany: "BritishRedCross" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Charity",
-    name: "British Red Cross",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "british-red-cross",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.redcross.org.uk",
-  },
-  // Sales, Recruitment & Commercial
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/PageGroup",
-    configuration: { smartRecruitersCompany: "PageGroup" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Recruitment",
-    name: "PageGroup",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "pagegroup",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.page.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Hays",
-    configuration: { smartRecruitersCompany: "Hays" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Recruitment",
-    name: "Hays",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "hays",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.hays.co.uk",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Adecco",
-    configuration: { smartRecruitersCompany: "Adecco" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Recruitment",
-    name: "Adecco",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "adecco",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.adecco.co.uk",
-  },
-  // Consulting
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/baringa",
-    configuration: { greenhouseBoardToken: "baringa" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consulting",
-    name: "Baringa",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "baringa",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.baringa.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/keystone",
-    configuration: { greenhouseBoardToken: "keystone" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consulting",
-    name: "Keystone",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "keystone",
-    sourceType: "greenhouse",
-    websiteUrl: "https://keystoneglobalpartners.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Accenture",
-    configuration: { smartRecruitersCompany: "Accenture" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consulting",
-    name: "Accenture",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "accenture",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.accenture.com",
-  },
-  // Additional identifier-verified priority employers
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/deliveroo",
-    configuration: { greenhouseBoardToken: "deliveroo" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consumer Technology",
-    name: "Deliveroo",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "deliveroo",
-    sourceType: "greenhouse",
-    websiteUrl: "https://deliveroo.co.uk",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/shopify",
-    configuration: { greenhouseBoardToken: "shopify" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Technology",
-    name: "Shopify",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "shopify",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.shopify.com",
-  },
-  {
-    atsProvider: "Ashby",
-    careersUrl: "https://jobs.ashbyhq.com/checkoutcom",
-    configuration: { ashbyOrg: "checkoutcom" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Payments Technology",
-    name: "Checkout.com",
-    notes:
-      "Identifier verified 2026-08-10 via official Ashby public posting API. Requires permission review before crawling.",
-    slug: "checkout-com",
-    sourceType: "ashby",
-    websiteUrl: "https://www.checkout.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/slalom",
-    configuration: { greenhouseBoardToken: "slalom" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consulting",
-    name: "Slalom",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "slalom",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.slalom.com",
-  },
-  {
-    atsProvider: "Lever",
-    careersUrl: "https://jobs.lever.co/thoughtworks",
-    configuration: { leverSite: "thoughtworks" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Technology Consulting",
-    name: "Thoughtworks",
-    notes:
-      "Identifier verified 2026-08-10 via official Lever public postings API. Requires permission review before crawling.",
-    slug: "thoughtworks",
-    sourceType: "lever",
-    websiteUrl: "https://www.thoughtworks.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/asos",
-    configuration: { greenhouseBoardToken: "asos" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Retail",
-    name: "ASOS",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "asos",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.asos.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/arup",
-    configuration: { greenhouseBoardToken: "arup" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Engineering",
-    name: "Arup",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "arup",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.arup.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/sky",
-    configuration: { greenhouseBoardToken: "sky" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Media",
-    name: "Sky",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "sky",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.sky.com",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/dentons",
-    configuration: { greenhouseBoardToken: "dentons" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Legal",
-    name: "Dentons",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "dentons",
-    sourceType: "greenhouse",
-    websiteUrl: "https://www.dentons.com",
-  },
-  {
-    atsProvider: "SmartRecruiters",
-    careersUrl: "https://www.smartrecruiters.com/Save-the-Children",
-    configuration: { smartRecruitersCompany: "Save the Children" },
-    crawlFrequencyMinutes: 2880,
-    industry: "Charity",
-    name: "Save the Children",
-    notes:
-      "Identifier verified 2026-08-10 via official SmartRecruiters public postings API. Requires permission review before crawling.",
-    slug: "save-the-children",
-    sourceType: "smartrecruiters",
-    websiteUrl: "https://www.savethechildren.org.uk",
-  },
-  {
-    atsProvider: "Lever",
-    careersUrl: "https://jobs.lever.co/skyscanner",
-    configuration: { leverSite: "skyscanner" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Travel Technology",
-    name: "Skyscanner",
-    notes:
-      "Identifier verified 2026-08-10 via official Lever public postings API. Requires permission review before crawling.",
-    slug: "skyscanner",
-    sourceType: "lever",
-    websiteUrl: "https://www.skyscanner.net",
-  },
-  {
-    atsProvider: "Greenhouse",
-    careersUrl: "https://boards.greenhouse.io/bumble",
-    configuration: { greenhouseBoardToken: "bumble" },
-    crawlFrequencyMinutes: 1440,
-    industry: "Consumer Technology",
-    name: "Bumble",
-    notes:
-      "Identifier verified 2026-08-10 via official Greenhouse public job board API. Requires permission review before crawling.",
-    slug: "bumble",
-    sourceType: "greenhouse",
-    websiteUrl: "https://bumble.com",
-  },
-];
+export function jobSourceInputFor(company: ManifestCompany, companyId: string): JobSourceWrite {
+  return {
+    ...(company.atsProvider !== undefined ? { atsProvider: company.atsProvider } : {}),
+    careersUrl: company.careersUrl,
+    channel: "general",
+    companyId,
+    configuration: company.configuration,
+    ...(company.crawlFrequencyMinutes !== undefined
+      ? { crawlFrequencyMinutes: company.crawlFrequencyMinutes }
+      : {}),
+    name: "All careers",
+    ...(company.needsBrowser ? { needsBrowser: true } : {}),
+    notes: company.verification.notes,
+    slug: "all-careers",
+    sourceType: company.sourceType,
+    status: company.verification.status === "verified" ? "active" : "paused",
+    verificationDate: new Date(`${company.verification.date}T00:00:00.000Z`),
+    ...(company.verification.evidenceUrl
+      ? { verificationEvidenceUrl: company.verification.evidenceUrl }
+      : {}),
+    manifestVersion: MANIFEST_VERSION,
+  };
+}
 
-const directorySectorBySlug: Readonly<Record<string, JobSectorKey>> = {
-  accenture: "consulting",
-  adecco: "sales_recruitment_commercial",
-  arup: "engineering_energy_infrastructure",
-  asos: "consumer_fmcg_retail",
-  baringa: "consulting",
-  bdo: "financial_services",
-  "british-red-cross": "public_sector_charity",
-  bumble: "technology_it",
-  "checkout-com": "financial_services",
-  deliveroo: "consumer_fmcg_retail",
-  dentons: "law",
-  dropbox: "technology_it",
-  duolingo: "technology_it",
-  dwf: "law",
-  fieldfisher: "law",
-  hays: "sales_recruitment_commercial",
-  instacart: "consumer_fmcg_retail",
-  iqvia: "pharmaceuticals_science",
-  itv: "marketing_media_pr",
-  "janus-henderson": "investment_banking_asset_management",
-  keystone: "consulting",
-  mitie: "management_operations",
-  monzo: "technology_it",
-  "national-grid": "engineering_energy_infrastructure",
-  notion: "technology_it",
-  nspcc: "public_sector_charity",
-  oxfam: "public_sector_charity",
-  pagegroup: "sales_recruitment_commercial",
-  revolut: "financial_services",
-  robinhood: "financial_services",
-  "save-the-children": "public_sector_charity",
-  serco: "management_operations",
-  shopify: "technology_it",
-  sky: "marketing_media_pr",
-  skyscanner: "technology_it",
-  slalom: "consulting",
-  thoughtworks: "consulting",
-  trowers: "law",
-  wise: "financial_services",
-};
+export function directoryPriorityRankFor(index: number): number {
+  return (index + 1) * 10;
+}
 
 export async function seedInitialCohort(
   database: Parameters<typeof upsertCompany>[0],
 ): Promise<readonly { id: string; slug: string; name: string }[]> {
   const created: { id: string; slug: string; name: string }[] = [];
-  for (const [index, company] of initialCohort.entries()) {
-    const directorySectorKey = directorySectorBySlug[company.slug];
-    if (!directorySectorKey) {
-      throw new Error(`Missing directory sector for priority employer ${company.slug}`);
-    }
+  for (const company of employerManifest) {
+    const companyInput: CompanySeedInput = {
+      atsProvider: company.atsProvider ?? null,
+      careersUrl: company.careersUrl,
+      configuration: company.configuration,
+      crawlFrequencyMinutes: company.crawlFrequencyMinutes,
+      industry: company.industry,
+      name: company.name,
+      notes: company.verification.notes,
+      slug: company.slug,
+      sourceType: company.sourceType,
+      websiteUrl: company.websiteUrl,
+    };
     const id = await upsertCompany(database, {
-      ...company,
-      directoryPriorityRank: index + 1,
-      directorySectorKey,
+      ...companyInput,
+      directoryPriorityRank: directoryPriorityRankFor(
+        employerManifest.findIndex((entry) => entry.slug === company.slug),
+      ),
+      directorySectorKey: company.directorySectorKey,
       directoryVisible: true,
     });
+    await upsertJobSource(database, jobSourceInputFor(company, id));
     created.push({ id, name: company.name, slug: company.slug });
   }
   return created;
