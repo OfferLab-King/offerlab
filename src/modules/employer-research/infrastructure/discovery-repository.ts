@@ -211,7 +211,7 @@ export async function markCandidateVerified(
   await database`
     update app.job_source_candidate
     set ats_verification_status = 'verified',
-        status = 'verified',
+        status = case when status = 'promoted' then status else 'verified' end,
         verified_at = now(),
         evidence = case
           when evidence is null or evidence = '' then ${evidenceNote}

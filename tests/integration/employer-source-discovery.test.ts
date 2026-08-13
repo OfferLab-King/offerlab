@@ -13,6 +13,7 @@ import {
 import {
   listDiscoveryCandidates,
   listEmployersMissingCandidates,
+  markCandidateVerified,
   promoteCandidateToSource,
   readPlatformCoverageData,
 } from "../../src/modules/employer-research/infrastructure/discovery-repository";
@@ -152,6 +153,14 @@ describe("source discovery pipeline", () => {
       select status from app.job_source_candidate where id = ${candidateId}::uuid
     `;
     expect(candidateRow[0]!.status).toBe("promoted");
+
+    await migrationDatabase.begin((transaction) =>
+      markCandidateVerified(transaction, candidateId, "https://verified.example.com/careers"),
+    );
+    const reverified = await migrationDatabase<{ status: string }[]>`
+      select status from app.job_source_candidate where id = ${candidateId}::uuid
+    `;
+    expect(reverified[0]!.status).toBe("promoted");
 
     const second = await migrationDatabase.begin((t) => applyCandidatePromotions(t, plans, true));
     expect(second.created).toBe(0);
