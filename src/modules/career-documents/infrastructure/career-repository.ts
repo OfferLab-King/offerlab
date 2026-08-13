@@ -475,24 +475,42 @@ export async function listCareerJobTargets(
   return rows.map(job);
 }
 
+async function resolveCareerJobTargetCompany(
+  database: TransactionSql,
+  input: CareerJobTargetInput,
+): Promise<CareerJobTargetInput> {
+  if (!input.companyId) return input;
+  const selected = await database<{ id: string; name: string }[]>`
+    select id, name
+    from app.employer_public_profile
+    where id = ${input.companyId}::uuid
+    limit 1
+  `;
+  const company = selected[0];
+  return company
+    ? { ...input, companyId: company.id, companyName: company.name }
+    : { ...input, companyId: null };
+}
+
 export async function saveCareerJobTarget(
   database: TransactionSql,
   owner: string,
   input: CareerJobTargetInput,
 ): Promise<CareerJobTarget> {
+  const resolvedInput = await resolveCareerJobTargetCompany(database, input);
   const rows = await database<(JobRow & { inserted: boolean })[]>`
     insert into app.career_job_target(
       owner_user_id,provider,provider_job_id,source_publisher,role_title,company_name,company_id,
       location,employment_type,description,apply_url,source_url,published_at,fetched_at
     ) values(
-      ${owner}::uuid,${input.provider},${input.providerJobId},${input.sourcePublisher},
-      ${input.roleTitle},${input.companyName},${input.companyId ?? null}::uuid,${input.location},${input.employmentType},
-      ${input.description},${input.applyUrl},${input.sourceUrl},${input.publishedAt},${input.fetchedAt}
+      ${owner}::uuid,${resolvedInput.provider},${resolvedInput.providerJobId},${resolvedInput.sourcePublisher},
+      ${resolvedInput.roleTitle},${resolvedInput.companyName},${resolvedInput.companyId ?? null}::uuid,${resolvedInput.location},${resolvedInput.employmentType},
+      ${resolvedInput.description},${resolvedInput.applyUrl},${resolvedInput.sourceUrl},${resolvedInput.publishedAt},${resolvedInput.fetchedAt}
     )
     on conflict(owner_user_id,provider,provider_job_id) where provider_job_id is not null
     do update set
       source_publisher=excluded.source_publisher,role_title=excluded.role_title,
-      company_name=excluded.company_name,location=excluded.location,
+      company_name=excluded.company_name,company_id=excluded.company_id,location=excluded.location,
       employment_type=excluded.employment_type,description=excluded.description,
       apply_url=excluded.apply_url,source_url=excluded.source_url,
       published_at=excluded.published_at,fetched_at=excluded.fetched_at,archived_at=null
