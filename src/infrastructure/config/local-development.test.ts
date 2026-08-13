@@ -5,6 +5,7 @@ import {
   isLoopbackRequestHost,
   isLoopbackUrl,
   localAuthBypassRole,
+  localAuthBypassUserId,
   parseLocalAuthBypassArguments,
 } from "./local-development";
 
@@ -62,5 +63,17 @@ describe("local development access gate", () => {
         NODE_ENV: "development",
       }),
     ).toBe("administrator");
+  });
+
+  it("defaults to the deterministic bypass member and permits a launcher-selected user", () => {
+    expect(localAuthBypassUserId({ NODE_ENV: "development" })).toBe(
+      "20000000-0000-4000-8000-000000000003",
+    );
+    expect(
+      localAuthBypassUserId({
+        LOCAL_AUTH_BYPASS_USER_ID: "20000000-0000-4000-8000-000000000001",
+        NODE_ENV: "development",
+      }),
+    ).toBe("20000000-0000-4000-8000-000000000001");
   });
 });

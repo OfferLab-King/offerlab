@@ -60,6 +60,18 @@ describe("local development authorization", () => {
     expect(mocks.authenticatedUserId).not.toHaveBeenCalled();
   });
 
+  it("returns the launcher-selected administrator without reading a Supabase session", async () => {
+    vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
+    vi.stubEnv("LOCAL_AUTH_BYPASS_USER_ID", "20000000-0000-4000-8000-000000000001");
+
+    await expect(currentAuthorization()).resolves.toEqual({
+      entitlementStatus: "active",
+      role: "administrator",
+      userId: "20000000-0000-4000-8000-000000000001",
+    });
+    expect(mocks.authenticatedUserId).not.toHaveBeenCalled();
+  });
+
   it("refuses bypass requests arriving through a non-loopback host", async () => {
     vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
     mocks.headers.mockResolvedValue(new Headers({ host: "offerlab.example" }));

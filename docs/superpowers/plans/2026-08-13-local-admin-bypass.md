@@ -4,7 +4,7 @@
 
 **Goal:** Add a safe `pnpm dev:bypass --admin` mode that satisfies both server authorization and administrator RLS during loopback-only local testing.
 
-**Architecture:** Extend the existing local-development configuration with a validated bypass role and a small CLI argument parser. The launcher temporarily aligns the deterministic bypass user's persisted role with the selected mode, passes the role to Next.js, and restores member state on normal admin-mode exit.
+**Architecture:** Extend the existing local-development configuration with validated bypass role and selected-user variables plus a small CLI argument parser. Member mode always uses the deterministic user. Admin mode reuses an existing local administrator without mutation, or temporarily promotes the deterministic user only when no administrator exists; the launcher passes the selected role and user ID to Next.js and restores member state only after its own temporary promotion.
 
 **Tech Stack:** TypeScript, Next.js 16, Zod environment validation, Postgres.js, Vitest, local Supabase.
 
@@ -12,7 +12,7 @@
 
 - Preserve `pnpm dev:bypass` as member mode and add `pnpm dev:bypass --admin` as administrator mode.
 - Permit bypass roles only under the existing explicit loopback local-development gate.
-- Do not create a permanent seeded administrator or promote a real account.
+- Do not create a permanent seeded administrator, promote, demote, or otherwise change an existing real administrator.
 - Do not reset, destroy, or recreate any database automatically.
 - Reuse the existing local-development and authorization tests; add no parallel test suite.
 - Leave the unrelated generated `next-env.d.ts` worktree change untouched.
@@ -36,11 +36,12 @@
 - Produces: `type LocalAuthBypassRole = "member" | "administrator"`
 - Produces: `parseLocalAuthBypassArguments(arguments_: readonly string[]): LocalAuthBypassRole`
 - Produces: `localAuthBypassRole(environment?: NodeJS.ProcessEnv): LocalAuthBypassRole`
+- Produces: `localAuthBypassUserId(environment?: NodeJS.ProcessEnv): string`
 - Consumes: existing `isLocalAuthBypassEnabled` and loopback request-host gate
 
 - [ ] **Step 1: Extend the nearest configuration and authorization tests first**
 
-Add assertions that `[]` selects `member`, `["--admin"]` selects `administrator`, unknown arguments throw a usage error, and `LOCAL_AUTH_BYPASS_ROLE=administrator` changes the deterministic authorization role only for a valid loopback bypass request. Extend the environment test to reject an administrator bypass role when bypass is disabled or the application is non-local/non-loopback.
+Add assertions that `[]` selects `member`, `["--admin"]` selects `administrator`, unknown arguments throw a usage error, and `LOCAL_AUTH_BYPASS_ROLE=administrator` changes the deterministic authorization role only for a valid loopback bypass request. Add a UUID-selected bypass-user assertion, verify authorization returns that selected user, and reject malformed or out-of-boundary `LOCAL_AUTH_BYPASS_USER_ID` values.
 
 - [ ] **Step 2: Run the focused tests and witness the intended failure**
 
@@ -55,7 +56,7 @@ Expected: failures because the role parser, environment key, and administrator a
 
 - [ ] **Step 3: Implement the minimal configuration and authorization behavior**
 
-Add `LOCAL_AUTH_BYPASS_ROLE` to the environment allowlist/schema and require it to remain inside the same local-development bypass boundary. Parse only zero arguments or exactly `--admin`; default the environment role to member. Return `localAuthBypassRole()` from `localDevelopmentAuthorization` after the existing loopback request-host check. Document the optional variable in `.env.example`.
+Add `LOCAL_AUTH_BYPASS_ROLE` and UUID-validated `LOCAL_AUTH_BYPASS_USER_ID` to the environment allowlist/schema and require both to remain inside the same local-development bypass boundary. Parse only zero arguments or exactly `--admin`; default the role and user ID to the deterministic member. Return both selected values from `localDevelopmentAuthorization` after the existing loopback request-host check. Document the optional variables in `.env.example`.
 
 - [ ] **Step 4: Re-run the focused tests**
 
@@ -83,19 +84,19 @@ git commit -m "feat: select local bypass administrator role"
 
 - Consumes: `parseLocalAuthBypassArguments(process.argv.slice(2))`
 - Consumes: `localAuthBypassMember.userId`
-- Sets: `LOCAL_AUTH_BYPASS_ROLE` for the Next.js child process
+- Sets: `LOCAL_AUTH_BYPASS_ROLE` and `LOCAL_AUTH_BYPASS_USER_ID` for the Next.js child process
 
 - [ ] **Step 1: Update the launcher around the tested role parser**
 
-Parse the CLI mode before starting services. After reading local Supabase status, distinguish missing `API_URL` from a non-loopback URL and report a safe `pnpm db:stop && pnpm db:start` recovery without invoking reset. Verify the deterministic user exists, set its persisted role to the selected role before spawning Next.js, and print the selected `/member` or `/admin` URL.
+Parse the CLI mode before starting services. After reading local Supabase status, distinguish missing `API_URL` from a non-loopback URL and report a safe `pnpm db:stop && pnpm db:start` recovery without invoking reset. Verify the deterministic user exists. Member mode sets it to `member`; admin mode reuses an existing administrator's ID without mutation or temporarily promotes the deterministic user only when none exists. Pass the selected user ID to Next.js and print the selected `/member` or `/admin` URL.
 
 - [ ] **Step 2: Restore safe member state**
 
-Wrap the child server launch so normal admin-mode exit updates the deterministic user's persisted role back to `member`. Always set member mode to `member` before launch so it recovers after an interrupted admin process.
+Wrap the child server launch so normal or signal-driven exit restores the deterministic user's persisted role to `member` only when that launch promoted it. Always set member mode to `member` before launch so it recovers after an interrupted admin process. Never mutate an existing administrator.
 
 - [ ] **Step 3: Document both commands and recovery behavior**
 
-Document `pnpm dev:bypass` and `pnpm dev:bypass --admin`, the temporary local database-role change, loopback restrictions, clean-exit restoration, and the stopped-service recovery command. Explicitly say the launcher never resets the database.
+Document `pnpm dev:bypass` and `pnpm dev:bypass --admin`, existing-administrator reuse, conditional temporary deterministic-role change, loopback restrictions, clean-exit restoration, and the stopped-service recovery command. Explicitly say the launcher never resets the database.
 
 - [ ] **Step 4: Run focused static and unit validation**
 

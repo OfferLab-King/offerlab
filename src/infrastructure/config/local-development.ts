@@ -53,4 +53,8 @@ export function localAuthBypassRole(
   return environment.LOCAL_AUTH_BYPASS_ROLE === "administrator" ? "administrator" : "member";
 }
 
+export function localAuthBypassUserId(environment: NodeJS.ProcessEnv = process.env): string {
+  return environment.LOCAL_AUTH_BYPASS_USER_ID ?? localBypassMember.userId;
+}
+
 export const localAuthBypassMember = localBypassMember;

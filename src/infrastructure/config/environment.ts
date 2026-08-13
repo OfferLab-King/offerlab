@@ -52,6 +52,7 @@ export const environmentKeys = [
   "JSEARCH_MEMBER_MONTHLY_LIMIT",
   "LOCAL_AUTH_BYPASS_ENABLED",
   "LOCAL_AUTH_BYPASS_ROLE",
+  "LOCAL_AUTH_BYPASS_USER_ID",
   "LOG_LEVEL",
 ] as const;
 
@@ -116,6 +117,7 @@ const serverEnvironmentSchema = z
     JSEARCH_MEMBER_MONTHLY_LIMIT: optionalPositiveInteger,
     LOCAL_AUTH_BYPASS_ENABLED: z.enum(["true", "false"]).optional(),
     LOCAL_AUTH_BYPASS_ROLE: z.enum(["member", "administrator"]).optional(),
+    LOCAL_AUTH_BYPASS_USER_ID: z.uuid().optional(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     NEXT_PUBLIC_APP_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
@@ -140,6 +142,13 @@ const serverEnvironmentSchema = z
         code: "custom",
         message: "LOCAL_AUTH_BYPASS_ROLE is allowed only for loopback local development",
         path: ["LOCAL_AUTH_BYPASS_ROLE"],
+      });
+    }
+    if (environment.LOCAL_AUTH_BYPASS_USER_ID && !isLocalLoopbackBypass) {
+      context.addIssue({
+        code: "custom",
+        message: "LOCAL_AUTH_BYPASS_USER_ID is allowed only for loopback local development",
+        path: ["LOCAL_AUTH_BYPASS_USER_ID"],
       });
     }
     if (environment.APP_ENV === "production") {

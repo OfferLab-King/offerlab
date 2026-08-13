@@ -7,8 +7,8 @@ import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture
 import {
   isLocalAuthBypassEnabled,
   isLoopbackRequestHost,
-  localAuthBypassMember,
   localAuthBypassRole,
+  localAuthBypassUserId,
 } from "../../../infrastructure/config/local-development";
 import { headers } from "next/headers";
 import { requestClientAddress } from "./request-security";
@@ -106,7 +106,7 @@ async function localDevelopmentAuthorization(): Promise<AuthorizationState | nul
   return {
     entitlementStatus: "active",
     role: localAuthBypassRole(),
-    userId: localAuthBypassMember.userId,
+    userId: localAuthBypassUserId(),
   };
 }
 

@@ -49,10 +49,11 @@ Open `http://127.0.0.1:3000/member` for `pnpm dev:bypass` or
 `http://127.0.0.1:3000/admin` for `pnpm dev:bypass --admin`. The launcher uses the deterministic,
 non-login seed member and a synthetic completed profile; it does not create or store a password.
 
-The administrator command temporarily changes that deterministic user's role in the local database so
-database policies match the administrator UI access. When the administrator server exits cleanly, the
-launcher restores the role to `member`; starting member mode always sets the role to `member` before it
-launches, recovering from an interrupted administrator process. The launcher binds Next.js to
+When a local administrator already exists, the administrator command uses that user's existing ID for
+bypass authorization and database policies without changing that user or its role. Otherwise, it
+temporarily changes the deterministic user's role to `administrator` and restores it to `member` when
+the server exits cleanly. Starting member mode always sets the deterministic user's role to `member`
+before launch, recovering from an interrupted administrator process. The launcher binds Next.js to
 `127.0.0.1` and requires both Supabase database and API URLs to be loopback. Normal `pnpm dev`, tests,
 staging and production continue to require Supabase authentication.
 

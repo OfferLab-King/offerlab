@@ -83,6 +83,35 @@ describe("parseServerEnvironment", () => {
     ).toThrow("LOCAL_AUTH_BYPASS_ROLE");
   });
 
+  it("permits a UUID-selected bypass user only for loopback local development", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_USER_ID: "20000000-0000-4000-8000-000000000001",
+        NODE_ENV: "development",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_USER_ID: "not-a-uuid",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_USER_ID");
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_USER_ID: "20000000-0000-4000-8000-000000000001",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_USER_ID");
+  });
+
   it("requires runtime and identity credentials but not migration credentials in production", () => {
     expect(() =>
       parseServerEnvironment({

@@ -130,6 +130,7 @@ if (!isLoopbackUrl(databaseUrl) || !isLoopbackUrl(supabaseUrl)) {
 
 const database = postgres(databaseUrl, { max: 1, prepare: false });
 let launcherFailure: unknown;
+let promotedDeterministicUser = false;
 try {
   const rows = await database<{ available: boolean }[]>`
     select exists(
@@ -140,11 +141,32 @@ try {
     throw new Error("The local test member is missing. Run pnpm db:reset once, then try again.");
   }
 
-  await database`
-    update app."user"
-    set role = ${bypassRole}, updated_at = now()
-    where id = ${localAuthBypassMember.userId}::uuid
-  `;
+  let bypassUserId: string = localAuthBypassMember.userId;
+  if (bypassRole === "member") {
+    await database`
+      update app."user"
+      set role = 'member', updated_at = now()
+      where id = ${localAuthBypassMember.userId}::uuid
+    `;
+  } else {
+    const administrators = await database<{ id: string }[]>`
+      select id::text
+      from app."user"
+      where role = 'administrator'
+      limit 1
+    `;
+    const existingAdministrator = administrators[0];
+    if (existingAdministrator) {
+      bypassUserId = existingAdministrator.id;
+    } else {
+      await database`
+        update app."user"
+        set role = 'administrator', updated_at = now()
+        where id = ${localAuthBypassMember.userId}::uuid
+      `;
+      promotedDeterministicUser = true;
+    }
+  }
 
   const port = process.env.PORT ?? "3000";
   if (!/^(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$/u.test(port)) {
@@ -164,6 +186,7 @@ try {
       IDENTITY_SYNC_DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_identity_sync_login"),
       LOCAL_AUTH_BYPASS_ENABLED: "true",
       LOCAL_AUTH_BYPASS_ROLE: bypassRole,
+      LOCAL_AUTH_BYPASS_USER_ID: bypassUserId,
       LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
       NEXT_PUBLIC_APP_URL: appUrl,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publishableKey,
@@ -178,7 +201,7 @@ try {
   let restorationFailure: unknown;
   let connectionCloseFailure: unknown;
   try {
-    if (bypassRole === "administrator") {
+    if (promotedDeterministicUser) {
       await database`
         update app."user"
         set role = 'member', updated_at = now()

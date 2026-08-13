@@ -12,11 +12,11 @@ Provide fast administrator UI access for local testing through `pnpm dev:bypass 
 
 ## Authorization and database behavior
 
-The launcher selects a bypass role of `member` or `administrator`. Before starting Next.js, it updates the deterministic local bypass user's database role to match. This is required because administrator UI guards inspect application authorization while administrator RLS policies inspect the persisted `app."user"` role.
+The launcher selects a bypass role of `member` or `administrator`. Member mode always uses the deterministic local bypass user and sets its persisted role to `member` before starting Next.js. Administrator mode first reads `app."user"` for an existing administrator. When one exists, it uses that user's ID for bypass authorization and RLS without changing that user or its role. When none exists, it temporarily promotes the deterministic user instead. This satisfies administrator UI guards and RLS policies while preserving the single-administrator constraint.
 
-The launcher passes the selected role through a server-only environment variable. Local authorization returns that role only when every existing bypass condition is satisfied: explicit bypass enablement, `APP_ENV=local`, `NODE_ENV=development`, a loopback application URL, and a loopback request host.
+The launcher passes the selected role and selected user ID through server-only environment variables. The user ID is UUID-validated and, like the role, is accepted only when every existing bypass condition is satisfied: explicit bypass enablement, `APP_ENV=local`, `NODE_ENV=development`, a loopback application URL, and a loopback request host. Local authorization defaults to the deterministic member ID when no selected ID is supplied.
 
-On normal server exit, admin mode restores the deterministic user to `member`. Member mode also sets the user to `member` before launch, recovering safely after an interrupted prior admin session. No real account is promoted, no password is created, and no production path accepts the bypass role.
+On normal or signal-driven server exit, the launcher restores the deterministic user to `member` only when that launch temporarily promoted it. Existing administrators are never promoted, demoted, or otherwise changed. No password is created, and no production path accepts the bypass role.
 
 ## Local service diagnostics
 
