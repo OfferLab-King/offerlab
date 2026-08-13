@@ -1,4 +1,4 @@
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 import {
   isLoopbackUrl,
@@ -12,6 +12,7 @@ import {
 import {
   LocalBypassShutdownRequested,
   signalExitCode,
+  waitForLocalBypassChildClose,
   watchLocalBypassShutdown,
   type LocalBypassShutdownWatcher,
 } from "./local-bypass-signals";
@@ -34,28 +35,6 @@ function roleDatabaseUrl(databaseUrl: string, role: string): string {
   return url.toString();
 }
 
-type ChildExit = Readonly<{ code: number | null; signal: NodeJS.Signals | null }>;
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function waitForChildExit(child: ChildProcess): Promise<ChildExit> {
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    child.once("error", (error) => {
-      if (settled) return;
-      settled = true;
-      reject(new Error(`Next.js development server failed to start: ${errorMessage(error)}`));
-    });
-    child.once("exit", (code, signal) => {
-      if (settled) return;
-      settled = true;
-      resolve({ code, signal });
-    });
-  });
-}
-
 async function runNextDevelopmentServer(
   environment: NodeJS.ProcessEnv,
   port: string,
@@ -71,50 +50,54 @@ async function runNextDevelopmentServer(
     env: environment,
     stdio: "inherit",
   });
+  const childClosePromise = waitForLocalBypassChildClose(child);
   shutdown.attachChild(child);
-  const stopChildAfterDatabaseSessionLoss = (): void => {
-    if (child.pid === undefined) return;
-    try {
-      process.kill(-child.pid, "SIGTERM");
-    } catch {
-      child.kill("SIGTERM");
-    }
-  };
+  const stopChildAfterDatabaseSessionLoss = (): void => shutdown.stopChild("SIGTERM");
   databaseSessionSignal.addEventListener("abort", stopChildAfterDatabaseSessionLoss, {
     once: true,
   });
   if (databaseSessionSignal.aborted) stopChildAfterDatabaseSessionLoss();
 
-  let childExit: ChildExit;
+  let childClose: Awaited<ReturnType<typeof waitForLocalBypassChildClose>>;
   try {
-    childExit = await waitForChildExit(child);
+    childClose = await childClosePromise;
   } finally {
     databaseSessionSignal.removeEventListener("abort", stopChildAfterDatabaseSessionLoss);
     shutdown.detachChild(child);
   }
+  const childErrors = [...childClose.errors, ...shutdown.forwardingFailures];
+  childErrors.forEach((error) => {
+    process.stderr.write(`Next.js development server process error: ${error.message}\n`);
+  });
 
   if (databaseSessionSignal.aborted) {
     throw databaseSessionSignal.reason;
   }
   if (shutdown.requestedSignal) {
-    const childResult = childExit.signal
-      ? `signal ${childExit.signal}`
-      : `exit code ${childExit.code ?? "unknown"}`;
+    const childResult = childClose.signal
+      ? `signal ${childClose.signal}`
+      : `exit code ${childClose.code ?? "unknown"}`;
     process.stdout.write(
       `Local bypass shutdown forwarded ${shutdown.requestedSignal}; Next.js ended with ${childResult}.\n`,
     );
     return signalExitCode(shutdown.requestedSignal);
   }
-  if (childExit.signal) {
-    throw new Error(`Next.js development server stopped from signal ${childExit.signal}.`);
+  if (childErrors.length > 0) {
+    throw new AggregateError(
+      childErrors,
+      "Next.js development server reported process errors before closing.",
+    );
   }
-  if (childExit.code === null) {
+  if (childClose.signal) {
+    throw new Error(`Next.js development server stopped from signal ${childClose.signal}.`);
+  }
+  if (childClose.code === null) {
     throw new Error("Next.js development server exited without an exit code or signal.");
   }
-  if (childExit.code !== 0) {
-    process.stderr.write(`Next.js development server exited with code ${childExit.code}.\n`);
+  if (childClose.code !== 0) {
+    process.stderr.write(`Next.js development server exited with code ${childClose.code}.\n`);
   }
-  return childExit.code;
+  return childClose.code;
 }
 
 const bypassRole = parseLocalAuthBypassArguments(process.argv.slice(2));
