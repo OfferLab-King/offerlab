@@ -8,6 +8,7 @@ import {
   isLocalAuthBypassEnabled,
   isLoopbackRequestHost,
   localAuthBypassMember,
+  localAuthBypassRole,
 } from "../../../infrastructure/config/local-development";
 import { headers } from "next/headers";
 import { requestClientAddress } from "./request-security";
@@ -104,7 +105,7 @@ async function localDevelopmentAuthorization(): Promise<AuthorizationState | nul
   if (!isLoopbackRequestHost(requestHeaders.get("host"))) return null;
   return {
     entitlementStatus: "active",
-    role: "member",
+    role: localAuthBypassRole(),
     userId: localAuthBypassMember.userId,
   };
 }

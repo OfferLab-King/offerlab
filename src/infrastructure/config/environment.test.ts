@@ -44,6 +44,45 @@ describe("parseServerEnvironment", () => {
     ).toThrow("LOCAL_AUTH_BYPASS_ENABLED");
   });
 
+  it("keeps the administrator bypass role inside the local loopback bypass boundary", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_ROLE: "administrator",
+        NODE_ENV: "development",
+      }),
+    ).not.toThrow();
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ROLE: "administrator",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_ROLE");
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "production",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_ROLE: "administrator",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_ROLE");
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_ROLE: "administrator",
+        NEXT_PUBLIC_APP_URL: "https://offerlab.example",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_ROLE");
+  });
+
   it("requires runtime and identity credentials but not migration credentials in production", () => {
     expect(() =>
       parseServerEnvironment({

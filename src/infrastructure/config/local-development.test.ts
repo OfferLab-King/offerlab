@@ -4,6 +4,8 @@ import {
   isLocalAuthBypassEnabled,
   isLoopbackRequestHost,
   isLoopbackUrl,
+  localAuthBypassRole,
+  parseLocalAuthBypassArguments,
 } from "./local-development";
 
 describe("local development access gate", () => {
@@ -39,5 +41,26 @@ describe("local development access gate", () => {
     expect(isLoopbackUrl("https://offerlab.example")).toBe(false);
     expect(isLoopbackRequestHost("127.0.0.1:3000")).toBe(true);
     expect(isLoopbackRequestHost("offerlab.example")).toBe(false);
+  });
+
+  it.each([
+    { arguments_: [], role: "member" },
+    { arguments_: ["--admin"], role: "administrator" },
+  ] as const)("selects $role from local bypass arguments", ({ arguments_, role }) => {
+    expect(parseLocalAuthBypassArguments(arguments_)).toBe(role);
+  });
+
+  it("rejects unknown local bypass arguments with usage guidance", () => {
+    expect(() => parseLocalAuthBypassArguments(["--member"])).toThrow(/usage/i);
+  });
+
+  it("defaults the local bypass role to member and permits an explicit administrator role", () => {
+    expect(localAuthBypassRole({ NODE_ENV: "development" })).toBe("member");
+    expect(
+      localAuthBypassRole({
+        LOCAL_AUTH_BYPASS_ROLE: "administrator",
+        NODE_ENV: "development",
+      }),
+    ).toBe("administrator");
   });
 });

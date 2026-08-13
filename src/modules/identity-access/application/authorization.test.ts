@@ -49,7 +49,19 @@ describe("local development authorization", () => {
     expect(mocks.authenticatedUserId).not.toHaveBeenCalled();
   });
 
+  it("returns the deterministic administrator only for a loopback bypass request", async () => {
+    vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
+
+    await expect(currentAuthorization()).resolves.toEqual({
+      entitlementStatus: "active",
+      role: "administrator",
+      userId: "20000000-0000-4000-8000-000000000003",
+    });
+    expect(mocks.authenticatedUserId).not.toHaveBeenCalled();
+  });
+
   it("refuses bypass requests arriving through a non-loopback host", async () => {
+    vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
     mocks.headers.mockResolvedValue(new Headers({ host: "offerlab.example" }));
 
     await expect(currentMemberAccess()).resolves.toEqual({ status: "unauthenticated" });

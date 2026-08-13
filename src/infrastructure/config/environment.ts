@@ -51,6 +51,7 @@ export const environmentKeys = [
   "JSEARCH_MEMBER_DAILY_LIMIT",
   "JSEARCH_MEMBER_MONTHLY_LIMIT",
   "LOCAL_AUTH_BYPASS_ENABLED",
+  "LOCAL_AUTH_BYPASS_ROLE",
   "LOG_LEVEL",
 ] as const;
 
@@ -114,6 +115,7 @@ const serverEnvironmentSchema = z
     JSEARCH_MEMBER_DAILY_LIMIT: optionalPositiveInteger,
     JSEARCH_MEMBER_MONTHLY_LIMIT: optionalPositiveInteger,
     LOCAL_AUTH_BYPASS_ENABLED: z.enum(["true", "false"]).optional(),
+    LOCAL_AUTH_BYPASS_ROLE: z.enum(["member", "administrator"]).optional(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
     NEXT_PUBLIC_APP_URL: z.url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
@@ -121,16 +123,23 @@ const serverEnvironmentSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]),
   })
   .superRefine((environment, context) => {
-    if (
+    const isLocalLoopbackBypass =
       environment.LOCAL_AUTH_BYPASS_ENABLED === "true" &&
-      (environment.APP_ENV !== "local" ||
-        environment.NODE_ENV !== "development" ||
-        !isLoopbackUrl(environment.NEXT_PUBLIC_APP_URL))
-    ) {
+      environment.APP_ENV === "local" &&
+      environment.NODE_ENV === "development" &&
+      isLoopbackUrl(environment.NEXT_PUBLIC_APP_URL);
+    if (environment.LOCAL_AUTH_BYPASS_ENABLED === "true" && !isLocalLoopbackBypass) {
       context.addIssue({
         code: "custom",
         message: "LOCAL_AUTH_BYPASS_ENABLED=true is allowed only for loopback local development",
         path: ["LOCAL_AUTH_BYPASS_ENABLED"],
+      });
+    }
+    if (environment.LOCAL_AUTH_BYPASS_ROLE && !isLocalLoopbackBypass) {
+      context.addIssue({
+        code: "custom",
+        message: "LOCAL_AUTH_BYPASS_ROLE is allowed only for loopback local development",
+        path: ["LOCAL_AUTH_BYPASS_ROLE"],
       });
     }
     if (environment.APP_ENV === "production") {

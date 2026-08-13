@@ -3,6 +3,8 @@ const localBypassMember = {
   userId: "20000000-0000-4000-8000-000000000003",
 } as const;
 
+export type LocalAuthBypassRole = "member" | "administrator";
+
 function isLoopbackHostname(hostname: string): boolean {
   return (
     hostname === "localhost" ||
@@ -37,6 +39,18 @@ export function isLocalAuthBypassEnabled(environment: NodeJS.ProcessEnv = proces
     environment.NODE_ENV === "development" &&
     isLoopbackUrl(environment.NEXT_PUBLIC_APP_URL)
   );
+}
+
+export function parseLocalAuthBypassArguments(arguments_: readonly string[]): LocalAuthBypassRole {
+  if (arguments_.length === 0) return "member";
+  if (arguments_.length === 1 && arguments_[0] === "--admin") return "administrator";
+  throw new Error("Usage: local authentication bypass accepts only --admin");
+}
+
+export function localAuthBypassRole(
+  environment: NodeJS.ProcessEnv = process.env,
+): LocalAuthBypassRole {
+  return environment.LOCAL_AUTH_BYPASS_ROLE === "administrator" ? "administrator" : "member";
 }
 
 export const localAuthBypassMember = localBypassMember;
