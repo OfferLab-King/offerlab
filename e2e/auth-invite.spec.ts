@@ -520,6 +520,7 @@ test("direct onboarding endpoint preserves authenticated ownership", async ({ pa
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
+    await page.waitForURL("**/verify-email**");
     await page.goto(await latestEmailLink(email, "confirm"));
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
@@ -637,6 +638,7 @@ test("direct application and recommendation endpoints enforce real authenticatio
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Create password").fill(password);
     await page.getByRole("button", { name: "Create account" }).click();
+    await page.waitForURL("**/verify-email**");
     await page.goto(await latestEmailLink(email, "confirm"));
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
