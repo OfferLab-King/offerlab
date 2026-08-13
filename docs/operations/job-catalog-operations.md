@@ -571,3 +571,18 @@ preserved by cohort imports. Incomplete or invalid records remain paused.
 JSearch remains temporarily disabled (`JSEARCH_ENABLED=false`); the member
 job-discovery page links into the catalogue and manual job targets continue to
 work. Re-enabling JSearch requires a fresh founder decision.
+
+## Admin scale-up (Phase H)
+
+- **Employer detail console** (`/admin/employers/[id]`, linked from the
+  research table): identity and aliases, Home Office sponsor entities with
+  routes and snapshot dates, the latest internal research snapshot (tier,
+  rank, scores, evidence, notes), discovery candidates and the live source
+  list with health/mode. Live source operations remain in
+  `/admin/job-sources`.
+- **Crawler capability analytics** (`/admin/source-discovery`): employers
+  with careers URL, verified and platform-identified candidates, employers
+  with live sources and jobs, live source counts split by browser vs HTTP,
+  sources grouped by type, and jobs grouped by ATS provider. This is the
+  browser-to-HTTP optimisation signal: sources recorded as browser-only can
+  be reviewed for stable endpoints and direct-HTTP replay.

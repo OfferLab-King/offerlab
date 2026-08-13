@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireAdministrator } from "../../../modules/identity-access/application/authorization";
 import {
   EMPLOYER_RESEARCH_CONFIDENCES,
@@ -201,7 +203,13 @@ export default async function EmployersResearchPage({
               {rows.map((row) => (
                 <tr key={row.companyId ?? `unresolved-${row.name}`}>
                   <td>
-                    <strong>{row.name}</strong>
+                    <strong>
+                      {row.companyId ? (
+                        <a href={`/admin/employers/${row.companyId}`}>{row.name}</a>
+                      ) : (
+                        row.name
+                      )}
+                    </strong>
                     {row.aliases.length > 0 && (
                       <span className="cms-employer-aliases">
                         {" "}
@@ -250,7 +258,7 @@ export default async function EmployersResearchPage({
           </table>
         </div>
         <p className="hint">
-          <a href="/admin/employers">Clear filters</a>
+          <Link href="/admin/employers">Clear filters</Link>
         </p>
       </section>
     </main>

@@ -8023,3 +8023,39 @@ progress {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Phase H: admin detail grids and lists */
+
+.cms-detail-grid {
+  display: grid;
+  gap: 0.4rem 1.4rem;
+  grid-template-columns: minmax(10rem, max-content) 1fr;
+  margin: 0 0 1rem;
+}
+
+.cms-detail-grid div {
+  align-items: baseline;
+  display: contents;
+}
+
+.cms-detail-grid dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.cms-detail-grid dd {
+  font-size: 0.9rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cms-detail-subheading {
+  font-size: 0.85rem;
+  margin: 1rem 0 0.4rem;
+}
+
+.cms-detail-list {
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+}
