@@ -84,6 +84,39 @@ Research tables (`app.employer_alias`, `app.employer_sponsor_entity`,
 administrator-only. The `/admin/employers` page is the research/operations
 view; `/admin/job-sources` remains the live source operations page.
 
+## Source discovery (research → live sources)
+
+Deterministic ATS/platform fingerprinting turns the researched universe into a
+discovery backlog without touching the crawler or activating anything.
+
+```bash
+pnpm jobs:discover-source                      # fingerprint candidates (dry run)
+pnpm jobs:discover-source --confirm            # apply fingerprint updates
+pnpm jobs:discover-source --verify             # bounded HTTP verification of careers URLs
+pnpm jobs:discover-source --promote --confirm  # create paused sources for verified candidates
+pnpm jobs:discover-source --company=<slug>     # one employer
+pnpm jobs:discover-source --tier=P0 --limit=50 # a cohort, ordered by crawler priority
+```
+
+Behaviour:
+
+- fingerprinting is pure URL/host classification (Workday, Greenhouse, Lever,
+  Ashby, SmartRecruiters, Oracle, SuccessFactors, TAL, iCIMS, Avature, Taleo,
+  Teamtailor, Personio, Workable, PageUp, Recruitee, Eightfold) with no LLM;
+- `--verify` respects robots.txt through the crawler's `RobotsGate` and marks
+  candidates `verified` only after a successful bounded fetch;
+- `--promote` creates `app.job_source` rows in `paused` state for verified,
+  high-confidence candidates; sources are never activated by discovery;
+  re-running is idempotent and never overwrites existing sources for the same
+  URL or a manually-overridden source;
+- `/admin/source-discovery` shows platform-grouped coverage (employers per
+  platform by tier, verified and live counts) and the candidate queue; live
+  source operations remain in `/admin/job-sources`.
+
+The promotion guard uses the fingerprint high-confidence host match and the
+existing URL-identity check, so a spreadsheet row or guessed URL can never
+become an active crawler source.
+
 ## Local CMS-triggered crawling
 
 The CMS **Run now** control never crawls inside the web request. It records a
