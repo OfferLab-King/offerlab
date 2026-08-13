@@ -58,6 +58,23 @@ const columns = `
   archived_at, version, created_at, updated_at
 `;
 
+async function resolveCanonicalCompany(
+  database: TransactionSql,
+  values: ApplicationValues,
+): Promise<ApplicationValues> {
+  if (!values.companyId) return values;
+  const selected = await database<{ id: string; name: string }[]>`
+    select id, name
+    from app.employer_public_profile
+    where id = ${values.companyId}::uuid
+    limit 1
+  `;
+  const company = selected[0];
+  return company
+    ? { ...values, company: company.name, companyId: company.id }
+    : { ...values, companyId: null };
+}
+
 export type ApplicationMutationOutcome =
   "archived" | "created" | "restored" | "stage_changed" | "unchanged" | "updated";
 
@@ -113,14 +130,15 @@ export async function createApplication(
   ownerId: string,
   values: ApplicationValues,
 ): Promise<ApplicationMutationResult> {
+  const resolvedValues = await resolveCanonicalCompany(database, values);
   const rows = await database<ApplicationRow[]>`
     insert into app.application (
       owner_user_id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
       application_deadline, applied_date, next_stage_deadline, notes
     ) values (
-      ${ownerId}::uuid, ${values.companyId ?? null}::uuid, ${values.company}, ${values.role}, ${values.opportunityType},
-      ${values.industry}, ${values.stage}, ${values.location}, ${values.applicationDeadline},
-      ${values.appliedDate}, ${values.nextStageDeadline}, ${values.notes}
+      ${ownerId}::uuid, ${resolvedValues.companyId ?? null}::uuid, ${resolvedValues.company}, ${resolvedValues.role}, ${resolvedValues.opportunityType},
+      ${resolvedValues.industry}, ${resolvedValues.stage}, ${resolvedValues.location}, ${resolvedValues.applicationDeadline},
+      ${resolvedValues.appliedDate}, ${resolvedValues.nextStageDeadline}, ${resolvedValues.notes}
     )
     returning id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
       application_deadline::text, applied_date::text, next_stage_deadline::text, notes,
@@ -172,20 +190,21 @@ export async function updateApplication(
   if (!current) return { outcome: "not_found" };
   if (current.archivedAt) return { outcome: "not_found" };
   if (current.version !== expectedVersion) return { current, outcome: "conflict" };
-  if (applicationValuesEqual(values(current), nextValues)) {
+  const resolvedValues = await resolveCanonicalCompany(database, nextValues);
+  if (applicationValuesEqual(values(current), resolvedValues)) {
     return { application: current, outcome: "unchanged" };
   }
-  const stageChanged = current.stage !== nextValues.stage;
+  const stageChanged = current.stage !== resolvedValues.stage;
   const outcome = stageChanged ? "stage_changed" : "updated";
   const rows = await database<ApplicationRow[]>`
     update app.application set
-      company_id = ${nextValues.companyId ?? null}::uuid,
-      company_name = ${nextValues.company}, role_title = ${nextValues.role},
-      opportunity_type = ${nextValues.opportunityType}, industry = ${nextValues.industry},
-      current_stage = ${nextValues.stage},
-      location = ${nextValues.location}, application_deadline = ${nextValues.applicationDeadline},
-      applied_date = ${nextValues.appliedDate}, next_stage_deadline = ${nextValues.nextStageDeadline},
-      notes = ${nextValues.notes}
+      company_id = ${resolvedValues.companyId ?? null}::uuid,
+      company_name = ${resolvedValues.company}, role_title = ${resolvedValues.role},
+      opportunity_type = ${resolvedValues.opportunityType}, industry = ${resolvedValues.industry},
+      current_stage = ${resolvedValues.stage},
+      location = ${resolvedValues.location}, application_deadline = ${resolvedValues.applicationDeadline},
+      applied_date = ${resolvedValues.appliedDate}, next_stage_deadline = ${resolvedValues.nextStageDeadline},
+      notes = ${resolvedValues.notes}
     where id = ${applicationId}::uuid and owner_user_id = ${ownerId}::uuid
       and version = ${expectedVersion}
     returning id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,

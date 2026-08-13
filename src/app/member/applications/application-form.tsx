@@ -10,6 +10,7 @@ import {
   type ApplicationFieldErrors,
   type ApplicationValues,
 } from "../../../modules/applications/domain/application";
+import { applicationFormRequestBody } from "../../../modules/applications/application/request";
 import { opportunityTypes } from "../../../modules/taxonomy/domain/opportunity-types";
 import { industries } from "../../../modules/taxonomy/domain/industries";
 import { EmployerCompanyField } from "./employer-company-field";
@@ -83,24 +84,6 @@ export function ApplicationForm({
     });
   }
 
-  function body(form: HTMLFormElement) {
-    const data = new FormData(form);
-    const optional = (name: string) => String(data.get(name) ?? "") || null;
-    return {
-      appliedDate: optional("appliedDate"),
-      applicationDeadline: optional("applicationDeadline"),
-      company: String(data.get("company") ?? ""),
-      industry: optional("industry"),
-      location: optional("location"),
-      nextStageDeadline: optional("nextStageDeadline"),
-      notes: optional("notes"),
-      opportunityType: String(data.get("opportunityType") ?? ""),
-      role: String(data.get("role") ?? ""),
-      stage: String(data.get("stage") ?? ""),
-      ...(version === undefined ? {} : { version }),
-    };
-  }
-
   async function submit(form: HTMLFormElement) {
     setPending(true);
     setErrors({});
@@ -110,7 +93,7 @@ export function ApplicationForm({
       const response = await fetch(
         applicationId ? `/api/member/applications/${applicationId}` : "/api/member/applications",
         {
-          body: JSON.stringify(body(form)),
+          body: JSON.stringify(applicationFormRequestBody(new FormData(form), version)),
           headers: { "content-type": "application/json" },
           method: applicationId ? "PUT" : "POST",
         },
@@ -232,6 +215,7 @@ export function ApplicationForm({
               Company <span className="required">Required</span>
             </label>
             <EmployerCompanyField
+              defaultCompanyId={initial.companyId}
               defaultValue={initial.company}
               describedBy={describedBy("company", "company-hint")}
               invalid={Boolean(errors.company)}

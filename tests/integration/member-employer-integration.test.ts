@@ -9,7 +9,10 @@ import {
 } from "../../src/modules/job-catalog/application/saved-employers";
 import { searchEmployersForAutocomplete } from "../../src/modules/job-catalog/application/catalog";
 import { parseApplicationInput } from "../../src/modules/applications/domain/application";
-import { createApplication } from "../../src/modules/applications/infrastructure/application-repository";
+import {
+  createApplication,
+  updateApplication,
+} from "../../src/modules/applications/infrastructure/application-repository";
 import { saveCareerJobTarget } from "../../src/modules/career-documents/infrastructure/career-repository";
 
 const databaseUrl =
@@ -156,6 +159,55 @@ describe("application canonical employer linkage", () => {
     expect(createdFree.outcome).toBe("created");
     if (createdFree.outcome !== "created") throw new Error("expected created");
     expect(createdFree.application.companyId).toBeNull();
+  });
+
+  it("canonicalizes valid selections, rejects false links, and preserves a link on update", async () => {
+    const { id: companyId } = await setupVisibleEmployer("Canonical Application Co");
+    const values = {
+      appliedDate: null,
+      applicationDeadline: null,
+      company: "Tampered company name",
+      companyId,
+      industry: "financial_services" as const,
+      location: "London",
+      nextStageDeadline: null,
+      notes: null,
+      opportunityType: "graduate_scheme" as const,
+      role: "Graduate Analyst",
+      stage: "preparing" as const,
+    };
+    const created = await asUser(userOne, (database) =>
+      createApplication(database, userOne, values),
+    );
+    expect(created).toMatchObject({
+      application: { company: "Canonical Application Co", companyId },
+      outcome: "created",
+    });
+    if (!("application" in created)) throw new Error("expected created application");
+
+    const updated = await asUser(userOne, (database) =>
+      updateApplication(database, userOne, created.application.id, 1, {
+        ...values,
+        company: "Canonical Application Co",
+        role: "Graduate Consultant",
+      }),
+    );
+    expect(updated).toMatchObject({
+      application: { company: "Canonical Application Co", companyId },
+      outcome: "updated",
+    });
+
+    const falseLink = await asUser(userOne, (database) =>
+      createApplication(database, userOne, {
+        ...values,
+        company: "Free Text Employer",
+        companyId: "00000000-0000-4000-8000-000000000999",
+      }),
+    );
+    expect(falseLink).toMatchObject({
+      application: { company: "Free Text Employer", companyId: null },
+      outcome: "created",
+    });
   });
 });
 
