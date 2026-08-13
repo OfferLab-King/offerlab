@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { jobSubsectors } from "../../../modules/job-catalog/domain/taxonomy";
+import { jobSubsectors, remoteTypeLabels } from "../../../modules/job-catalog/domain/taxonomy";
 import type {
   CatalogFacetGroup,
   FacetOption,
@@ -300,6 +300,42 @@ export function FacetSidebar({
         )}
       </section>
 
+      <FacetSection
+        canClear={filters.industries.length > 0}
+        clearLabel="industries"
+        expanded={expanded.industries ?? true}
+        onClear={() => onClearGroup("industries")}
+        onToggleExpanded={() => toggleExpanded("industries")}
+        options={facets.industries}
+        renderOption={(option) => (
+          <FacetChoice
+            count={option.count}
+            label={option.label ?? option.value.replaceAll("_", " ")}
+            onToggle={() => onToggle("industries", option.value)}
+            selected={filters.industries.includes(option.value)}
+          />
+        )}
+        title="Employer industry"
+      />
+
+      <FacetSection
+        canClear={filters.functions.length > 0}
+        clearLabel="functions"
+        expanded={expanded.functions ?? true}
+        onClear={() => onClearGroup("functions")}
+        onToggleExpanded={() => toggleExpanded("functions")}
+        options={facets.functions}
+        renderOption={(option) => (
+          <FacetChoice
+            count={option.count}
+            label={option.label ?? option.value.replaceAll("_", " ")}
+            onToggle={() => onToggle("functions", option.value)}
+            selected={filters.functions.includes(option.value)}
+          />
+        )}
+        title="Job function"
+      />
+
       <div className="catalogue-facet">
         <div className="catalogue-facet-heading">
           <h3>Employers</h3>
@@ -380,6 +416,24 @@ export function FacetSidebar({
       )}
 
       <FacetSection
+        canClear={filters.workModes.length > 0}
+        clearLabel="workmodes"
+        expanded={expanded.workModes ?? true}
+        onClear={() => onClearGroup("workModes")}
+        onToggleExpanded={() => toggleExpanded("workModes")}
+        options={facets.workModes}
+        renderOption={(mode) => (
+          <FacetChoice
+            count={mode.count}
+            label={remoteTypeLabels[mode.value as keyof typeof remoteTypeLabels] ?? mode.value}
+            onToggle={() => onToggle("workModes", mode.value)}
+            selected={filters.workModes.includes(mode.value)}
+          />
+        )}
+        title="Work arrangement"
+      />
+
+      <FacetSection
         canClear={filters.jobTypes.length > 0}
         clearLabel="jobtypes"
         expanded={expanded.jobTypes ?? true}
@@ -398,6 +452,24 @@ export function FacetSidebar({
       />
 
       <FacetSection
+        canClear={filters.levels.length > 0}
+        clearLabel="levels"
+        expanded={expanded.levels ?? true}
+        onClear={() => onClearGroup("levels")}
+        onToggleExpanded={() => toggleExpanded("levels")}
+        options={facets.levels}
+        renderOption={(option) => (
+          <FacetChoice
+            count={option.count}
+            label={option.label ?? option.value.replaceAll("_", " ")}
+            onToggle={() => onToggle("levels", option.value)}
+            selected={filters.levels.includes(option.value)}
+          />
+        )}
+        title="Career level"
+      />
+
+      <FacetSection
         canClear={filters.sponsorship.length > 0}
         clearLabel="sponsorship"
         expanded={expanded.sponsorship ?? true}
@@ -412,7 +484,25 @@ export function FacetSidebar({
             selected={filters.sponsorship.includes(option.value)}
           />
         )}
-        title="Visa sponsorship"
+        title="Role sponsorship"
+      />
+
+      <FacetSection
+        canClear={filters.sponsorLicence}
+        clearLabel="sponsorlicence"
+        expanded={expanded.sponsorLicence ?? true}
+        onClear={() => onClearGroup("sponsorLicence")}
+        onToggleExpanded={() => toggleExpanded("sponsorLicence")}
+        options={facets.sponsorLicence}
+        renderOption={(option) => (
+          <FacetChoice
+            count={option.count}
+            label={option.label ?? "Employer is a UK licensed sponsor"}
+            onToggle={() => onToggle("sponsorLicence", option.value)}
+            selected={filters.sponsorLicence}
+          />
+        )}
+        title="Employer sponsor licence"
       />
 
       <FacetSection

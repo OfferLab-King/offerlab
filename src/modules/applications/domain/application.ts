@@ -21,6 +21,7 @@ export type ApplicationValues = Readonly<{
   appliedDate: string | null;
   applicationDeadline: string | null;
   company: string;
+  companyId: string | null;
   industry: Industry | null;
   location: string | null;
   nextStageDeadline: string | null;
@@ -52,6 +53,7 @@ const inputSchema = z
     appliedDate: z.string().nullable().optional().default(null),
     applicationDeadline: z.string().nullable().optional().default(null),
     company: z.string(),
+    companyId: z.string().uuid().nullable().optional().default(null),
     industry: z.enum(enumKeys(industries)).nullable().optional().default(null),
     location: z.string().nullable().optional().default(null),
     nextStageDeadline: z.string().nullable().optional().default(null),
@@ -118,6 +120,7 @@ export function parseApplicationInput(
     appliedDate: parsed.data.appliedDate || null,
     applicationDeadline: parsed.data.applicationDeadline || null,
     company: normalizeDisplayText(parsed.data.company),
+    companyId: parsed.data.companyId,
     location: normalizeOptionalDisplayText(parsed.data.location),
     nextStageDeadline: parsed.data.nextStageDeadline || null,
     industry: parsed.data.industry,

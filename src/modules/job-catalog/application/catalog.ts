@@ -9,11 +9,13 @@ import {
 import type { JobCatalogFilters } from "../domain/catalog";
 import {
   findEmployerProfile,
+  findEmployerPublicProfile,
   findJobDetail,
   findJobsByIds,
   listCatalogJobsForSitemap,
   listCompanyActiveJobs,
   listEmployerDirectory,
+  listEmployerPublicDirectory,
   listIndexableEmployersForSitemap,
   listRelatedEmployerJobs,
   listSimilarJobs,
@@ -21,6 +23,7 @@ import {
   searchJobsFaceted,
   type EmployerDirectoryRow,
   type EmployerProfileRow,
+  type EmployerPublicProfileRow,
   type EmployerSitemapRow,
   type FacetCountRow,
   type JobCardRow,
@@ -34,11 +37,16 @@ import {
 export type FacetedSearchPayload = Readonly<{
   facets: Readonly<{
     employers: readonly FacetOptionView[];
+    functions: readonly FacetOptionView[];
+    industries: readonly FacetOptionView[];
     jobTypes: readonly FacetOptionView[];
+    levels: readonly FacetOptionView[];
     locations: readonly FacetOptionView[];
     sectors: readonly FacetOptionView[];
+    sponsorLicence: readonly FacetOptionView[];
     sponsorship: readonly FacetOptionView[];
     subsectors: readonly FacetOptionView[];
+    workModes: readonly FacetOptionView[];
   }>;
   hasSalaryData: boolean;
   result: JobSearchResult;
@@ -92,17 +100,42 @@ export async function searchJobCatalogFaceted(
         label: row.label ?? row.value,
         value: row.value,
       })),
+      functions: facets.functions.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
+      industries: facets.industries.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
       jobTypes: presentWithTaxonomy(
         facets.jobTypes,
         (key) => opportunityTypeLabels[key as keyof typeof opportunityTypeLabels] ?? null,
       ),
+      levels: facets.levels.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
       locations: presentLocations(facets.locations),
       sectors: presentWithTaxonomy(facets.sectors, (key) => jobSectorLabel(key)),
+      sponsorLicence: facets.sponsorLicence.map((row) => ({
+        count: row.count,
+        label: row.label ?? "Employer is a UK licensed sponsor",
+        value: row.value,
+      })),
       sponsorship: presentWithTaxonomy(
         facets.sponsorship,
         (key) => visaSponsorshipLabels[key as keyof typeof visaSponsorshipLabels] ?? null,
       ),
       subsectors: presentWithTaxonomy(facets.subsectors, (key) => jobSubsectorLabel(key)),
+      workModes: facets.workModes.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
     },
     hasSalaryData,
     result,
@@ -135,11 +168,49 @@ export function readEmployerDirectory(): Promise<EmployerDirectoryRow[]> {
   return withApplicationRole((database) => listEmployerDirectory(database));
 }
 
-export type EmployerProfileView = EmployerProfileRow & Readonly<{ indexable: boolean }>;
+export function readEmployerDirectoryEntries(): Promise<readonly EmployerPublicProfileRow[]> {
+  return withApplicationRole((database) => listEmployerPublicDirectory(database));
+}
+
+export type EmployerAutocompleteOption = Readonly<{
+  id: string;
+  slug: string;
+  name: string;
+  industryKey: string | null;
+}>;
+
+/** Bounded server-side employer autocomplete matching canonical name or aliases. */
+export async function searchEmployersForAutocomplete(
+  query: string,
+  limit = 8,
+): Promise<EmployerAutocompleteOption[]> {
+  const trimmed = query.trim().toLowerCase();
+  if (trimmed.length < 2) return [];
+  return withApplicationRole(async (database) => {
+    const rows = await database<EmployerAutocompleteOption[]>`
+      select id, slug, name, employer_industry_key as "industryKey"
+      from app.employer_public_profile
+      where name ilike ${`%${trimmed}%`}
+         or exists (
+           select 1 from jsonb_array_elements_text(aliases) as alias
+           where lower(alias) like ${`%${trimmed}%`}
+         )
+      order by name asc
+      limit ${limit}
+    `;
+    return rows;
+  });
+}
+
+export type EmployerProfileView = EmployerProfileRow &
+  Readonly<{ indexable: boolean; publicProfile: EmployerPublicProfileRow | null }>;
 
 export async function readEmployerProfile(slug: string): Promise<EmployerProfileView | null> {
   return withApplicationRole(async (database) => {
-    const row = await findEmployerProfile(database, slug);
+    const [row, publicProfile] = await Promise.all([
+      findEmployerProfile(database, slug),
+      findEmployerPublicProfile(database, slug),
+    ]);
     if (!row) return null;
     return {
       ...row,
@@ -148,7 +219,15 @@ export async function readEmployerProfile(slug: string): Promise<EmployerProfile
         description: row.description,
         hasImportedJobs: row.has_imported_jobs,
         hasOfficialEmployerInfo: row.website_url !== null || row.careers_url !== null,
+        hasCredibleProfile:
+          publicProfile !== null &&
+          publicProfile.employer_industry_key !== null &&
+          (publicProfile.employee_band !== null ||
+            publicProfile.ownership_type !== null ||
+            publicProfile.has_sponsor) &&
+          (publicProfile.website_url !== null || publicProfile.careers_url !== null),
       }),
+      publicProfile,
     };
   });
 }

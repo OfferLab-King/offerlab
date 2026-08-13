@@ -56,6 +56,9 @@ export type OnboardingAnswers = Readonly<{
   preparationPriorities: readonly z.infer<typeof prioritySchema>[];
   supportNeeds: readonly z.infer<typeof supportSchema>[];
   targetCompanies: readonly string[];
+  targetIndustries: readonly string[];
+  targetFunctions: readonly string[];
+  preferredLocations: readonly string[];
 }>;
 
 export type OnboardingIntent = "complete" | "save";
@@ -73,8 +76,33 @@ const inputSchema = z
     preparationPriorities: z.array(prioritySchema).max(8).default([]),
     supportNeeds: z.array(supportSchema).max(6).default([]),
     targetCompanies: z.array(z.string().max(320)).max(10).default([]),
+    targetIndustries: z.array(z.string().max(80)).max(8).default([]),
+    targetFunctions: z.array(z.string().max(80)).max(8).default([]),
+    preferredLocations: z.array(z.string().max(80)).max(12).default([]),
   })
   .strict();
+
+/** Legacy onboarding industry choices mapped to canonical employer industries. */
+const legacyToCanonicalIndustry: Readonly<Record<string, string>> = {
+  consulting: "professional_services_consulting",
+  accounting_professional_services: "professional_services_consulting",
+  financial_services: "financial_services",
+  technology: "technology_software",
+  public_sector: "public_sector_government",
+  consumer_retail: "consumer_retail_fmcg",
+  general_corporate: "other",
+  other: "other",
+};
+
+export function canonicalIndustriesFromLegacy(industries: readonly string[]): string[] {
+  return [
+    ...new Set(
+      industries
+        .map((key) => legacyToCanonicalIndustry[key])
+        .filter((value): value is string => value !== undefined),
+    ),
+  ];
+}
 
 export type ParsedOnboardingInput = Readonly<{
   answers: OnboardingAnswers;
@@ -119,6 +147,18 @@ export function parseOnboardingInput(
     preparationPriorities: [...new Set(parsed.data.preparationPriorities)],
     supportNeeds: [...new Set(parsed.data.supportNeeds)],
     targetCompanies: normalizeCompanies(parsed.data.targetCompanies),
+    targetIndustries:
+      parsed.data.targetIndustries.length > 0
+        ? [...new Set(parsed.data.targetIndustries)]
+        : canonicalIndustriesFromLegacy(parsed.data.industries),
+    targetFunctions: [...new Set(parsed.data.targetFunctions)],
+    preferredLocations: [
+      ...new Set(
+        parsed.data.preferredLocations
+          .map((location) => location.trim().toLowerCase())
+          .filter((location): location is string => location.length > 0),
+      ),
+    ],
   };
   if (answers.targetCompanies.some((company) => Array.from(company).length > 80)) {
     return {

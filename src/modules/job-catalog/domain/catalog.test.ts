@@ -10,6 +10,7 @@ import {
   serializeJobCatalogFilters,
   slugToKey,
   splitLocationSelections,
+  type JobCatalogFilters,
 } from "./catalog";
 
 describe("catalog URL serialisation", () => {
@@ -152,5 +153,73 @@ describe("faceted filter clause semantics", () => {
     const { conditions } = buildFor({ deadline: "upcoming", postedWithinDays: 7 });
     expect(conditions.some((c) => c.includes("application_deadline"))).toBe(true);
     expect(conditions.some((c) => c.includes("first_seen_at"))).toBe(true);
+  });
+});
+
+describe("Phase F dimension filters", () => {
+  const buildFor = (
+    overrides: Partial<Parameters<typeof buildJobFilterClauses>[0]>,
+    options?: Parameters<typeof buildJobFilterClauses>[2],
+  ): Readonly<{ conditions: string[]; values: unknown[] }> => {
+    const result = buildJobFilterClauses(
+      { ...defaultJobCatalogFilters, ...overrides },
+      new Date("2026-08-01T00:00:00Z"),
+      options,
+    );
+    return result;
+  };
+
+  it("round-trips employer industry, job function, career level and work modes", () => {
+    const filters: JobCatalogFilters = {
+      ...defaultJobCatalogFilters,
+      functions: ["software_engineering"],
+      industries: ["financial_services"],
+      levels: ["graduate"],
+      sponsorLicence: true,
+      workModes: ["hybrid"],
+    };
+    const roundTripped = parseJobCatalogFilters(
+      new URLSearchParams(serializeJobCatalogFilters(filters)),
+    );
+    expect(roundTripped.functions).toEqual(["software_engineering"]);
+    expect(roundTripped.industries).toEqual(["financial_services"]);
+    expect(roundTripped.levels).toEqual(["graduate"]);
+    expect(roundTripped.workModes).toEqual(["hybrid"]);
+    expect(roundTripped.sponsorLicence).toBe(true);
+  });
+
+  it("rejects unknown dimension keys and serializes slugs", () => {
+    const parsed = parseJobCatalogFilters(
+      new URLSearchParams("industries=financial-services,not-real&functions=legal&levels=intern"),
+    );
+    expect(parsed.industries).toEqual(["financial_services"]);
+    expect(parsed.functions).toEqual(["legal"]);
+    expect(parsed.levels).toEqual(["intern"]);
+    expect(
+      parseJobCatalogFilters(new URLSearchParams("industries=definitely-not-an-industry"))
+        .industries,
+    ).toEqual([]);
+  });
+
+  it("builds employer industry, function and career level clauses", () => {
+    const { conditions } = buildFor({
+      functions: ["software_engineering"],
+      industries: ["financial_services"],
+      levels: ["graduate"],
+    });
+    expect(conditions.some((c) => c.includes("c.employer_industry_key = any"))).toBe(true);
+    expect(conditions.some((c) => c.includes("j.job_function_key = any"))).toBe(true);
+    expect(conditions.some((c) => c.includes("j.career_level_key = any"))).toBe(true);
+  });
+
+  it("builds work arrangement and employer sponsor licence clauses", () => {
+    const { conditions } = buildFor({ workModes: ["remote"], sponsorLicence: true });
+    expect(conditions.some((c) => c.includes("j.remote_type = any"))).toBe(true);
+    expect(conditions.some((c) => c.includes("employer_public_profile"))).toBe(true);
+  });
+
+  it("excludes the sponsor licence clause from its own disjunctive count", () => {
+    const { conditions } = buildFor({ sponsorLicence: true }, { excludeFacet: "sponsorLicence" });
+    expect(conditions.some((c) => c.includes("employer_public_profile"))).toBe(false);
   });
 });

@@ -216,7 +216,7 @@ test("signed-in members keep the workspace navigation while visiting /employers"
     await page.waitForURL(/\/member$/);
 
     await page.goto("/employers");
-    await expect(page.getByRole("heading", { name: /Explore employers/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
     await expect(navigation.getByRole("link", { name: "Employers" })).toHaveAttribute(
@@ -245,7 +245,7 @@ test("the public navigation becomes current on /jobs and /employers", async ({ p
   );
 
   await page.goto("/employers");
-  await expect(page.getByRole("heading", { name: /Explore employers/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
   const employersNav = page.getByRole("navigation", { name: "Public navigation" });
   await expect(employersNav.getByRole("link", { name: "Employers" })).toHaveAttribute(
     "aria-current",

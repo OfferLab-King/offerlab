@@ -2,6 +2,10 @@ import { classifyJob, classificationRequiresReview } from "../domain/classificat
 import type { DiscoveredJob } from "../domain/deduplication";
 import { evaluateEligibility } from "../domain/eligibility";
 import { evaluateUkLocation } from "../domain/uk-location";
+import {
+  careerLevelFromOpportunityAndSeniority,
+  jobFunctionFromLegacySubsector,
+} from "../../taxonomy/taxonomy-mapping";
 import type { JobClassificationWrite } from "../infrastructure/job-repository";
 
 /**
@@ -43,15 +47,21 @@ export function classifyDiscoveredJob(discovered: DiscoveredJob): JobClassificat
         ? "suppressed"
         : "draft";
 
+  const requiresReview = classificationRequiresReview(classification);
+
   return {
+    careerLevelKey: careerLevelFromOpportunityAndSeniority(eligibility.opportunityType, null),
     classificationSource: "deterministic",
     eligibilityEvidence: location.evidence ?? eligibility.evidence[0] ?? null,
     eligibilityReasons: [...eligibility.reasons, location.reason],
     eligibilityStatus,
+    jobFunctionKey: requiresReview
+      ? null
+      : jobFunctionFromLegacySubsector(classification.subsectorKey),
     opportunityType: eligibility.opportunityType,
     publicationStatus,
-    sectorKey: classificationRequiresReview(classification) ? null : classification.sectorKey,
-    subsectorKey: classificationRequiresReview(classification) ? null : classification.subsectorKey,
+    sectorKey: requiresReview ? null : classification.sectorKey,
+    subsectorKey: requiresReview ? null : classification.subsectorKey,
   };
 }
 

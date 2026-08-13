@@ -390,3 +390,257 @@ export async function listAliasTextByCompany(
     select alias, company_id as "companyId" from app.employer_alias
   `;
 }
+
+export type EmployerDetailSnapshot = Readonly<{
+  id: string;
+  companyId: string | null;
+  canonicalName: string;
+  datasetVersion: string;
+  researchDate: Date;
+  priorityTier: string;
+  internalRank: number;
+  crawlerWave: string | null;
+  employerValueScore: number | null;
+  crawlerReadinessScore: number | null;
+  crawlerPriorityScore: number | null;
+  sponsorshipScore: number | null;
+  earlyCareerScore: number | null;
+  scaleScore: number | null;
+  brandMarketScore: number | null;
+  ukRelevanceScore: number | null;
+  sector: string | null;
+  subsector: string | null;
+  employeeBand: string | null;
+  employeeScope: string | null;
+  employeeSource: string | null;
+  employeeConfidence: string | null;
+  ownershipType: string | null;
+  ticker: string | null;
+  exchange: string | null;
+  identityConfidence: string | null;
+  researchStatus: string;
+  evidenceUrls: readonly string[];
+  notes: string | null;
+  atsPlatform: string | null;
+}>;
+
+export type EmployerSponsorDetail = Readonly<{
+  id: string;
+  legalName: string;
+  townCity: string | null;
+  sponsorRating: string | null;
+  routes: readonly string[];
+  sourceSnapshotDate: Date;
+  activeInSnapshot: boolean;
+  identityConfidence: string | null;
+  identityNotes: string | null;
+  sourceReference: string | null;
+}>;
+
+export type EmployerCandidateDetail = Readonly<{
+  id: string;
+  candidateUrl: string | null;
+  candidateEndpoint: string | null;
+  platformHint: string | null;
+  atsVerificationStatus: string | null;
+  status: string;
+  confidence: string | null;
+  discoveryMethod: string | null;
+  verifiedAt: Date | null;
+  notes: string | null;
+}>;
+
+export type EmployerLiveSourceDetail = Readonly<{
+  id: string;
+  slug: string;
+  name: string;
+  channel: string;
+  careersUrl: string;
+  crawlEndpointUrl: string | null;
+  atsProvider: string | null;
+  sourceType: string;
+  status: string;
+  needsBrowser: boolean;
+  landingHealthStatus: string;
+  endpointHealthStatus: string;
+  lastCheckedAt: Date | null;
+  nextCheckAt: Date | null;
+  consecutiveFailures: number;
+  verificationDate: Date | null;
+}>;
+
+export type EmployerDetailRow = Readonly<{
+  id: string;
+  slug: string;
+  name: string;
+  websiteUrl: string | null;
+  careersUrl: string | null;
+  employerIndustryKey: string | null;
+  employerSubindustryKey: string | null;
+  description: string | null;
+  active: boolean;
+  aliases: readonly { alias: string; aliasType: string; source: string }[];
+  snapshot: EmployerDetailSnapshot | null;
+  sponsors: readonly EmployerSponsorDetail[];
+  candidates: readonly EmployerCandidateDetail[];
+  liveSources: readonly EmployerLiveSourceDetail[];
+}>;
+
+export async function findEmployerDetail(
+  database: TransactionSql,
+  companyId: string,
+): Promise<EmployerDetailRow | null> {
+  const [companies, aliases, snapshots, sponsors, candidates, sources] = await Promise.all([
+    database<
+      {
+        id: string;
+        slug: string;
+        name: string;
+        websiteUrl: string | null;
+        careersUrl: string | null;
+        employerIndustryKey: string | null;
+        employerSubindustryKey: string | null;
+        description: string | null;
+        active: boolean;
+      }[]
+    >`
+      select id, slug, name, website_url as "websiteUrl", careers_url as "careersUrl",
+        employer_industry_key as "employerIndustryKey",
+        employer_subindustry_key as "employerSubindustryKey",
+        description, active
+      from app.company where id = ${companyId}::uuid
+    `,
+    database<{ alias: string; aliasType: string; source: string }[]>`
+      select alias, alias_type as "aliasType", source
+      from app.employer_alias where company_id = ${companyId}::uuid order by alias
+    `,
+    database<EmployerDetailSnapshot[]>`
+      select id, company_id as "companyId", canonical_name as "canonicalName",
+        dataset_version as "datasetVersion", research_date as "researchDate",
+        priority_tier as "priorityTier", internal_rank as "internalRank",
+        crawler_wave as "crawlerWave", employer_value_score as "employerValueScore",
+        crawler_readiness_score as "crawlerReadinessScore",
+        crawler_priority_score as "crawlerPriorityScore",
+        sponsorship_score as "sponsorshipScore", early_career_score as "earlyCareerScore",
+        scale_score as "scaleScore", brand_market_score as "brandMarketScore",
+        uk_relevance_score as "ukRelevanceScore", sector, subsector,
+        employee_band as "employeeBand", employee_scope as "employeeScope",
+        employee_source as "employeeSource", employee_confidence as "employeeConfidence",
+        ownership_type as "ownershipType", ticker, exchange,
+        identity_confidence as "identityConfidence", research_status as "researchStatus",
+        evidence_urls as "evidenceUrls", notes, ats_platform as "atsPlatform"
+      from app.employer_research_snapshot
+      where company_id = ${companyId}::uuid
+      order by research_date desc, dataset_version desc
+      limit 3
+    `,
+    database<EmployerSponsorDetail[]>`
+      select id, legal_name as "legalName", town_city as "townCity",
+        sponsor_rating as "sponsorRating", routes,
+        source_snapshot_date as "sourceSnapshotDate", active_in_snapshot as "activeInSnapshot",
+        identity_confidence as "identityConfidence", identity_notes as "identityNotes",
+        source_reference as "sourceReference"
+      from app.employer_sponsor_entity
+      where company_id = ${companyId}::uuid
+      order by source_snapshot_date desc, legal_name
+    `,
+    database<EmployerCandidateDetail[]>`
+      select id, candidate_url as "candidateUrl", candidate_endpoint as "candidateEndpoint",
+        platform_hint as "platformHint", ats_verification_status as "atsVerificationStatus",
+        status, confidence, discovery_method as "discoveryMethod",
+        verified_at as "verifiedAt", notes
+      from app.job_source_candidate
+      where company_id = ${companyId}::uuid
+      order by updated_at desc
+    `,
+    database<EmployerLiveSourceDetail[]>`
+      select id, slug, name, channel, careers_url as "careersUrl",
+        crawl_endpoint_url as "crawlEndpointUrl", ats_provider as "atsProvider",
+        source_type as "sourceType", status, needs_browser as "needsBrowser",
+        landing_health_status as "landingHealthStatus",
+        endpoint_health_status as "endpointHealthStatus",
+        last_checked_at as "lastCheckedAt", next_check_at as "nextCheckAt",
+        consecutive_failures as "consecutiveFailures",
+        verification_date as "verificationDate"
+      from app.job_source
+      where company_id = ${companyId}::uuid
+      order by status asc, name
+    `,
+  ]);
+  const company = companies[0];
+  if (!company) return null;
+  return {
+    ...company,
+    aliases,
+    snapshot: snapshots[0] ?? null,
+    sponsors,
+    candidates,
+    liveSources: sources,
+  };
+}
+
+export type SourceCapabilityStats = Readonly<{
+  liveSources: number;
+  browserSources: number;
+  httpSources: number;
+  jobsByAts: readonly { atsProvider: string | null; count: number }[];
+  sourcesByType: readonly { sourceType: string; needsBrowser: boolean; count: number }[];
+  verifiedCandidates: number;
+  platformIdentifiedCandidates: number;
+  employersWithCareersUrl: number;
+  employersWithLiveSource: number;
+  employersWithJobs: number;
+}>;
+
+export async function readSourceCapabilityStats(
+  database: TransactionSql,
+): Promise<SourceCapabilityStats> {
+  const [sources, jobsByAts, candidates, employers] = await Promise.all([
+    database<{ needsBrowser: boolean; sourceType: string }[]>`
+      select needs_browser as "needsBrowser", source_type as "sourceType" from app.job_source
+    `,
+    database<{ atsProvider: string | null; count: number }[]>`
+      select ats_provider as "atsProvider", count(*)::int as count
+      from app.job_source group by ats_provider order by count(*) desc
+    `,
+    database<{ status: string }[]>`
+      select status from app.job_source_candidate
+    `,
+    database<{ hasCareersUrl: boolean; hasSource: boolean; hasJobs: boolean }[]>`
+      select
+        (coalesce(nullif(website_url, ''), careers_url) not like '%employer.invalid%') as "hasCareersUrl",
+        exists (select 1 from app.job_source js where js.company_id = c.id) as "hasSource",
+        exists (select 1 from app.job j where j.company_id = c.id) as "hasJobs"
+      from app.company c
+    `,
+  ]);
+  const browserSources = sources.filter((source) => source.needsBrowser).length;
+  const typeCounts = new Map<string, { needsBrowser: boolean; count: number }>();
+  for (const source of sources) {
+    const key = source.sourceType;
+    const existing = typeCounts.get(key);
+    if (existing) existing.count += 1;
+    else typeCounts.set(key, { needsBrowser: source.needsBrowser, count: 1 });
+  }
+  return {
+    liveSources: sources.length,
+    browserSources,
+    httpSources: sources.length - browserSources,
+    jobsByAts: jobsByAts,
+    sourcesByType: [...typeCounts.entries()].map(([sourceType, entry]) => ({
+      sourceType,
+      needsBrowser: entry.needsBrowser,
+      count: entry.count,
+    })),
+    verifiedCandidates: candidates.filter(
+      (candidate) => candidate.status === "verified" || candidate.status === "promoted",
+    ).length,
+    platformIdentifiedCandidates: candidates.filter(
+      (candidate) =>
+        candidate.status === "platform_identified" || candidate.status === "endpoint_identified",
+    ).length,
+    employersWithCareersUrl: employers.filter((employer) => employer.hasCareersUrl).length,
+    employersWithLiveSource: employers.filter((employer) => employer.hasSource).length,
+    employersWithJobs: employers.filter((employer) => employer.hasJobs).length,
+  };
+}

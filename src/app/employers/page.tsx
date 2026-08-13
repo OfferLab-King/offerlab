@@ -1,11 +1,20 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import {
-  readEmployerDirectory,
+  employerDirectoryFilterAndSort,
+  distinctEmployeeBands,
+  distinctOwnerships,
+  employerIndustryLabel,
+  parseEmployerDirectoryFilters,
+  EMPLOYER_DIRECTORY_INDUSTRIES,
+} from "../../modules/job-catalog/domain/employer-directory";
+import { jobSectorLabel } from "../../modules/job-catalog/domain/taxonomy";
+import {
+  readEmployerDirectoryEntries,
   readSectorJobCounts,
 } from "../../modules/job-catalog/application/catalog";
 import { SiteHeader } from "../components/site-header";
-import { EmployerDirectoryView } from "./employer-directory-view";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,9 +31,9 @@ export async function generateMetadata({
   return {
     alternates: { canonical: "/employers" },
     description:
-      "Explore UK employers by sector, with current roles sourced from official career sites and honest zero-role states.",
+      "Explore UK employers by industry, with current roles sourced from official career sites and honest zero-role states.",
     robots: filtered ? { index: false, follow: true } : undefined,
-    title: "Explore Employers by Sector | OfferLab",
+    title: "Explore UK Employers by Industry | OfferLab",
   };
 }
 
@@ -33,12 +42,18 @@ export default async function EmployersDirectoryPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await searchParams;
-  const [rows, sectorCounts] = await Promise.all([readEmployerDirectory(), readSectorJobCounts()]);
-  const employerCount = new Set(rows.map((row) => row.company_slug)).size;
-  const hiringCount = new Set(
-    rows.filter((row) => row.active_count > 0).map((row) => row.company_slug),
-  ).size;
+  const [entries, sectorCounts] = await Promise.all([
+    readEmployerDirectoryEntries(),
+    readSectorJobCounts(),
+  ]);
+  const query = await searchParams;
+  const filters = parseEmployerDirectoryFilters(query);
+  const rows = employerDirectoryFilterAndSort(entries, filters);
+  const visible = rows.filter((row) => row.current_jobs > 0).length;
+
+  const sizeBands = distinctEmployeeBands(entries);
+  const ownerships = distinctOwnerships(entries);
+
   return (
     <main className="employers-page">
       <SiteHeader />
@@ -46,18 +61,133 @@ export default async function EmployersDirectoryPage({
         <header className="employer-directory-hero">
           <div>
             <p className="catalogue-eyebrow">Employer and industry directory</p>
-            <h1>Explore employers by sector</h1>
+            <h1>Explore UK employers</h1>
             <p className="catalogue-subtitle">
-              Browse priority UK employers by industry, then open their current roles or official
-              careers pages. Employers without an open role remain visible for research.
+              Researched UK employers by industry. Open their current roles or official careers
+              pages; employers without an open role remain discoverable for research.
             </p>
           </div>
           <p className="employer-directory-summary">
-            <strong>{employerCount}</strong> employers · {hiringCount} hiring now
+            <strong>{rows.length}</strong> employers · {visible} hiring now
           </p>
         </header>
-        <EmployerDirectoryView rows={rows} sectorCounts={sectorCounts} />
+
+        <form className="employer-directory-filters" method="get" action="/employers">
+          <label>
+            Search
+            <input name="q" defaultValue={filters.query ?? ""} placeholder="Employer name" />
+          </label>
+          <label>
+            Industry
+            <select name="industry" defaultValue={filters.industry ?? ""}>
+              <option value="">All industries</option>
+              {EMPLOYER_DIRECTORY_INDUSTRIES.map((industry) => (
+                <option key={industry} value={industry}>
+                  {employerIndustryLabel(industry)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Size
+            <select name="size" defaultValue={filters.sizeBand ?? ""}>
+              <option value="">Any size</option>
+              {sizeBands.map((band) => (
+                <option key={band} value={band}>
+                  {band}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Ownership
+            <select name="ownership" defaultValue={filters.ownership ?? ""}>
+              <option value="">Any ownership</option>
+              {ownerships.map((ownership) => (
+                <option key={ownership} value={ownership}>
+                  {ownership}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="employer-directory-check">
+            <input name="sponsor" type="checkbox" value="1" defaultChecked={filters.sponsor} />
+            UK licensed sponsor
+          </label>
+          <label className="employer-directory-check">
+            <input name="hiring" type="checkbox" value="1" defaultChecked={filters.hiring} />
+            Hiring now
+          </label>
+          <label>
+            Sort
+            <select name="sort" defaultValue={filters.sort}>
+              <option value="hiring">Hiring first</option>
+              <option value="roles">Most current roles</option>
+              <option value="az">A–Z</option>
+            </select>
+          </label>
+          <button type="submit">Apply</button>
+        </form>
+
+        {rows.length === 0 ? (
+          <section className="job-catalog-empty">
+            <h2>No employers match</h2>
+            <p>Try removing a filter or searching for a different employer.</p>
+            <Link className="button-link" href="/employers">
+              Clear filters
+            </Link>
+          </section>
+        ) : (
+          <ul className="employer-directory-grid">
+            {rows.map((entry) => {
+              const industry = employerIndustryLabel(entry.employer_industry_key);
+              const officialUrl = entry.careers_url ?? entry.website_url;
+              const factParts = [
+                industry ?? undefined,
+                entry.employee_band ? `${entry.employee_band} employees` : undefined,
+                entry.employee_scope ? `${entry.employee_scope} scope` : undefined,
+              ].filter((part): part is string => part !== undefined);
+              return (
+                <li className="employer-directory-card" key={entry.id}>
+                  <h2>
+                    <Link href={`/employers/${entry.slug}`}>{entry.name}</Link>
+                  </h2>
+                  {factParts.length > 0 && (
+                    <p className="employer-directory-facts">{factParts.join(" · ")}</p>
+                  )}
+                  <p className="employer-directory-roles">
+                    {entry.current_jobs > 0 ? (
+                      <>
+                        <strong>{entry.current_jobs}</strong> current{" "}
+                        {entry.current_jobs === 1 ? "role" : "roles"}
+                      </>
+                    ) : (
+                      <>No current OfferLab roles</>
+                    )}
+                    {entry.has_sponsor && (
+                      <span className="employer-sponsor-badge">UK licensed sponsor</span>
+                    )}
+                  </p>
+                  <p className="employer-directory-footer">
+                    {officialUrl && (
+                      <a href={officialUrl} rel="noreferrer" target="_blank">
+                        Official careers page →
+                      </a>
+                    )}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
+      <p className="hint employer-directory-sector-note">
+        Sector role counts:{" "}
+        {sectorCounts
+          .filter((row) => row.count > 0)
+          .map((row) => `${jobSectorLabel(row.sector_key) ?? row.sector_key} (${row.count})`)
+          .join(" · ")}
+      </p>
     </main>
   );
 }

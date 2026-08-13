@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { completionErrors, isOnboardingComplete, parseOnboardingInput } from "./onboarding";
+import {
+  canonicalIndustriesFromLegacy,
+  completionErrors,
+  isOnboardingComplete,
+  parseOnboardingInput,
+} from "./onboarding";
 
 const validInput = {
   confidence: null,
@@ -65,5 +70,42 @@ describe("onboarding validation", () => {
     expect(parseOnboardingInput({ ...validInput, targetCompanies: ["x".repeat(81)] }).ok).toBe(
       false,
     );
+  });
+});
+
+describe("Phase G onboarding dimensions", () => {
+  it("derives canonical target industries from legacy choices", () => {
+    expect(canonicalIndustriesFromLegacy(["technology", "financial_services"])).toEqual([
+      "technology_software",
+      "financial_services",
+    ]);
+    expect(canonicalIndustriesFromLegacy(["consulting"])).toEqual([
+      "professional_services_consulting",
+    ]);
+    expect(canonicalIndustriesFromLegacy([])).toEqual([]);
+  });
+
+  it("accepts explicit canonical preferences and normalizes locations", () => {
+    const result = parseOnboardingInput({
+      ...validInput,
+      targetIndustries: ["technology_software"],
+      targetFunctions: ["software_engineering", "data_analytics_ai"],
+      preferredLocations: ["  London ", "Manchester"],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.answers.targetIndustries).toEqual(["technology_software"]);
+    expect(result.value.answers.targetFunctions).toEqual([
+      "software_engineering",
+      "data_analytics_ai",
+    ]);
+    expect(result.value.answers.preferredLocations).toEqual(["london", "manchester"]);
+  });
+
+  it("falls back to legacy-derived industries when no canonical preference is given", () => {
+    const result = parseOnboardingInput({ ...validInput, industries: ["technology"] });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.answers.targetIndustries).toEqual(["technology_software"]);
   });
 });

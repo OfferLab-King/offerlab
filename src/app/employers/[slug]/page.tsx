@@ -7,6 +7,7 @@ import {
   jobSubsectorLabel,
   remoteTypeLabels,
 } from "../../../modules/job-catalog/domain/taxonomy";
+import { employerIndustryLabel } from "../../../modules/job-catalog/domain/employer-directory";
 import { escapeJsonLd } from "../../../modules/job-catalog/domain/publication";
 import {
   readEmployerActiveJobs,
@@ -15,6 +16,9 @@ import {
 import { JobCard } from "../../jobs/job-card";
 import { EmployerMark } from "../../jobs/employer-mark";
 import { SiteHeader } from "../../components/site-header";
+import { currentMemberAccess } from "../../../modules/identity-access/application/authorization";
+import { isEmployerSavedForMember } from "../../../modules/job-catalog/application/saved-employers";
+import { saveEmployer, unsaveEmployer } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,6 +55,12 @@ export default async function EmployerProfilePage({ params }: { params: Employer
   const employer = await readEmployerProfile(slug);
   if (!employer) notFound();
   const jobs = await readEmployerActiveJobs(employer.id);
+  const access = await currentMemberAccess();
+  const memberId = access.status === "eligible" ? access.authorization.userId : null;
+  const saved =
+    memberId !== null && employer.id
+      ? await isEmployerSavedForMember(memberId, employer.id)
+      : false;
   const now = new Date();
 
   const sectors = [...new Set(jobs.flatMap((job) => (job.sector_key ? [job.sector_key] : [])))];
@@ -70,6 +80,30 @@ export default async function EmployerProfilePage({ params }: { params: Employer
       }),
     ),
   ];
+  const opportunityTypes = [
+    ...new Set(jobs.flatMap((job) => (job.opportunity_type ? [job.opportunity_type] : []))),
+  ];
+  const opportunityLabels: Readonly<Record<string, string>> = {
+    graduate_scheme: "Graduate programmes",
+    graduate_job: "Graduate jobs",
+    internship: "Internships",
+    industrial_placement: "Industrial placements",
+    work_experience: "Work experience",
+    apprenticeship: "Apprenticeships",
+    degree_apprenticeship: "Degree apprenticeships",
+    training_contract: "Training contracts",
+    vacation_scheme: "Vacation schemes",
+    immediate_start: "Immediate-start roles",
+    entry_level: "Entry-level roles",
+    postgraduate_opportunity: "Postgraduate opportunities",
+    other_early_career: "Early-career roles",
+    unknown: "",
+  };
+  const opportunities = opportunityTypes
+    .map((key) => opportunityLabels[key] ?? "")
+    .filter((label): label is string => label.length > 0);
+  const profile = employer.publicProfile;
+  const industryLabel = employerIndustryLabel(profile?.employer_industry_key ?? null);
 
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
   const structuredData = employer.indexable
@@ -128,13 +162,79 @@ export default async function EmployerProfilePage({ params }: { params: Employer
             <EmployerMark companyName={employer.name} logoUrl={employer.logo_url} />
           </div>
           <div className="employer-profile-heading">
-            {employer.industry && <p className="employer-profile-industry">{employer.industry}</p>}
+            {industryLabel && <p className="employer-profile-industry">{industryLabel}</p>}
             <h1>{employer.name}</h1>
             {employer.description && (
               <p className="employer-profile-description">{employer.description}</p>
             )}
           </div>
         </header>
+
+        {profile && (
+          <section className="employer-profile-facts" aria-labelledby="employer-facts">
+            <h2 id="employer-facts">Quick facts</h2>
+            <dl>
+              {industryLabel && (
+                <div>
+                  <dt>Industry</dt>
+                  <dd>{industryLabel}</dd>
+                </div>
+              )}
+              {profile.employee_band && (
+                <div>
+                  <dt>Company size</dt>
+                  <dd>
+                    {profile.employee_band}
+                    {profile.employee_scope ? ` (${profile.employee_scope})` : ""}
+                  </dd>
+                </div>
+              )}
+              {profile.ownership_type && (
+                <div>
+                  <dt>Ownership</dt>
+                  <dd>{profile.ownership_type}</dd>
+                </div>
+              )}
+              {profile.ticker && (
+                <div>
+                  <dt>Listed as</dt>
+                  <dd>
+                    {profile.ticker}
+                    {profile.exchange ? ` · ${profile.exchange}` : ""}
+                  </dd>
+                </div>
+              )}
+              {profile.has_sponsor && (
+                <div>
+                  <dt>UK licensed sponsor</dt>
+                  <dd>
+                    On the Home Office sponsor register
+                    {profile.sponsor_snapshot_date
+                      ? ` · verified ${profile.sponsor_snapshot_date.toISOString().slice(0, 10)}`
+                      : ""}
+                  </dd>
+                </div>
+              )}
+              {profile.facts_as_of && (
+                <div>
+                  <dt>Profile facts as of</dt>
+                  <dd>{profile.facts_as_of.toISOString().slice(0, 10)}</dd>
+                </div>
+              )}
+            </dl>
+            <p className="employer-profile-facts-note">
+              Sponsorship availability varies by role and candidate; employer-level evidence does
+              not guarantee sponsorship for a specific vacancy.
+            </p>
+          </section>
+        )}
+
+        {opportunities.length > 0 && (
+          <section className="employer-profile-opportunities" aria-labelledby="employer-opps">
+            <h2 id="employer-opps">Opportunities</h2>
+            <p>Current OfferLab roles include: {opportunities.join(", ").toLowerCase()}.</p>
+          </section>
+        )}
 
         <dl className="employer-profile-stats">
           <div className="employer-profile-stat">
@@ -178,6 +278,18 @@ export default async function EmployerProfilePage({ params }: { params: Employer
         </dl>
 
         <div className="employer-profile-links">
+          {memberId !== null ? (
+            <form action={saved ? unsaveEmployer : saveEmployer}>
+              <input type="hidden" name="companyId" value={employer.id} />
+              <button className="button-link" type="submit">
+                {saved ? "Remove from saved employers" : "Save employer"}
+              </button>
+            </form>
+          ) : (
+            <Link className="button-link secondary" href="/sign-in">
+              Sign in to save employers
+            </Link>
+          )}
           {employer.website_url && (
             <a
               className="button-link secondary"

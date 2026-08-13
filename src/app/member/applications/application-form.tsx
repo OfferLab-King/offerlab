@@ -12,6 +12,7 @@ import {
 } from "../../../modules/applications/domain/application";
 import { opportunityTypes } from "../../../modules/taxonomy/domain/opportunity-types";
 import { industries } from "../../../modules/taxonomy/domain/industries";
+import { EmployerCompanyField } from "./employer-company-field";
 
 type Props = Readonly<{
   applicationId?: string;
@@ -24,6 +25,7 @@ const empty: ApplicationValues = {
   appliedDate: null,
   applicationDeadline: null,
   company: "",
+  companyId: null,
   industry: null,
   location: null,
   nextStageDeadline: null,
@@ -37,6 +39,7 @@ const labels: Record<ApplicationField, string> = {
   appliedDate: "Applied date",
   applicationDeadline: "Application deadline",
   company: "Company",
+  companyId: "Company",
   industry: "Industry",
   location: "Location",
   nextStageDeadline: "Next-stage deadline",
@@ -228,17 +231,13 @@ export function ApplicationForm({
             <label htmlFor="company">
               Company <span className="required">Required</span>
             </label>
-            <input
-              aria-describedby={describedBy("company", "company-hint")}
-              aria-invalid={Boolean(errors.company)}
+            <EmployerCompanyField
               defaultValue={initial.company}
-              id="company"
-              maxLength={120}
-              name="company"
-              required
+              describedBy={describedBy("company", "company-hint")}
+              invalid={Boolean(errors.company)}
             />
             <p className="hint" id="company-hint">
-              Use the employer’s display name.
+              Start typing to pick a researched employer; otherwise enter any company name.
             </p>
             {errors.company && (
               <p className="field-error" id="company-error">

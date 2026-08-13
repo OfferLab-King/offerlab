@@ -9,7 +9,12 @@ import {
   listEmployerResearchRows,
   type ResearchViewRow,
 } from "../infrastructure/research-repository";
-import { computePlatformCoverage, type PlatformCoverageRow } from "./source-discovery";
+import {
+  applyCandidatePromotions,
+  computePlatformCoverage,
+  planCandidatePromotion,
+  type PlatformCoverageRow,
+} from "./source-discovery";
 import {
   listDiscoveryCandidates,
   readPlatformCoverageData,
@@ -96,6 +101,7 @@ export async function readSourceDiscovery(
     const [coverageData, queue] = await Promise.all([
       readPlatformCoverageData(database),
       listDiscoveryCandidates(database, {
+        candidateId: null,
         companySlug: null,
         tier: filters.tier,
         platform: filters.platform,
@@ -106,5 +112,30 @@ export async function readSourceDiscovery(
     ]);
     const coverage = computePlatformCoverage(coverageData);
     return { coverage: coverage.rows, queue, totals: coverage.totals };
+  });
+}
+
+export async function promoteCandidateForAdmin(
+  administratorUserId: string,
+  candidateId: string,
+): Promise<{ outcome: "created" | "already_present" | "not_promotable" | "not_found" }> {
+  return withApplicationUser(administratorUserId, async (database) => {
+    const candidates = await listDiscoveryCandidates(database, {
+      candidateId,
+      companySlug: null,
+      tier: null,
+      platform: null,
+      status: null,
+      search: null,
+      limit: 1,
+    });
+    const candidate = candidates[0];
+    if (!candidate) return { outcome: "not_found" };
+    const plan = planCandidatePromotion(candidate);
+    if (!plan.promotable) return { outcome: "not_promotable" };
+    const applied = await applyCandidatePromotions(database, [plan], true);
+    if (applied.created === 1) return { outcome: "created" };
+    if (applied.alreadyPresent === 1) return { outcome: "already_present" };
+    return { outcome: "not_promotable" };
   });
 }

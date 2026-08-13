@@ -1055,3 +1055,61 @@
     transition: none;
   }
 }
+
+/* Phase F: sponsor badge on cards and employer context on job detail */
+
+.job-card-sponsor {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+  padding: 0.15rem 0.55rem;
+}
+
+.job-detail-employer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.job-detail-employer h2 {
+  font-size: 1rem;
+  margin: 0 0 0.6rem;
+}
+
+.job-detail-employer-facts {
+  display: grid;
+  gap: 0.35rem 1.2rem;
+  grid-template-columns: minmax(10rem, max-content) 1fr;
+  margin: 0;
+}
+
+.job-detail-employer-facts div {
+  align-items: baseline;
+  display: contents;
+}
+
+.job-detail-employer-facts dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.job-detail-employer-facts dd {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.job-detail-employer-link {
+  font-size: 0.9rem;
+  margin: 0.6rem 0 0;
+}
+
+@media (max-width: 40rem) {
+  .job-detail-employer-facts {
+    grid-template-columns: 1fr;
+  }
+}

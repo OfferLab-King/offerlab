@@ -79,6 +79,30 @@ The import is typed, deterministic, idempotent and provenance-preserving. It:
   `app.job_source`;
 - never touches `app.job_source`; existing live sources are preserved.
 
+## Taxonomy dimensions (Phase D)
+
+The employer-industry, job-function and career-level dimensions are
+backward-compatible additions over the legacy sector/subsector model. After
+the migration, populate them from research and legacy classification:
+
+```bash
+pnpm jobs:taxonomy:backfill            # dry-run report of planned updates
+pnpm jobs:taxonomy:backfill --confirm  # fill only NULL cells; idempotent
+```
+
+Rules:
+
+- employer industry comes from the Top 1,000 research snapshot sector, falling
+  back to the legacy directory sector;
+- job function derives from the job's own legacy subsector classification,
+  never from employer industry;
+- career level derives from opportunity type and seniority; general and
+  experienced roles remain valid catalogue records;
+- the deterministic classification pipeline writes the new job dimensions for
+  every discovered or changed job (review-gated like the legacy dimensions);
+- nothing reads the new dimensions publicly yet; public facets and onboarding
+  migrate in later phases.
+
 Research tables (`app.employer_alias`, `app.employer_sponsor_entity`,
 `app.employer_research_snapshot`, `app.job_source_candidate`) are
 administrator-only. The `/admin/employers` page is the research/operations
@@ -94,6 +118,7 @@ pnpm jobs:discover-source                      # fingerprint candidates (dry run
 pnpm jobs:discover-source --confirm            # apply fingerprint updates
 pnpm jobs:discover-source --verify             # bounded HTTP verification of careers URLs
 pnpm jobs:discover-source --promote --confirm  # create paused sources for verified candidates
+pnpm jobs:discover-source --homepage           # discover careers links for P0/P1 employers without candidates
 pnpm jobs:discover-source --company=<slug>     # one employer
 pnpm jobs:discover-source --tier=P0 --limit=50 # a cohort, ordered by crawler priority
 ```
@@ -105,10 +130,14 @@ Behaviour:
   Teamtailor, Personio, Workable, PageUp, Recruitee, Eightfold) with no LLM;
 - `--verify` respects robots.txt through the crawler's `RobotsGate` and marks
   candidates `verified` only after a successful bounded fetch;
+- `--homepage` fetches employer homepages (robots-gated, bounded) for P0/P1
+  employers that have real website evidence but no discovery candidate, scores
+  careers links deterministically and inserts new `job_source_candidate` rows;
 - `--promote` creates `app.job_source` rows in `paused` state for verified,
   high-confidence candidates; sources are never activated by discovery;
   re-running is idempotent and never overwrites existing sources for the same
-  URL or a manually-overridden source;
+  URL or a manually-overridden source; verified candidates can also be
+  promoted from the `/admin/source-discovery` queue;
 - `/admin/source-discovery` shows platform-grouped coverage (employers per
   platform by tier, verified and live counts) and the candidate queue; live
   source operations remain in `/admin/job-sources`.
@@ -116,6 +145,96 @@ Behaviour:
 The promotion guard uses the fingerprint high-confidence host match and the
 existing URL-identity check, so a spreadsheet row or guessed URL can never
 become an active crawler source.
+
+## Platform adapter prioritisation (Phase C measurement)
+
+Measured coverage of the researched universe (2026-08-12 dataset, as of the
+2026-08-13 discovery run) drives adapter decisions:
+
+- **Workday: 15 employers, all P0** — the dominant reusable platform; the
+  native Workday CXS/RaaS connectors already cover it.
+- **Greenhouse / Lever / Ashby / SmartRecruiters: 4 employers each** — native
+  connectors already cover them.
+- **Custom branded careers portals: ~9 employers** (Amazon jobs, Google
+  careers, Apple, EY, PwC, Babcock, Marriott, Admiral) — employer-specific;
+  covered by `direct_html` and browser connectors, not reusable adapters.
+- **Oracle: 1, SuccessFactors: 1, TAL: 0** — no missing platform currently
+  unlocks more than one employer, so no new typed adapter is justified yet.
+
+Adapter build rule (from the founder directive): implement a typed reusable
+connector only when a platform shows repeated measured frequency (at least
+2-3 verified employers). The discovery pipeline is the measurement tool; the
+moment a platform crosses the threshold (e.g. after `--homepage` expansion or
+new research evidence), register the connector in
+`src/modules/job-catalog/infrastructure/connectors/registry.ts`, add the
+`source_type` enum value and update `sourceTypeForPlatform` in
+`ats-fingerprint.ts`.
+
+## Public employer directory (Phase E)
+
+The public `/employers` directory and `/employers/[slug]` profiles read the
+`app.employer_public_profile` security-barrier view — the privacy-safe
+contract between the researched universe and the public routes.
+
+- The view exposes only verifiable employer facts (industry, size band,
+  ownership, ticker/exchange, sponsor presence and snapshot date, official
+  URLs, current roles). Internal research fields (tier, rank, scores,
+  confidence, notes) are never selected by the view and never reach public
+  pages.
+- Visibility is quality-based: an employer is listed when it has current
+  published roles, is explicitly curated (`directory_visible`), or carries a
+  credible researched profile (verified industry plus size/ownership/sponsor
+  evidence and an official URL). Placeholder `employer.invalid` URLs are
+  treated as absent, so nothing public links to them.
+- Search and filters (industry, size, ownership, sponsor, hiring) are
+  URL-backed; hiring-first, most-roles and A–Z sorts are supported.
+- SEO: `isEmployerIndexable` now also qualifies credible researched profiles
+  (no filler required), and the sitemap includes them; filtered directory
+  URLs stay noindex.
+
+## Public jobs facets (Phase F)
+
+The `/jobs` catalogue search uses the new dimensions alongside the legacy
+sector model:
+
+- **Employer industry** (`c.employer_industry_key`) — what the employer is.
+- **Job function** (`j.job_function_key`) — what the role does, never inferred
+  from employer industry.
+- **Career level** (`j.career_level_key`) — a filter, never a publication gate.
+- **Work arrangement** (`j.remote_type`) is a separate facet from **Location**
+  (cities only); legacy `locations=remote` URLs still filter.
+- **Employer sponsor licence** filters through the public profile view
+  (`employer_public_profile.has_sponsor`) and is distinct from **role-level
+  sponsorship** (`j.visa_sponsorship_status`).
+- Facet semantics stay disjunctive (OR inside a facet, AND across facets,
+  counts exclude the counted facet's own selections); all filters are
+  URL-addressable and filtered URLs remain noindex.
+- Job cards and job detail pages surface the new dimensions plus the
+  employer context panel (industry, size, ownership, sponsor status, official
+  careers link). Internal crawler and research fields never render.
+
+## Member integration (Phase G)
+
+Canonical employers are linked into member workflows while free-text fallback
+is preserved everywhere.
+
+- **Saved employers**: owner-scoped `app.user_saved_employer` with forced RLS
+  (policy and grants mirror `user_saved_job`). Save/remove from employer
+  profiles; the member home shows a saved-employers strip; `/jobs` renders
+  "Saved: <employer>" quick chips for signed-in members. Saves never create
+  notifications or alerts without an explicit member preference.
+- **Employer autocomplete**: `/api/employers/search` matches canonical names
+  and aliases (aliases are exposed through the public profile view, which the
+  member roles can read) and returns canonical company UUIDs. The application
+  form and career job targets accept a nullable `company_id` alongside the
+  required free-text company name.
+- **Onboarding**: `onboarding_profile` gains canonical `target_industries`,
+  `target_functions` and `preferred_locations`; legacy industry choices map
+  deterministically to canonical industries when no explicit preference is
+  supplied. The legacy columns and completion rule are unchanged.
+- The public employer profile view appends an `aliases` jsonb column
+  (employer trading names and sponsor legal entities) for autocomplete and
+  search.
 
 ## Local CMS-triggered crawling
 

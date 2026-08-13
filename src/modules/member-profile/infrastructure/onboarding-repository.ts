@@ -20,6 +20,9 @@ type ProfileRow = Readonly<{
   preparation_priorities: OnboardingAnswers["preparationPriorities"];
   support_needs: OnboardingAnswers["supportNeeds"];
   target_companies: OnboardingAnswers["targetCompanies"];
+  target_functions: OnboardingAnswers["targetFunctions"];
+  target_industries: OnboardingAnswers["targetIndustries"];
+  preferred_locations: OnboardingAnswers["preferredLocations"];
   updated_at: Date;
 }>;
 
@@ -33,6 +36,9 @@ function profile(row: ProfileRow): OnboardingProfile {
       preparationPriorities: row.preparation_priorities,
       supportNeeds: row.support_needs,
       targetCompanies: row.target_companies,
+      targetFunctions: row.target_functions,
+      targetIndustries: row.target_industries,
+      preferredLocations: row.preferred_locations,
     },
     completedAt: row.completed_at,
     createdAt: row.created_at,
@@ -46,7 +52,8 @@ export async function findOnboardingProfile(
 ): Promise<OnboardingProfile | null> {
   const rows = await database<ProfileRow[]>`
     select education_stage, opportunity_types, industries, preparation_priorities,
-      target_companies, support_needs, confidence, completed_at, created_at, updated_at
+      target_companies, target_industries, target_functions, preferred_locations,
+      support_needs, confidence, completed_at, created_at, updated_at
     from app.onboarding_profile
     where user_id = ${ownerId}::uuid
   `;
@@ -107,16 +114,21 @@ export async function saveOnboardingProfile(
   const rows = await database<ProfileRow[]>`
     insert into app.onboarding_profile (
       user_id, education_stage, opportunity_types, industries, preparation_priorities,
-      target_companies, support_needs, confidence, completed_at, created_at, updated_at
+      target_companies, target_industries, target_functions, preferred_locations,
+      support_needs, confidence, completed_at, created_at, updated_at
     ) values (
       ${ownerId}::uuid, ${answers.educationStage}, ${answers.opportunityTypes},
       ${answers.industries}, ${answers.preparationPriorities}, ${answers.targetCompanies},
+      ${answers.targetIndustries}, ${answers.targetFunctions}, ${answers.preferredLocations},
       ${answers.supportNeeds}, ${answers.confidence}, ${completedAt}, ${createdAt}, ${now}
     )
     on conflict (user_id) do update set
       education_stage = excluded.education_stage,
       opportunity_types = excluded.opportunity_types,
       industries = excluded.industries,
+      target_industries = excluded.target_industries,
+      target_functions = excluded.target_functions,
+      preferred_locations = excluded.preferred_locations,
       preparation_priorities = excluded.preparation_priorities,
       target_companies = excluded.target_companies,
       support_needs = excluded.support_needs,

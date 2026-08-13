@@ -16,6 +16,7 @@ type ApplicationRow = Readonly<{
   applied_date: string | null;
   application_deadline: string | null;
   archived_at: Date | null;
+  company_id: string | null;
   company_name: string;
   created_at: Date;
   current_stage: ApplicationValues["stage"];
@@ -36,6 +37,7 @@ function tracked(row: ApplicationRow): TrackedApplication {
     applicationDeadline: row.application_deadline,
     archivedAt: row.archived_at,
     company: row.company_name,
+    companyId: row.company_id,
     createdAt: row.created_at,
     id: row.id,
     industry: row.industry,
@@ -51,7 +53,7 @@ function tracked(row: ApplicationRow): TrackedApplication {
 }
 
 const columns = `
-  id, company_name, role_title, opportunity_type, industry, current_stage, location,
+  id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
   application_deadline::text, applied_date::text, next_stage_deadline::text, notes,
   archived_at, version, created_at, updated_at
 `;
@@ -113,14 +115,14 @@ export async function createApplication(
 ): Promise<ApplicationMutationResult> {
   const rows = await database<ApplicationRow[]>`
     insert into app.application (
-      owner_user_id, company_name, role_title, opportunity_type, industry, current_stage, location,
+      owner_user_id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
       application_deadline, applied_date, next_stage_deadline, notes
     ) values (
-      ${ownerId}::uuid, ${values.company}, ${values.role}, ${values.opportunityType},
+      ${ownerId}::uuid, ${values.companyId ?? null}::uuid, ${values.company}, ${values.role}, ${values.opportunityType},
       ${values.industry}, ${values.stage}, ${values.location}, ${values.applicationDeadline},
       ${values.appliedDate}, ${values.nextStageDeadline}, ${values.notes}
     )
-    returning id, company_name, role_title, opportunity_type, industry, current_stage, location,
+    returning id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
       application_deadline::text, applied_date::text, next_stage_deadline::text, notes,
       archived_at, version, created_at, updated_at
   `;
@@ -135,6 +137,7 @@ function values(application: TrackedApplication): ApplicationValues {
     appliedDate: application.appliedDate,
     applicationDeadline: application.applicationDeadline,
     company: application.company,
+    companyId: application.companyId,
     industry: application.industry,
     location: application.location,
     nextStageDeadline: application.nextStageDeadline,
@@ -176,6 +179,7 @@ export async function updateApplication(
   const outcome = stageChanged ? "stage_changed" : "updated";
   const rows = await database<ApplicationRow[]>`
     update app.application set
+      company_id = ${nextValues.companyId ?? null}::uuid,
       company_name = ${nextValues.company}, role_title = ${nextValues.role},
       opportunity_type = ${nextValues.opportunityType}, industry = ${nextValues.industry},
       current_stage = ${nextValues.stage},
@@ -184,7 +188,7 @@ export async function updateApplication(
       notes = ${nextValues.notes}
     where id = ${applicationId}::uuid and owner_user_id = ${ownerId}::uuid
       and version = ${expectedVersion}
-    returning id, company_name, role_title, opportunity_type, industry, current_stage, location,
+    returning id, company_id, company_name, role_title, opportunity_type, industry, current_stage, location,
       application_deadline::text, applied_date::text, next_stage_deadline::text, notes,
       archived_at, version, created_at, updated_at
   `;
