@@ -6,7 +6,7 @@ import {
   opportunityTypeLabels,
   visaSponsorshipLabels,
 } from "../domain/taxonomy";
-import type { JobCatalogFilters } from "../domain/catalog";
+import type { CatalogFacetGroup, JobCatalogFilters } from "../domain/catalog";
 import {
   findEmployerProfile,
   findEmployerPublicProfile,
@@ -15,12 +15,15 @@ import {
   listCatalogJobsForSitemap,
   listCompanyActiveJobs,
   listEmployerDirectory,
+  listEmployerDirectoryOptions as listEmployerDirectoryOptionsSql,
   listEmployerPublicDirectory,
   listIndexableEmployersForSitemap,
   listRelatedEmployerJobs,
   listSimilarJobs,
-  sectorJobCounts,
   searchJobsFaceted,
+  searchJobsPage,
+  sectorJobCounts,
+  type EmployerDirectoryPageResult,
   type EmployerDirectoryRow,
   type EmployerProfileRow,
   type EmployerPublicProfileRow,
@@ -90,55 +93,131 @@ function presentWithTaxonomy(
 export async function searchJobCatalogFaceted(
   filters: JobCatalogFilters,
 ): Promise<FacetedSearchPayload> {
+  const cachedFacetState = readCachedFacetState(filters);
+  if (cachedFacetState) {
+    const { result, hasSalaryData } = await withApplicationRole((database) =>
+      searchJobsPage(database, filters),
+    );
+    return {
+      facets: presentFacetOptions(cachedFacetState.facets),
+      hasSalaryData,
+      result,
+    };
+  }
   const { facets, hasSalaryData, result } = await withApplicationRole((database) =>
     searchJobsFaceted(database, filters),
   );
+  storeFacetState(filters, { facets, hasSalaryData });
   return {
-    facets: {
-      employers: facets.employers.map((row) => ({
-        count: row.count,
-        label: row.label ?? row.value,
-        value: row.value,
-      })),
-      functions: facets.functions.map((row) => ({
-        count: row.count,
-        label: row.label ?? row.value.replaceAll("_", " "),
-        value: row.value,
-      })),
-      industries: facets.industries.map((row) => ({
-        count: row.count,
-        label: row.label ?? row.value.replaceAll("_", " "),
-        value: row.value,
-      })),
-      jobTypes: presentWithTaxonomy(
-        facets.jobTypes,
-        (key) => opportunityTypeLabels[key as keyof typeof opportunityTypeLabels] ?? null,
-      ),
-      levels: facets.levels.map((row) => ({
-        count: row.count,
-        label: row.label ?? row.value.replaceAll("_", " "),
-        value: row.value,
-      })),
-      locations: presentLocations(facets.locations),
-      sectors: presentWithTaxonomy(facets.sectors, (key) => jobSectorLabel(key)),
-      sponsorLicence: facets.sponsorLicence.map((row) => ({
-        count: row.count,
-        label: row.label ?? "Employer is a UK licensed sponsor",
-        value: row.value,
-      })),
-      sponsorship: presentWithTaxonomy(
-        facets.sponsorship,
-        (key) => visaSponsorshipLabels[key as keyof typeof visaSponsorshipLabels] ?? null,
-      ),
-      subsectors: presentWithTaxonomy(facets.subsectors, (key) => jobSubsectorLabel(key)),
-      workModes: facets.workModes.map((row) => ({
-        count: row.count,
-        label: row.label ?? row.value.replaceAll("_", " "),
-        value: row.value,
-      })),
-    },
+    facets: presentFacetOptions(facets),
     hasSalaryData,
     result,
+  };
+}
+
+type FacetState = Readonly<{
+  facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>;
+  hasSalaryData: boolean;
+}>;
+
+/**
+ * The unfiltered catalogue's facet counts are request-independent: they only
+ * depend on the visibility state of the catalogue, which changes when the
+ * crawler publishes or retires roles. A short TTL bounds staleness; results,
+ * counts and saved state always come from the database. Only PUBLIC facet
+ * counts are cached — never member-specific data.
+ */
+const FACET_CACHE_TTL_MS = 60_000;
+let unfilteredFacetCache: Readonly<{
+  expiresAt: number;
+  facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>;
+  hasSalaryData: boolean;
+} | null> = null;
+
+function readCachedFacetState(filters: JobCatalogFilters): FacetState | null {
+  if (!isUnfilteredFacetRequest(filters)) return null;
+  const cached = unfilteredFacetCache;
+  if (cached && cached.expiresAt > Date.now()) {
+    return { facets: cached.facets, hasSalaryData: cached.hasSalaryData };
+  }
+  return null;
+}
+
+function storeFacetState(filters: JobCatalogFilters, state: FacetState): void {
+  if (!isUnfilteredFacetRequest(filters)) return;
+  const current = unfilteredFacetCache;
+  if (current && current.expiresAt > Date.now()) return;
+  unfilteredFacetCache = {
+    expiresAt: Date.now() + FACET_CACHE_TTL_MS,
+    facets: state.facets,
+    hasSalaryData: state.hasSalaryData,
+  };
+}
+
+function isUnfilteredFacetRequest(filters: JobCatalogFilters): boolean {
+  return (
+    filters.query === "" &&
+    filters.sectors.length === 0 &&
+    filters.subsectors.length === 0 &&
+    filters.industries.length === 0 &&
+    filters.functions.length === 0 &&
+    filters.levels.length === 0 &&
+    filters.employers.length === 0 &&
+    filters.locations.length === 0 &&
+    filters.workModes.length === 0 &&
+    filters.jobTypes.length === 0 &&
+    filters.sponsorship.length === 0 &&
+    !filters.sponsorLicence &&
+    filters.deadline === "any" &&
+    filters.postedWithinDays === null
+  );
+}
+
+function presentFacetOptions(
+  facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>,
+): FacetedSearchPayload["facets"] {
+  return {
+    employers: facets.employers.map((row) => ({
+      count: row.count,
+      label: row.label ?? row.value,
+      value: row.value,
+    })),
+    functions: facets.functions.map((row) => ({
+      count: row.count,
+      label: row.label ?? row.value.replaceAll("_", " "),
+      value: row.value,
+    })),
+    industries: facets.industries.map((row) => ({
+      count: row.count,
+      label: row.label ?? row.value.replaceAll("_", " "),
+      value: row.value,
+    })),
+    jobTypes: presentWithTaxonomy(
+      facets.jobTypes,
+      (key) => opportunityTypeLabels[key as keyof typeof opportunityTypeLabels] ?? null,
+    ),
+    levels: facets.levels.map((row) => ({
+      count: row.count,
+      label: row.label ?? row.value.replaceAll("_", " "),
+      value: row.value,
+    })),
+    locations: presentLocations(facets.locations),
+    sectors: presentWithTaxonomy(facets.sectors, (key) => jobSectorLabel(key)),
+    sponsorLicence: facets.sponsorLicence.map((row) => ({
+      count: row.count,
+      label: row.label ?? "Employer is a UK licensed sponsor",
+      value: row.value,
+    })),
+    sponsorship: presentWithTaxonomy(
+      facets.sponsorship,
+      (key) => visaSponsorshipLabels[key as keyof typeof visaSponsorshipLabels] ?? null,
+    ),
+    subsectors: presentWithTaxonomy(facets.subsectors, (key) => jobSubsectorLabel(key)),
+    workModes: facets.workModes.map((row) => ({
+      count: row.count,
+      label: row.label ?? row.value.replaceAll("_", " "),
+      value: row.value,
+    })),
   };
 }
 
@@ -168,8 +247,25 @@ export function readEmployerDirectory(): Promise<EmployerDirectoryRow[]> {
   return withApplicationRole((database) => listEmployerDirectory(database));
 }
 
-export function readEmployerDirectoryEntries(): Promise<readonly EmployerPublicProfileRow[]> {
-  return withApplicationRole((database) => listEmployerPublicDirectory(database));
+export function readEmployerDirectoryEntries(
+  query: Readonly<{
+    query: string | null;
+    industry: string | null;
+    sponsor: boolean;
+    hiring: boolean;
+    sizeBand: string | null;
+    ownership: string | null;
+    sort: "hiring" | "roles" | "az";
+    page: number;
+  }>,
+): Promise<EmployerDirectoryPageResult> {
+  return withApplicationRole((database) => listEmployerPublicDirectory(database, query));
+}
+
+export function readEmployerDirectoryOptions(): Promise<
+  Readonly<{ employeeBands: readonly string[]; ownerships: readonly string[] }>
+> {
+  return withApplicationRole((database) => listEmployerDirectoryOptionsSql(database));
 }
 
 export type EmployerAutocompleteOption = Readonly<{
@@ -189,7 +285,7 @@ export async function searchEmployersForAutocomplete(
   return withApplicationRole(async (database) => {
     const rows = await database<EmployerAutocompleteOption[]>`
       select id, slug, name, employer_industry_key as "industryKey"
-      from app.employer_public_profile
+      from app.employer_public_search
       where name ilike ${`%${trimmed}%`}
          or exists (
            select 1 from jsonb_array_elements_text(aliases) as alias

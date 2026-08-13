@@ -294,12 +294,23 @@ export type FacetGroupKey = keyof JobFacetCounts;
  *  - selecting subsectors filters by subsector only.
  * `excludeFacet` removes one facet group so counts stay disjunctive: other
  * facets apply, but options in the counted group are not constrained by their
- * own selections.
+ * own selections. `excludeAllFacets` emits only non-facet conditions (keyword,
+ * deadline, posted window) for a shared base scan. `onlyFacets` emits facet
+ * conditions only (used when the base scan already applied non-facet
+ * conditions). `locationConditionRef` / `sponsorConditionRef` substitute a
+ * precomputed base-column reference for the expensive per-row EXISTS
+ * subqueries, so a single-pass facet aggregation evaluates them once per row.
  */
 export function buildJobFilterClauses(
   filters: JobCatalogFilters,
   now: Date,
-  options: Readonly<{ excludeFacet?: CatalogFacetGroup }> = {},
+  options: Readonly<{
+    excludeFacet?: CatalogFacetGroup;
+    excludeAllFacets?: boolean;
+    onlyFacets?: boolean;
+    locationConditionRef?: string;
+    sponsorConditionRef?: string;
+  }> = {},
 ): Readonly<{ conditions: string[]; values: unknown[] }> {
   const conditions: string[] = [];
   const values: unknown[] = [];
@@ -308,45 +319,48 @@ export function buildJobFilterClauses(
     return `$${values.length}`;
   };
 
-  if (filters.query) {
+  if (filters.query && !options.onlyFacets) {
     conditions.push(
       `j.search_vector @@ websearch_to_tsquery('english', ${parameter(filters.query)})`,
     );
   }
+  const facetGroupExcluded = (group: CatalogFacetGroup): boolean =>
+    options.excludeAllFacets === true || options.excludeFacet === group;
   if (
     filters.sectors.length > 0 &&
     filters.subsectors.length === 0 &&
-    options.excludeFacet !== "sectors"
+    !facetGroupExcluded("sectors")
   ) {
     conditions.push(`j.sector_key = any(${parameter(filters.sectors)})`);
   }
-  if (filters.subsectors.length > 0 && options.excludeFacet !== "subsectors") {
+  if (filters.subsectors.length > 0 && !facetGroupExcluded("subsectors")) {
     conditions.push(`j.subsector_key = any(${parameter(filters.subsectors)})`);
   }
-  if (filters.industries.length > 0 && options.excludeFacet !== "industries") {
+  if (filters.industries.length > 0 && !facetGroupExcluded("industries")) {
     conditions.push(`c.employer_industry_key = any(${parameter(filters.industries)})`);
   }
-  if (filters.functions.length > 0 && options.excludeFacet !== "functions") {
+  if (filters.functions.length > 0 && !facetGroupExcluded("functions")) {
     conditions.push(`j.job_function_key = any(${parameter(filters.functions)})`);
   }
-  if (filters.levels.length > 0 && options.excludeFacet !== "levels") {
+  if (filters.levels.length > 0 && !facetGroupExcluded("levels")) {
     conditions.push(`j.career_level_key = any(${parameter(filters.levels)})`);
   }
-  if (filters.workModes.length > 0 && options.excludeFacet !== "workModes") {
+  if (filters.workModes.length > 0 && !facetGroupExcluded("workModes")) {
     conditions.push(`j.remote_type = any(${parameter(filters.workModes)})`);
   }
-  if (filters.sponsorLicence && options.excludeFacet !== "sponsorLicence") {
+  if (filters.sponsorLicence && !facetGroupExcluded("sponsorLicence")) {
     conditions.push(
-      `exists (
-        select 1 from app.employer_public_profile p
-        where p.id = c.id and p.has_sponsor
-      )`,
+      options.sponsorConditionRef ??
+        `exists (
+          select 1 from app.employer_public_sponsor s
+          where s.company_id = c.id and s.has_sponsor
+        )`,
     );
   }
-  if (filters.employers.length > 0 && options.excludeFacet !== "employers") {
+  if (filters.employers.length > 0 && !facetGroupExcluded("employers")) {
     conditions.push(`c.slug = any(${parameter(filters.employers)})`);
   }
-  if (filters.locations.length > 0 && options.excludeFacet !== "locations") {
+  if (filters.locations.length > 0 && !facetGroupExcluded("locations")) {
     const { labels, modes } = splitLocationSelections(filters.locations);
     const parts: string[] = [];
     if (modes.length > 0) {
@@ -354,26 +368,29 @@ export function buildJobFilterClauses(
     }
     if (labels.length > 0) {
       parts.push(
-        `exists (
-          select 1 from app.job_location jl
-          where jl.job_id = j.id
-            and lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) = any(${parameter(labels)})
-        )`,
+        options.locationConditionRef ??
+          `exists (
+            select 1 from app.job_location jl
+            where jl.job_id = j.id
+              and lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) = any(${parameter(labels)})
+          )`,
       );
     }
     if (parts.length > 0) conditions.push(`(${parts.join(" or ")})`);
   }
-  if (filters.jobTypes.length > 0 && options.excludeFacet !== "jobTypes") {
+  if (filters.jobTypes.length > 0 && !facetGroupExcluded("jobTypes")) {
     conditions.push(`j.opportunity_type = any(${parameter(filters.jobTypes)})`);
   }
-  if (filters.sponsorship.length > 0 && options.excludeFacet !== "sponsorship") {
+  if (filters.sponsorship.length > 0 && !facetGroupExcluded("sponsorship")) {
     conditions.push(`j.visa_sponsorship_status = any(${parameter(filters.sponsorship)})`);
   }
-  if (filters.deadline === "upcoming") {
+  if (filters.deadline === "upcoming" && !options.onlyFacets) {
     conditions.push(`j.application_deadline >= ${parameter(now)}`);
   }
-  if (filters.deadline === "none") conditions.push(`j.application_deadline is null`);
-  if (filters.postedWithinDays) {
+  if (filters.deadline === "none" && !options.onlyFacets) {
+    conditions.push(`j.application_deadline is null`);
+  }
+  if (filters.postedWithinDays && !options.onlyFacets) {
     conditions.push(
       `j.first_seen_at >= ${parameter(new Date(now.getTime() - filters.postedWithinDays * 86_400_000))}`,
     );

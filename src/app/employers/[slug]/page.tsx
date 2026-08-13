@@ -52,15 +52,15 @@ export async function generateMetadata({ params }: { params: EmployerParams }): 
 
 export default async function EmployerProfilePage({ params }: { params: EmployerParams }) {
   const { slug } = await params;
-  const employer = await readEmployerProfile(slug);
+  const [employer, access] = await Promise.all([readEmployerProfile(slug), currentMemberAccess()]);
   if (!employer) notFound();
-  const jobs = await readEmployerActiveJobs(employer.id);
-  const access = await currentMemberAccess();
   const memberId = access.status === "eligible" ? access.authorization.userId : null;
-  const saved =
+  const [jobs, saved] = await Promise.all([
+    readEmployerActiveJobs(employer.id),
     memberId !== null && employer.id
-      ? await isEmployerSavedForMember(memberId, employer.id)
-      : false;
+      ? isEmployerSavedForMember(memberId, employer.id)
+      : Promise.resolve(false),
+  ]);
   const now = new Date();
 
   const sectors = [...new Set(jobs.flatMap((job) => (job.sector_key ? [job.sector_key] : [])))];

@@ -459,7 +459,7 @@ test("the catalogue has no horizontal overflow on mobile", async ({ page }, test
 test("the employer directory has no horizontal overflow on mobile", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile-chromium", "mobile overflow runs once");
   await page.goto("/employers");
-  await expect(page.getByRole("heading", { name: "Explore employers" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

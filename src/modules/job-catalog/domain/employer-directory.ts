@@ -34,7 +34,10 @@ export type EmployerDirectoryFilters = Readonly<{
   sizeBand: string | null;
   ownership: string | null;
   sort: EmployerDirectorySort;
+  page: number;
 }>;
+
+export const EMPLOYER_DIRECTORY_PAGE_SIZE = 48;
 
 export const EMPLOYER_DIRECTORY_INDUSTRIES: readonly string[] = [...employerIndustries];
 
@@ -56,6 +59,7 @@ export function parseEmployerDirectoryFilters(
       ? (employerIndustryFromDirectorySector(legacySector) ??
         employerIndustryFromDirectorySector(legacySector.replaceAll("-", "_")))
       : null;
+  const page = Number(single("page") ?? "1");
   return {
     query: single("q")?.trim().toLowerCase() ?? null,
     industry: single("industry") ?? sectorIndustry,
@@ -64,6 +68,7 @@ export function parseEmployerDirectoryFilters(
     sizeBand: single("size") ?? null,
     ownership: single("ownership") ?? null,
     sort: sort === "roles" || sort === "az" || sort === "hiring" ? sort : "hiring",
+    page: Number.isInteger(page) && page >= 1 && page <= 1000 ? page : 1,
   };
 }
 
@@ -88,6 +93,13 @@ export function hasCredibleProfile(entry: EmployerDirectoryEntry): boolean {
   return hasIndustry && hasEvidence && hasOfficialUrl;
 }
 
+/**
+ * Pure filter/sort spec for the employer directory. The SQL directory query in
+ * `catalog-repository.listEmployerPublicDirectory` mirrors these exact
+ * semantics (visibility, name/slug search, industry, sponsor, hiring,
+ * size band, ownership, and the hiring/roles/A-Z sorts); this function and its
+ * tests remain the executable specification for that mirror.
+ */
 export function employerDirectoryFilterAndSort(
   rows: readonly EmployerDirectoryEntry[],
   filters: EmployerDirectoryFilters,
@@ -127,12 +139,32 @@ export function employerIndustryLabel(key: string | null): string | null {
   return employerIndustryLabels[key as keyof typeof employerIndustryLabels] ?? null;
 }
 
+/**
+ * Semantic employee-band ordering. Bands are categorical labels, so a plain
+ * string sort would place "1,000-4,999" before "1-49"; the research dataset
+ * uses these exact band labels, which are ranked smallest to largest here.
+ */
+const EMPLOYEE_BAND_RANK: Readonly<Record<string, number>> = {
+  "1-49": 1,
+  "50-249": 2,
+  "250-999": 3,
+  "1,000-4,999": 4,
+  "5,000-9,999": 5,
+  "10,000-49,999": 6,
+  "50,000-99,999": 7,
+  "100,000+": 8,
+};
+
+export function employeeBandRank(band: string): number {
+  return EMPLOYEE_BAND_RANK[band] ?? 100;
+}
+
 export function distinctEmployeeBands(rows: readonly EmployerDirectoryEntry[]): readonly string[] {
   return [
     ...new Set(
       rows.map((row) => row.employee_band).filter((band): band is string => band !== null),
     ),
-  ].sort((a, b) => a.localeCompare(b));
+  ].sort((a, b) => employeeBandRank(a) - employeeBandRank(b) || a.localeCompare(b));
 }
 
 export function distinctOwnerships(rows: readonly EmployerDirectoryEntry[]): readonly string[] {

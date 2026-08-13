@@ -215,11 +215,29 @@ describe("Phase F dimension filters", () => {
   it("builds work arrangement and employer sponsor licence clauses", () => {
     const { conditions } = buildFor({ workModes: ["remote"], sponsorLicence: true });
     expect(conditions.some((c) => c.includes("j.remote_type = any"))).toBe(true);
-    expect(conditions.some((c) => c.includes("employer_public_profile"))).toBe(true);
+    expect(conditions.some((c) => c.includes("employer_public_sponsor"))).toBe(true);
   });
 
   it("excludes the sponsor licence clause from its own disjunctive count", () => {
     const { conditions } = buildFor({ sponsorLicence: true }, { excludeFacet: "sponsorLicence" });
-    expect(conditions.some((c) => c.includes("employer_public_profile"))).toBe(false);
+    expect(conditions.some((c) => c.includes("employer_public_sponsor"))).toBe(false);
+  });
+
+  it("builds only non-facet conditions when excludeAllFacets is set", () => {
+    const { conditions } = buildFor(
+      {
+        query: "graduate",
+        sectors: ["technology_it"],
+        industries: ["financial_services"],
+        sponsorLicence: true,
+        deadline: "upcoming",
+      },
+      { excludeAllFacets: true },
+    );
+    expect(conditions.some((c) => c.includes("search_vector"))).toBe(true);
+    expect(conditions.some((c) => c.includes("sector_key = any"))).toBe(false);
+    expect(conditions.some((c) => c.includes("employer_industry_key = any"))).toBe(false);
+    expect(conditions.some((c) => c.includes("employer_public_sponsor"))).toBe(false);
+    expect(conditions.some((c) => c.includes("application_deadline >="))).toBe(true);
   });
 });

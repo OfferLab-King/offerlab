@@ -41,8 +41,10 @@ export default async function PublicJobsPage({
   }
   const filters = parseJobCatalogFilters(params);
   const initialUrl = params.toString();
-  const initialData = await searchJobCatalogFaceted(filters);
-  const access = await currentMemberAccess();
+  const [initialData, access] = await Promise.all([
+    searchJobCatalogFaceted(filters),
+    currentMemberAccess(),
+  ]);
   const savedEmployers =
     access.status === "eligible"
       ? await listSavedEmployersForMember(access.authorization.userId)

@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
-  employerDirectoryFilterAndSort,
-  distinctEmployeeBands,
-  distinctOwnerships,
   employerIndustryLabel,
+  employeeBandRank,
   parseEmployerDirectoryFilters,
   EMPLOYER_DIRECTORY_INDUSTRIES,
+  EMPLOYER_DIRECTORY_PAGE_SIZE,
 } from "../../modules/job-catalog/domain/employer-directory";
 import { jobSectorLabel } from "../../modules/job-catalog/domain/taxonomy";
 import {
   readEmployerDirectoryEntries,
+  readEmployerDirectoryOptions,
   readSectorJobCounts,
 } from "../../modules/job-catalog/application/catalog";
 import { SiteHeader } from "../components/site-header";
@@ -42,17 +42,38 @@ export default async function EmployersDirectoryPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [entries, sectorCounts] = await Promise.all([
-    readEmployerDirectoryEntries(),
-    readSectorJobCounts(),
-  ]);
   const query = await searchParams;
   const filters = parseEmployerDirectoryFilters(query);
-  const rows = employerDirectoryFilterAndSort(entries, filters);
-  const visible = rows.filter((row) => row.current_jobs > 0).length;
+  const [directory, sectorCounts, options] = await Promise.all([
+    readEmployerDirectoryEntries(filters),
+    readSectorJobCounts(),
+    readEmployerDirectoryOptions(),
+  ]);
+  const rows = directory.rows;
+  const visible = directory.hiringTotal;
+  const total = directory.total;
+  const pageCount = Math.max(1, Math.ceil(total / EMPLOYER_DIRECTORY_PAGE_SIZE));
 
-  const sizeBands = distinctEmployeeBands(entries);
-  const ownerships = distinctOwnerships(entries);
+  const sizeBands = [...options.employeeBands].sort(
+    (a, b) => employeeBandRank(a) - employeeBandRank(b) || a.localeCompare(b),
+  );
+  const ownerships = options.ownerships;
+
+  const pageLink = (page: number): string => {
+    const params = new URLSearchParams();
+    const set = (key: string, value: string | null): void => {
+      if (value) params.set(key, value);
+    };
+    set("q", filters.query);
+    set("industry", filters.industry);
+    set("size", filters.sizeBand);
+    set("ownership", filters.ownership);
+    if (filters.sponsor) params.set("sponsor", "1");
+    if (filters.hiring) params.set("hiring", "1");
+    if (filters.sort !== "hiring") params.set("sort", filters.sort);
+    if (page > 1) params.set("page", String(page));
+    return `/employers${params.size > 0 ? `?${params.toString()}` : ""}`;
+  };
 
   return (
     <main className="employers-page">
@@ -68,7 +89,7 @@ export default async function EmployersDirectoryPage({
             </p>
           </div>
           <p className="employer-directory-summary">
-            <strong>{rows.length}</strong> employers · {visible} hiring now
+            <strong>{total}</strong> employers · {visible} hiring now
           </p>
         </header>
 
@@ -179,6 +200,27 @@ export default async function EmployersDirectoryPage({
               );
             })}
           </ul>
+        )}
+        {pageCount > 1 && (
+          <nav className="employer-directory-pagination" aria-label="Employer directory pages">
+            {filters.page > 1 ? (
+              <Link className="button-link" href={pageLink(filters.page - 1) as never} rel="prev">
+                ← Previous
+              </Link>
+            ) : (
+              <span />
+            )}
+            <p>
+              Page {filters.page} of {pageCount}
+            </p>
+            {filters.page < pageCount ? (
+              <Link className="button-link" href={pageLink(filters.page + 1) as never} rel="next">
+                Next →
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
         )}
       </div>
       <p className="hint employer-directory-sector-note">

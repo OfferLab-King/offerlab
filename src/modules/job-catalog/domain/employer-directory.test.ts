@@ -44,6 +44,7 @@ describe("parseEmployerDirectoryFilters", () => {
       size: "10,000–49,999",
       ownership: "Listed parent/company",
       sort: "roles",
+      page: "1",
     });
     expect(filters.query).toBe("bank");
     expect(filters.industry).toBe("financial_services");
@@ -145,6 +146,7 @@ describe("employerDirectoryFilterAndSort", () => {
       sizeBand: null,
       ownership: null,
       sort: "hiring",
+      page: 1,
     });
     expect(filtered.map((row) => row.slug)).not.toContain("hidden");
   });
@@ -159,6 +161,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "az",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a"]);
 
@@ -171,6 +174,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "az",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a", "retail-c"]);
 
@@ -183,6 +187,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "az",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a", "retail-c"]);
   });
@@ -197,6 +202,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "hiring",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a", "retail-c", "tech-b"]);
 
@@ -209,6 +215,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "roles",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a", "retail-c", "tech-b"]);
 
@@ -221,6 +228,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "az",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["bank-a", "retail-c", "tech-b"]);
   });
@@ -235,6 +243,7 @@ describe("employerDirectoryFilterAndSort", () => {
         sizeBand: null,
         ownership: null,
         sort: "az",
+        page: 1,
       }).map((row) => row.slug),
     ).toEqual(["tech-b"]);
   });

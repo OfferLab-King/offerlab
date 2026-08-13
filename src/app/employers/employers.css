@@ -480,3 +480,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+.employer-directory-pagination {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+}
+
+.employer-directory-pagination p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}

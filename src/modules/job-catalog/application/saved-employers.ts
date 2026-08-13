@@ -1,5 +1,4 @@
 import { withApplicationUser } from "../../../infrastructure/database/runtime-connections";
-import { listEmployerPublicDirectory } from "../infrastructure/catalog-repository";
 import { withApplicationRole } from "../../../infrastructure/database/runtime-connections";
 
 export type SavedEmployerView = Readonly<{
@@ -64,24 +63,34 @@ export async function listSavedEmployersForMember(ownerId: string): Promise<Save
     `,
   );
   if (saved.length === 0) return [];
-  const profiles = await withApplicationRole((database) => listEmployerPublicDirectory(database));
-  const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+  const companyIds = saved.map((entry) => entry.companyId);
+  // Bounded projection: fetch only the saved employers' public facts instead
+  // of materialising the whole directory view per request.
+  const profiles = await withApplicationRole(
+    (database) =>
+      database<SavedEmployerView[]>`
+      select c.id as "companyId", c.slug, c.name, c.logo_url,
+        nullif(c.website_url, '') as website_url,
+        nullif(c.careers_url, '') as careers_url,
+        c.employer_industry_key,
+        coalesce(sp.has_sponsor, false) as has_sponsor,
+        (
+          select count(*)::int
+          from app.job j
+          where j.company_id = c.id
+            and j.active and j.publication_status = 'published'
+            and j.eligibility_status = 'eligible'
+            and (j.application_deadline is null or j.application_deadline >= now())
+        ) as current_jobs
+      from app.company c
+      left join app.employer_public_sponsor sp on sp.company_id = c.id
+      where c.id = any(${companyIds}::uuid[]) and c.active
+    `,
+  );
+  const byId = new Map(profiles.map((profile) => [profile.companyId, profile]));
   return saved.flatMap((entry) => {
     const profile = byId.get(entry.companyId);
     if (!profile) return [];
-    return [
-      {
-        companyId: profile.id,
-        slug: profile.slug,
-        name: profile.name,
-        logo_url: profile.logo_url,
-        website_url: profile.website_url,
-        careers_url: profile.careers_url,
-        employer_industry_key: profile.employer_industry_key,
-        current_jobs: profile.current_jobs,
-        has_sponsor: profile.has_sponsor,
-        savedAt: entry.savedAt,
-      },
-    ];
+    return [{ ...profile, savedAt: entry.savedAt }];
   });
 }
