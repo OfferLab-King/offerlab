@@ -21,9 +21,11 @@ async function seedCatalogue() {
     const companyId = await database.begin(async (transaction) => {
       await transaction`set local role offerlab_crawler`;
       const rows = await transaction<{ id: string }[]>`
-        insert into app.company (name, slug, careers_url, source_type, crawl_allowed)
-        values ('Synthetic Bank', 'synthetic-bank', 'https://synthetic-bank.example.com/careers', 'greenhouse', 'unknown')
-        on conflict (slug) do update set crawl_allowed = excluded.crawl_allowed
+        insert into app.company (name, slug, careers_url, source_type, crawl_allowed, employer_industry_key)
+        values ('Synthetic Bank', 'synthetic-bank', 'https://synthetic-bank.example.com/careers', 'greenhouse', 'unknown', 'financial_services')
+        on conflict (slug) do update set
+          crawl_allowed = excluded.crawl_allowed,
+          employer_industry_key = excluded.employer_industry_key
         returning id
       `;
       return rows[0]!.id;
@@ -43,14 +45,17 @@ async function seedCatalogue() {
       await transaction`
         insert into app.company (
           name, slug, careers_url, source_type, crawl_allowed,
+          employer_industry_key,
           directory_sector_key, directory_priority_rank, directory_visible
         )
         values (
           'Synthetic Engineering', 'synthetic-engineering',
           'https://synthetic-engineering.example.com/careers', 'greenhouse', 'unknown',
+          'engineering_manufacturing',
           'engineering_energy_infrastructure', 499, true
         )
         on conflict (slug) do update set
+          employer_industry_key = excluded.employer_industry_key,
           directory_sector_key = excluded.directory_sector_key,
           directory_priority_rank = excluded.directory_priority_rank,
           directory_visible = excluded.directory_visible
@@ -394,7 +399,7 @@ test("the employer directory shows employers with active counts", async ({ page 
   await page.goto("/employers");
   await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Synthetic Engineering" })).toBeVisible();
-  await expect(page.getByText("No current OfferLab roles")).toBeVisible();
+  await expect(page.getByText("No current OfferLab roles").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Synthetic Bank" })).toBeVisible();
   await page.getByRole("link", { name: "Synthetic Bank" }).click();
   await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
