@@ -85,6 +85,34 @@ function websiteHostname(url: string | null | undefined): string | null {
   }
 }
 
+/**
+ * Multi-tenant ATS/career-platform hosts that are shared by many employers.
+ * A URL on one of these hosts is platform evidence, not employer identity
+ * evidence: matching on it could link two different employers together.
+ */
+const SHARED_ATS_HOSTS: readonly string[] = [
+  "boards.greenhouse.io",
+  "jobs.lever.co",
+  "jobs.ashbyhq.com",
+  "jobs.smartrecruiters.com",
+  "jobs.workable.com",
+  "careers-page.teamtailor.com",
+  "myworkdayjobs.com",
+  "careers.recruitee.com",
+  "jobs.personio.com",
+  "careers.personio.com",
+] as const;
+
+export function isSharedAtsHostname(hostname: string): boolean {
+  return SHARED_ATS_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+}
+
+export function employerWebsiteCandidateUrl(url: string): boolean {
+  const hostname = websiteHostname(url);
+  if (!hostname) return false;
+  return !isSharedAtsHostname(hostname);
+}
+
 export function matchCanonicalEmployer(
   input: Readonly<{
     canonicalName: string;
@@ -137,7 +165,7 @@ export function matchCanonicalEmployer(
   }
 
   const websiteHost = websiteHostname(input.evidenceWebsiteUrl);
-  if (websiteHost) {
+  if (websiteHost && !isSharedAtsHostname(websiteHost)) {
     const websiteMatch = input.existingCompanies.find(
       (company) => websiteHostname(company.websiteUrl) === websiteHost,
     );

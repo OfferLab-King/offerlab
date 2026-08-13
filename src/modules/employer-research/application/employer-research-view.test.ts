@@ -54,6 +54,7 @@ const rows = [
     tier: "P0",
     identityConfidence: "Medium",
     researchStatus: "not_researched",
+    ownership: "Private company / subsidiary legal entity",
     sponsorEntities: 0,
     sourceCandidates: 0,
     liveSources: 0,
@@ -70,6 +71,8 @@ describe("parseEmployerResearchFilters", () => {
       research: "not_researched",
       live: "1",
       jobs: "1",
+      candidate: "1",
+      sponsor: "1",
       unresolved: "1",
       q: "  monzo  ",
     });
@@ -79,9 +82,22 @@ describe("parseEmployerResearchFilters", () => {
       researchStatus: "not_researched",
       hasLiveSource: true,
       hasJobs: true,
+      hasSourceCandidate: true,
+      hasSponsorEntity: true,
       unresolved: true,
       search: "monzo",
     });
+  });
+
+  it("parses sector, size and ownership filters", () => {
+    const filters = parseEmployerResearchFilters({
+      sector: "Financial Services",
+      size: "1,000–4,999",
+      ownership: "Private company / subsidiary legal entity",
+    });
+    expect(filters.sector).toBe("Financial Services");
+    expect(filters.employeeBand).toBe("1,000–4,999");
+    expect(filters.ownership).toBe("Private company / subsidiary legal entity");
   });
 
   it("ignores unknown values", () => {
@@ -126,6 +142,30 @@ describe("filterEmployerResearchRows", () => {
     expect(
       filterEmployerResearchRows(rows, parseEmployerResearchFilters({ jobs: "1" })),
     ).toHaveLength(2);
+  });
+
+  it("filters by size band, ownership and sponsor/candidate presence", () => {
+    expect(
+      filterEmployerResearchRows(rows, parseEmployerResearchFilters({ size: "1,000–4,999" })).map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["Monzo"]);
+    expect(
+      filterEmployerResearchRows(rows, parseEmployerResearchFilters({ sponsor: "1" })).map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["Amazon", "Monzo"]);
+    expect(
+      filterEmployerResearchRows(rows, parseEmployerResearchFilters({ candidate: "1" })).map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["Amazon", "Monzo"]);
+    expect(
+      filterEmployerResearchRows(
+        rows,
+        parseEmployerResearchFilters({ ownership: "Listed parent/company" }),
+      ).map((entry) => entry.name),
+    ).toEqual(["Amazon"]);
   });
 
   it("isolates unresolved identities", () => {

@@ -1,4 +1,5 @@
 import {
+  employerWebsiteCandidateUrl,
   matchCanonicalEmployer,
   uniqueSlug,
   type ExistingAliasIdentity,
@@ -65,8 +66,10 @@ function evidenceWebsiteUrl(row: EmployerResearchRow): string | null {
     row.evidenceUrls.find((url) => {
       try {
         const hostname = new URL(url).hostname.replace(/^www\./u, "").toLowerCase();
-        return !/(gov\.uk|targetjobs|highfliers|linkedin|companiesmarketcap|glassdoor|indeed|times|dwps)/u.test(
-          hostname,
+        return (
+          !/(gov\.uk|targetjobs|highfliers|linkedin|companiesmarketcap|glassdoor|indeed|times|dwps)/u.test(
+            hostname,
+          ) && employerWebsiteCandidateUrl(url)
         );
       } catch {
         return false;

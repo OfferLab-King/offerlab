@@ -32,6 +32,7 @@ export type EmployerResearchFilters = Readonly<{
   hasLiveSource: boolean;
   hasJobs: boolean;
   hasSourceCandidate: boolean;
+  hasSponsorEntity: boolean;
   unresolved: boolean;
   search: string | null;
 }>;
@@ -70,6 +71,7 @@ export function parseEmployerResearchFilters(
     hasLiveSource: single("live") === "1",
     hasJobs: single("jobs") === "1",
     hasSourceCandidate: single("candidate") === "1",
+    hasSponsorEntity: single("sponsor") === "1",
     unresolved: single("unresolved") === "1",
     search: single("q")?.trim().toLowerCase() ?? null,
   };
@@ -91,6 +93,7 @@ export function filterEmployerResearchRows(
     if (filters.hasLiveSource && row.liveSources === 0) return false;
     if (filters.hasJobs && row.currentJobs === 0) return false;
     if (filters.hasSourceCandidate && row.sourceCandidates === 0) return false;
+    if (filters.hasSponsorEntity && row.sponsorEntities === 0) return false;
     if (filters.unresolved && row.companyId !== null) return false;
     if (filters.search) {
       const haystack = [row.name, row.slug ?? "", row.aliases.join(" ")].join(" ").toLowerCase();

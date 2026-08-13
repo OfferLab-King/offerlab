@@ -32,7 +32,7 @@ export default async function EmployersResearchPage({
   const administrator = await requireAdministrator();
   const query = await searchParams;
   const filters = parseEmployerResearchFilters(query);
-  const { rows, summary } = await readEmployerResearch(administrator.userId, filters);
+  const { rows, summary, facets } = await readEmployerResearch(administrator.userId, filters);
 
   return (
     <main className="cms-page">
@@ -80,6 +80,39 @@ export default async function EmployersResearchPage({
             </select>
           </label>
           <label>
+            Industry
+            <select name="sector" defaultValue={filters.sector ?? ""}>
+              <option value="">All industries</option>
+              {facets.sectors.map((sector) => (
+                <option key={sector} value={sector}>
+                  {sector}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Employee size
+            <select name="size" defaultValue={filters.employeeBand ?? ""}>
+              <option value="">Any size</option>
+              {facets.employeeBands.map((band) => (
+                <option key={band} value={band}>
+                  {band}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Ownership
+            <select name="ownership" defaultValue={filters.ownership ?? ""}>
+              <option value="">Any ownership</option>
+              {facets.ownerships.map((ownership) => (
+                <option key={ownership} value={ownership}>
+                  {ownership}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Confidence
             <select name="confidence" defaultValue={filters.identityConfidence ?? ""}>
               <option value="">Any confidence</option>
@@ -108,6 +141,24 @@ export default async function EmployersResearchPage({
           <label className="cms-check-filter">
             <input name="jobs" type="checkbox" value="1" defaultChecked={filters.hasJobs} />
             Has jobs
+          </label>
+          <label className="cms-check-filter">
+            <input
+              name="candidate"
+              type="checkbox"
+              value="1"
+              defaultChecked={filters.hasSourceCandidate}
+            />
+            Has source candidate
+          </label>
+          <label className="cms-check-filter">
+            <input
+              name="sponsor"
+              type="checkbox"
+              value="1"
+              defaultChecked={filters.hasSponsorEntity}
+            />
+            Has sponsor entity
           </label>
           <label className="cms-check-filter">
             <input

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  employerWebsiteCandidateUrl,
+  isSharedAtsHostname,
   matchCanonicalEmployer,
   normalizeEmployerName,
   slugifyEmployerName,
@@ -79,6 +81,26 @@ describe("matchCanonicalEmployer", () => {
       evidenceWebsiteUrl: "https://wise.com/careers",
     });
     expect(match).toMatchObject({ companyId: "c2", grade: "website" });
+  });
+
+  it("never matches on shared multi-tenant ATS hosts", () => {
+    const match = matchCanonicalEmployer({
+      canonicalName: "Wise Technology",
+      existingCompanies: companies,
+      existingAliases: aliases,
+      evidenceWebsiteUrl: "https://boards.greenhouse.io/wise",
+    });
+    expect(match.grade).toBe("ambiguous");
+    expect(match.companyId).toBeNull();
+  });
+
+  it("flags shared ATS hosts as non-website evidence", () => {
+    expect(isSharedAtsHostname("boards.greenhouse.io")).toBe(true);
+    expect(isSharedAtsHostname("jobs.lever.co")).toBe(true);
+    expect(isSharedAtsHostname("barclays.wd3.myworkdayjobs.com")).toBe(true);
+    expect(isSharedAtsHostname("wise.com")).toBe(false);
+    expect(employerWebsiteCandidateUrl("https://jobs.ashbyhq.com/wise")).toBe(false);
+    expect(employerWebsiteCandidateUrl("https://wise.com/careers")).toBe(true);
   });
 
   it("returns ambiguous with no company for unknown employers", () => {

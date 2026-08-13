@@ -22,10 +22,20 @@ export type EmployerResearchSummary = Readonly<{
   sponsors: number;
 }>;
 
+export type EmployerResearchFacets = Readonly<{
+  sectors: readonly string[];
+  employeeBands: readonly string[];
+  ownerships: readonly string[];
+}>;
+
 export async function readEmployerResearch(
   administratorUserId: string,
   filters: EmployerResearchFilters,
-): Promise<{ rows: readonly EmployerResearchViewRow[]; summary: EmployerResearchSummary }> {
+): Promise<{
+  rows: readonly EmployerResearchViewRow[];
+  summary: EmployerResearchSummary;
+  facets: EmployerResearchFacets;
+}> {
   return withApplicationUser(administratorUserId, async (database) => {
     const [rawRows, aliases] = await Promise.all([
       listEmployerResearchRows(database),
@@ -43,6 +53,10 @@ export async function readEmployerResearch(
       aliases: row.companyId ? (aliasesByCompany.get(row.companyId) ?? []) : [],
     }));
     const filtered = filterEmployerResearchRows(rows, filters);
+    const distinct = (values: (string | null)[]): string[] =>
+      [...new Set(values.filter((value): value is string => value !== null))].sort((a, b) =>
+        a.localeCompare(b),
+      );
     const summary: EmployerResearchSummary = {
       total: rows.length,
       p0: rows.filter((row) => row.tier === "P0").length,
@@ -54,6 +68,11 @@ export async function readEmployerResearch(
       withJobs: rows.filter((row) => row.currentJobs > 0).length,
       sponsors: rows.reduce((sum, row) => sum + row.sponsorEntities, 0),
     };
-    return { rows: filtered, summary };
+    const facets: EmployerResearchFacets = {
+      sectors: distinct(rows.map((row) => row.sector)),
+      employeeBands: distinct(rows.map((row) => row.employeeBand)),
+      ownerships: distinct(rows.map((row) => row.ownership)),
+    };
+    return { rows: filtered, summary, facets };
   });
 }

@@ -1,4 +1,8 @@
+import * as fs from "node:fs";
+
 import XLSX from "xlsx";
+
+XLSX.set_fs(fs);
 
 export const TARGET_WORKBOOK_PATH =
   "data/research/employer-targets/offerlab_target_employers_top_1000_enhanced.xlsx";
