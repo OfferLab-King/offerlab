@@ -8,7 +8,7 @@ import { createInvitation } from "../src/modules/identity-access/infrastructure/
 
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
-const mailpitUrl = "http://127.0.0.1:55324";
+const mailpitUrl = process.env.TEST_MAILPIT_URL ?? "http://127.0.0.1:55324";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
 
 type MailSummary = Readonly<{

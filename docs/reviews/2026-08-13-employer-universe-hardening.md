@@ -15,6 +15,7 @@
 | Analytics           | Paused and archived job sources were counted as live across discovery, capability, research, and public-profile reads.                                 | Existing source-discovery, admin-detail, and public-profile integration coverage; forward migration `20260813180000` |
 | Source lifecycle    | Re-verifying a promoted candidate downgraded it to `verified`.                                                                                         | Existing source-promotion idempotency coverage                                                                       |
 | Dependency security | A newly published high-severity Nano ID advisory affected the shared PostCSS dependency after the clean baseline.                                      | Frozen install, resolved dependency inspection, and clean high-severity audit                                        |
+| Test isolation      | Repeated integration runs reused a canonical employer name, and browser tests hardcoded the persistent Mailpit port.                                   | Repeated focused integration coverage and the disposable direct-application Playwright journey                       |
 
 ## Reviewed without a confirmed defect
 
@@ -24,4 +25,4 @@
 
 ## Validation
 
-Baseline on unmodified `origin/main` was green: format, lint, typecheck, 951 unit tests, disposable migration replay, 252 integration/security tests, production build, and dependency audit. Final branch validation is recorded in the task handoff after one clean disposable migration replay and full validation pass.
+Baseline on unmodified `origin/main` was green: format, lint, typecheck, 951 unit tests, disposable migration replay, 252 integration/security tests, production build, and dependency audit. Final branch validation is recorded in the task handoff after clean disposable migration replay and full validation.
