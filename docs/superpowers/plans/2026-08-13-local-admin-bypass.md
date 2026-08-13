@@ -4,7 +4,7 @@
 
 **Goal:** Add a safe `pnpm dev:bypass --admin` mode that satisfies both server authorization and administrator RLS during loopback-only local testing.
 
-**Architecture:** Extend the existing local-development configuration with validated bypass role and selected-user variables plus a small CLI argument parser. A session-level database advisory lock serializes all launcher modes. Member mode always uses the deterministic user. Admin mode first reuses an existing non-deterministic local administrator without mutation, or temporarily promotes the deterministic user only when no administrator exists; the launcher passes the selected role and user ID to Next.js and restores member state only after its own temporary promotion.
+**Architecture:** Extend the existing local-development configuration with validated bypass role and selected-user variables plus a small CLI argument parser. A primary session-level advisory lock serializes launcher setup and cleanup, while a detached supervisor holds a companion advisory lock until the entire Next.js process group is absent and stops that group if launcher IPC disappears. A launcher-owned HTTP boundary stamps the actual socket address, and a one-time tokenized URL establishes the required per-launch HttpOnly cookie. Member mode always uses the deterministic user. Admin mode first reuses an existing non-deterministic local administrator without mutation, or temporarily promotes the deterministic user only when no administrator exists; the launcher passes the selected role and user ID to Next.js and restores member state only after its own temporary promotion.
 
 **Tech Stack:** TypeScript, Next.js 16, Zod environment validation, Postgres.js, Vitest, local Supabase.
 
@@ -14,7 +14,7 @@
 - Permit bypass roles only under the existing explicit loopback local-development gate.
 - Do not create a permanent seeded administrator, promote, demote, or otherwise change an existing real administrator.
 - Do not reset, destroy, or recreate any database automatically.
-- Serialize member and administrator launcher processes with a long-lived session-level database advisory lock.
+- Serialize member and administrator launcher processes with long-lived session-level database locks that remain held through definitive child closure, including after abrupt launcher death.
 - Reuse the existing local-development and authorization tests; add no parallel test suite.
 - Leave the unrelated generated `next-env.d.ts` worktree change untouched.
 
@@ -143,7 +143,7 @@ Use `pnpm db:stop && pnpm db:start` only if `supabase status` still omits `API_U
 
 - [ ] **Step 2: Exercise both local modes**
 
-Start member mode on a non-default test port, request `/member`, and confirm the deterministic user's persisted role is `member`. Stop it cleanly. Start admin mode, request `/admin`, confirm an HTTP success and persisted `administrator` role, then stop it cleanly and confirm the role returns to `member`.
+Start member mode on a non-default test port, request `/member`, and confirm the deterministic user's persisted role is `member`. Stop it cleanly. Start admin mode and request `/admin`. When a non-deterministic administrator already exists, confirm that administrator remains `administrator` and the deterministic user remains `member` before and after exit. In a controlled fallback fixture with no other administrator, confirm the deterministic user is temporarily promoted while the server runs and restored to `member` after normal or signal-driven exit.
 
 - [ ] **Step 3: Run final validation once**
 

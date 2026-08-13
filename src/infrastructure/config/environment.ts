@@ -51,6 +51,7 @@ export const environmentKeys = [
   "JSEARCH_MEMBER_DAILY_LIMIT",
   "JSEARCH_MEMBER_MONTHLY_LIMIT",
   "LOCAL_AUTH_BYPASS_ENABLED",
+  "LOCAL_AUTH_BYPASS_REQUEST_SECRET",
   "LOCAL_AUTH_BYPASS_ROLE",
   "LOCAL_AUTH_BYPASS_USER_ID",
   "LOG_LEVEL",
@@ -116,6 +117,7 @@ const serverEnvironmentSchema = z
     JSEARCH_MEMBER_DAILY_LIMIT: optionalPositiveInteger,
     JSEARCH_MEMBER_MONTHLY_LIMIT: optionalPositiveInteger,
     LOCAL_AUTH_BYPASS_ENABLED: z.enum(["true", "false"]).optional(),
+    LOCAL_AUTH_BYPASS_REQUEST_SECRET: optionalString,
     LOCAL_AUTH_BYPASS_ROLE: z.enum(["member", "administrator"]).optional(),
     LOCAL_AUTH_BYPASS_USER_ID: z.uuid().optional(),
     LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
@@ -135,6 +137,23 @@ const serverEnvironmentSchema = z
         code: "custom",
         message: "LOCAL_AUTH_BYPASS_ENABLED=true is allowed only for loopback local development",
         path: ["LOCAL_AUTH_BYPASS_ENABLED"],
+      });
+    }
+    if (
+      environment.LOCAL_AUTH_BYPASS_ENABLED === "true" &&
+      !environment.LOCAL_AUTH_BYPASS_REQUEST_SECRET
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "LOCAL_AUTH_BYPASS_REQUEST_SECRET is required for local authentication bypass",
+        path: ["LOCAL_AUTH_BYPASS_REQUEST_SECRET"],
+      });
+    }
+    if (environment.LOCAL_AUTH_BYPASS_REQUEST_SECRET && !isLocalLoopbackBypass) {
+      context.addIssue({
+        code: "custom",
+        message: "LOCAL_AUTH_BYPASS_REQUEST_SECRET is allowed only for loopback local development",
+        path: ["LOCAL_AUTH_BYPASS_REQUEST_SECRET"],
       });
     }
     if (environment.LOCAL_AUTH_BYPASS_ROLE && !isLocalLoopbackBypass) {

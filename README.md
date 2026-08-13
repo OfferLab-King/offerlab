@@ -45,23 +45,28 @@ pnpm dev:bypass
 pnpm dev:bypass --admin
 ```
 
-Open `http://127.0.0.1:3000/member` for `pnpm dev:bypass` or
-`http://127.0.0.1:3000/admin` for `pnpm dev:bypass --admin`. The launcher uses the deterministic,
-non-login seed member and a synthetic completed profile; it does not create or store a password.
+Open the one-time tokenized URL printed by the launcher. It establishes an HttpOnly session cookie
+and redirects to `/member` for `pnpm dev:bypass` or `/admin` for `pnpm dev:bypass --admin`. The
+launcher uses the deterministic, non-login seed member and a synthetic completed profile; it does
+not create or store a password.
 
 When a local administrator already exists, the administrator command uses that user's existing ID for
 bypass authorization and database policies without changing that user or its role. Otherwise, it
 temporarily changes the deterministic user's role to `administrator` and restores it to `member` when
 the server exits cleanly. Starting member mode always sets the deterministic user's role to `member`
 before launch, recovering from an interrupted administrator process. The launcher binds Next.js to
-`127.0.0.1` and requires both Supabase database and API URLs to be loopback. Normal `pnpm dev`, tests,
-staging and production continue to require Supabase authentication.
+`127.0.0.1`, stamps the socket client address at its HTTP boundary, and requires both that address and
+the per-launch cookie before granting bypass authorization. It also requires both Supabase database
+and API URLs to be loopback. Normal `pnpm dev`, tests, staging and production continue to require
+Supabase authentication.
 
 The launcher never resets the database. If the local Supabase status omits `API_URL` after startup, run
 `pnpm db:stop && pnpm db:start` and then re-run the launcher.
 
-Only one local bypass launcher may run at a time. A second launch fails before Next.js starts, preserving
-the selected authorization identity and database role for the active launcher.
+Only one local bypass launcher may run at a time. A child-lifetime supervisor stops Next.js if the
+launcher is killed and retains a companion database lock until the server has closed. A concurrent
+launch therefore fails before Next.js starts; a later launch can safely recover any interrupted
+temporary fallback role after the prior server is gone.
 
 ## Validation
 

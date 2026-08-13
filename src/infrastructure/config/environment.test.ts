@@ -22,6 +22,7 @@ describe("parseServerEnvironment", () => {
         ...validEnvironment,
         APP_ENV: "local",
         LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_REQUEST_SECRET: "local-test-request-secret",
         NODE_ENV: "development",
       }),
     ).not.toThrow();
@@ -44,12 +45,24 @@ describe("parseServerEnvironment", () => {
     ).toThrow("LOCAL_AUTH_BYPASS_ENABLED");
   });
 
+  it("requires a launcher request secret for local authentication bypass", () => {
+    expect(() =>
+      parseServerEnvironment({
+        ...validEnvironment,
+        APP_ENV: "local",
+        LOCAL_AUTH_BYPASS_ENABLED: "true",
+        NODE_ENV: "development",
+      }),
+    ).toThrow("LOCAL_AUTH_BYPASS_REQUEST_SECRET");
+  });
+
   it("keeps the administrator bypass role inside the local loopback bypass boundary", () => {
     expect(() =>
       parseServerEnvironment({
         ...validEnvironment,
         APP_ENV: "local",
         LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_REQUEST_SECRET: "local-test-request-secret",
         LOCAL_AUTH_BYPASS_ROLE: "administrator",
         NODE_ENV: "development",
       }),
@@ -76,6 +89,7 @@ describe("parseServerEnvironment", () => {
         ...validEnvironment,
         APP_ENV: "local",
         LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_REQUEST_SECRET: "local-test-request-secret",
         LOCAL_AUTH_BYPASS_ROLE: "administrator",
         NEXT_PUBLIC_APP_URL: "https://offerlab.example",
         NODE_ENV: "development",
@@ -89,6 +103,7 @@ describe("parseServerEnvironment", () => {
         ...validEnvironment,
         APP_ENV: "local",
         LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_REQUEST_SECRET: "local-test-request-secret",
         LOCAL_AUTH_BYPASS_USER_ID: "20000000-0000-4000-8000-000000000001",
         NODE_ENV: "development",
       }),
@@ -98,6 +113,7 @@ describe("parseServerEnvironment", () => {
         ...validEnvironment,
         APP_ENV: "local",
         LOCAL_AUTH_BYPASS_ENABLED: "true",
+        LOCAL_AUTH_BYPASS_REQUEST_SECRET: "local-test-request-secret",
         LOCAL_AUTH_BYPASS_USER_ID: "not-a-uuid",
         NODE_ENV: "development",
       }),

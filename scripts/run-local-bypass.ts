@@ -1,4 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { fileURLToPath } from "node:url";
 
 import {
   isLoopbackUrl,
@@ -18,6 +20,10 @@ import {
 } from "./local-bypass-signals";
 
 const localBypassLockKey = "offerlab:local-auth-bypass";
+const localBypassChildLockKey = `${localBypassLockKey}:child`;
+const childSupervisorScript = fileURLToPath(
+  new URL("./local-bypass-child-supervisor.ts", import.meta.url),
+);
 
 function runRequired(command: string, arguments_: readonly string[]) {
   const result = spawnSync(command, arguments_, { encoding: "utf8" });
@@ -38,6 +44,7 @@ function roleDatabaseUrl(databaseUrl: string, role: string): string {
 async function runNextDevelopmentServer(
   environment: NodeJS.ProcessEnv,
   port: string,
+  databaseUrl: string,
   databaseSessionSignal: AbortSignal,
   shutdown: LocalBypassShutdownWatcher,
 ): Promise<number> {
@@ -45,10 +52,15 @@ async function runNextDevelopmentServer(
   if (databaseSessionSignal.aborted) {
     throw databaseSessionSignal.reason;
   }
-  const child = spawn("pnpm", ["exec", "next", "dev", "--hostname", "127.0.0.1", "--port", port], {
+  const child = spawn(process.execPath, ["--import", "tsx", childSupervisorScript], {
     detached: true,
-    env: environment,
-    stdio: "inherit",
+    env: {
+      ...environment,
+      LOCAL_BYPASS_GUARDIAN_DATABASE_URL: databaseUrl,
+      LOCAL_BYPASS_GUARDIAN_LOCK_KEY: localBypassChildLockKey,
+      LOCAL_BYPASS_GUARDIAN_PORT: port,
+    },
+    stdio: ["inherit", "inherit", "inherit", "ipc"],
   });
   const childClosePromise = waitForLocalBypassChildClose(child);
   shutdown.attachChild(child);
@@ -67,7 +79,7 @@ async function runNextDevelopmentServer(
   }
   const childErrors = [...childClose.errors, ...shutdown.forwardingFailures];
   childErrors.forEach((error) => {
-    process.stderr.write(`Next.js development server process error: ${error.message}\n`);
+    process.stderr.write(`Next.js development server supervisor error: ${error.message}\n`);
   });
 
   if (databaseSessionSignal.aborted) {
@@ -78,24 +90,28 @@ async function runNextDevelopmentServer(
       ? `signal ${childClose.signal}`
       : `exit code ${childClose.code ?? "unknown"}`;
     process.stdout.write(
-      `Local bypass shutdown forwarded ${shutdown.requestedSignal}; Next.js ended with ${childResult}.\n`,
+      `Local bypass shutdown forwarded ${shutdown.requestedSignal}; Next.js supervisor ended with ${childResult}.\n`,
     );
     return signalExitCode(shutdown.requestedSignal);
   }
   if (childErrors.length > 0) {
     throw new AggregateError(
       childErrors,
-      "Next.js development server reported process errors before closing.",
+      "Next.js development server supervisor reported process errors before closing.",
     );
   }
   if (childClose.signal) {
-    throw new Error(`Next.js development server stopped from signal ${childClose.signal}.`);
+    throw new Error(
+      `Next.js development server supervisor stopped from signal ${childClose.signal}.`,
+    );
   }
   if (childClose.code === null) {
-    throw new Error("Next.js development server exited without an exit code or signal.");
+    throw new Error("Next.js development server supervisor exited without an exit code or signal.");
   }
   if (childClose.code !== 0) {
-    process.stderr.write(`Next.js development server exited with code ${childClose.code}.\n`);
+    process.stderr.write(
+      `Next.js development server supervisor exited with code ${childClose.code}.\n`,
+    );
   }
   return childClose.code;
 }
@@ -129,7 +145,7 @@ let databaseSessionFailure: Error | undefined;
 let databaseSession: LocalBypassDatabaseSession | null | undefined;
 let promotedDeterministicUser = false;
 const databaseSessionController = new AbortController();
-const shutdown = watchLocalBypassShutdown();
+const shutdown = watchLocalBypassShutdown(process, { escalationDelayMs: 20_000 });
 try {
   databaseSession = await openLocalBypassDatabaseSession(databaseUrl, localBypassLockKey, () => {
     databaseSessionFailure ??= new Error(
@@ -144,6 +160,21 @@ try {
     );
   }
   const database = databaseSession.connection;
+  const childLocks = await database<{ acquired: boolean }[]>`
+    select pg_try_advisory_lock(hashtext(${localBypassChildLockKey})) as acquired
+  `;
+  if (!childLocks[0]?.acquired) {
+    throw new Error(
+      "Another local bypass launcher is already running. Stop it before starting a new one.",
+    );
+  }
+  const releasedChildLocks = await database<{ released: boolean }[]>`
+    select pg_advisory_unlock(hashtext(${localBypassChildLockKey})) as released
+  `;
+  if (!releasedChildLocks[0]?.released) {
+    throw new Error("The local bypass child-lifetime lock probe could not be released.");
+  }
+  shutdown.throwIfRequested();
 
   let bypassUserId: string = localAuthBypassMember.userId;
   if (bypassRole === "administrator") {
@@ -202,7 +233,10 @@ try {
   }
   const appUrl = `http://127.0.0.1:${port}`;
   const accessPath = bypassRole === "administrator" ? "/admin" : "/member";
-  process.stdout.write(`Local test access enabled at ${appUrl}${accessPath}\n`);
+  const requestSecret = randomBytes(32).toString("hex");
+  const accessUrl = new URL(accessPath, appUrl);
+  accessUrl.searchParams.set("local-bypass-token", requestSecret);
+  process.stdout.write(`Local test access enabled at ${accessUrl.toString()}\n`);
 
   process.exitCode = await runNextDevelopmentServer(
     {
@@ -213,6 +247,7 @@ try {
       DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_runtime_login"),
       IDENTITY_SYNC_DATABASE_URL: roleDatabaseUrl(databaseUrl, "offerlab_identity_sync_login"),
       LOCAL_AUTH_BYPASS_ENABLED: "true",
+      LOCAL_AUTH_BYPASS_REQUEST_SECRET: requestSecret,
       LOCAL_AUTH_BYPASS_ROLE: bypassRole,
       LOCAL_AUTH_BYPASS_USER_ID: bypassUserId,
       LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
@@ -222,6 +257,7 @@ try {
       NODE_ENV: "development",
     },
     port,
+    databaseUrl,
     databaseSessionController.signal,
     shutdown,
   );

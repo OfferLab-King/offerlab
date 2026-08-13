@@ -36,11 +36,19 @@ describe("local development access gate", () => {
     ).toBe(false);
   });
 
-  it("recognises only loopback URLs and request hosts", () => {
+  it("recognises only numeric IPv4 loopback addresses and exact loopback names", () => {
     expect(isLoopbackUrl("http://localhost:3000")).toBe(true);
+    expect(isLoopbackUrl("http://127.0.0.1:3000")).toBe(true);
+    expect(isLoopbackUrl("http://127.255.255.255:3000")).toBe(true);
     expect(isLoopbackUrl("http://[::1]:3000")).toBe(true);
     expect(isLoopbackUrl("https://offerlab.example")).toBe(false);
     expect(isLoopbackRequestHost("127.0.0.1:3000")).toBe(true);
+    expect(isLoopbackUrl("http://127.attacker.invalid:3000")).toBe(false);
+    expect(isLoopbackUrl("http://127.0.0.1.attacker.invalid:3000")).toBe(false);
+    expect(isLoopbackRequestHost("127.attacker.invalid:3000")).toBe(false);
+    expect(isLoopbackRequestHost("127.0.0.1.attacker.invalid:3000")).toBe(false);
+    expect(isLoopbackRequestHost("attacker@127.0.0.1:3000")).toBe(false);
+    expect(isLoopbackRequestHost("127.0.0.1:3000/admin")).toBe(false);
     expect(isLoopbackRequestHost("offerlab.example")).toBe(false);
   });
 

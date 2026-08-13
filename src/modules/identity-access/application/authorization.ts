@@ -6,7 +6,10 @@ import { getIdentitySyncDatabase } from "../../../infrastructure/database/runtim
 import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture";
 import {
   isLocalAuthBypassEnabled,
+  isLoopbackClientAddress,
   isLoopbackRequestHost,
+  localAuthBypassClientAddressHeader,
+  localAuthBypassCookieName,
   localAuthBypassRole,
   localAuthBypassUserId,
 } from "../../../infrastructure/config/local-development";
@@ -103,11 +106,33 @@ async function localDevelopmentAuthorization(): Promise<AuthorizationState | nul
   if (!isLocalAuthBypassEnabled()) return null;
   const requestHeaders = await headers();
   if (!isLoopbackRequestHost(requestHeaders.get("host"))) return null;
+  const requestSecret = process.env.LOCAL_AUTH_BYPASS_REQUEST_SECRET;
+  if (
+    !requestSecret ||
+    requestCookie(requestHeaders, localAuthBypassCookieName) !== requestSecret
+  ) {
+    return null;
+  }
+  const clientAddress = requestHeaders.get(localAuthBypassClientAddressHeader);
+  if (!clientAddress || !isLoopbackClientAddress(clientAddress)) return null;
   return {
     entitlementStatus: "active",
     role: localAuthBypassRole(),
     userId: localAuthBypassUserId(),
   };
+}
+
+function requestCookie(requestHeaders: Headers, name: string): string | undefined {
+  for (const segment of requestHeaders.get("cookie")?.split(";") ?? []) {
+    const separator = segment.indexOf("=");
+    if (separator < 0 || segment.slice(0, separator).trim() !== name) continue;
+    try {
+      return decodeURIComponent(segment.slice(separator + 1).trim());
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
 }
 
 export async function requireAdministrator(): Promise<AuthorizationState> {

@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 const localBypassMember = {
   authUserId: "10000000-0000-4000-8000-000000000003",
   userId: "20000000-0000-4000-8000-000000000003",
@@ -5,13 +7,24 @@ const localBypassMember = {
 
 export type LocalAuthBypassRole = "member" | "administrator";
 
+export const localAuthBypassClientAddressHeader = "x-offerlab-local-client-address";
+export const localAuthBypassCookieName = "offerlab-local-bypass";
+
 function isLoopbackHostname(hostname: string): boolean {
   return (
     hostname === "localhost" ||
     hostname === "::1" ||
     hostname === "[::1]" ||
-    hostname.startsWith("127.")
+    isIpv4Loopback(hostname)
   );
+}
+
+function isIpv4Loopback(address: string): boolean {
+  return isIP(address) === 4 && address.split(".", 1)[0] === "127";
+}
+
+export function isLoopbackClientAddress(address: string): boolean {
+  return address === "::1" || isIpv4Loopback(address);
 }
 
 export function isLoopbackUrl(value: string | undefined): boolean {
@@ -26,7 +39,15 @@ export function isLoopbackUrl(value: string | undefined): boolean {
 export function isLoopbackRequestHost(value: string | null): boolean {
   if (!value) return false;
   try {
-    return isLoopbackHostname(new URL(`http://${value}`).hostname);
+    const parsed = new URL(`http://${value}`);
+    return (
+      !parsed.username &&
+      !parsed.password &&
+      parsed.pathname === "/" &&
+      !parsed.search &&
+      !parsed.hash &&
+      isLoopbackHostname(parsed.hostname)
+    );
   } catch {
     return false;
   }

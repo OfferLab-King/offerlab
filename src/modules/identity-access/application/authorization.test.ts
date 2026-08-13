@@ -26,11 +26,19 @@ import { currentAuthorization, currentMemberAccess } from "./authorization";
 
 describe("local development authorization", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.stubEnv("APP_ENV", "local");
     vi.stubEnv("LOCAL_AUTH_BYPASS_ENABLED", "true");
+    vi.stubEnv("LOCAL_AUTH_BYPASS_REQUEST_SECRET", "local-test-request-secret");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://127.0.0.1:3000");
     vi.stubEnv("NODE_ENV", "development");
-    mocks.headers.mockResolvedValue(new Headers({ host: "127.0.0.1:3000" }));
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        cookie: "offerlab-local-bypass=local-test-request-secret",
+        host: "127.0.0.1:3000",
+        "x-offerlab-local-client-address": "127.0.0.1",
+      }),
+    );
     mocks.authenticatedUserId.mockResolvedValue(null);
   });
 
@@ -74,7 +82,41 @@ describe("local development authorization", () => {
 
   it("refuses bypass requests arriving through a non-loopback host", async () => {
     vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
-    mocks.headers.mockResolvedValue(new Headers({ host: "offerlab.example" }));
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        cookie: "offerlab-local-bypass=local-test-request-secret",
+        host: "127.attacker.invalid:3000",
+        "x-offerlab-local-client-address": "127.0.0.1",
+      }),
+    );
+
+    await expect(currentMemberAccess()).resolves.toEqual({ status: "unauthenticated" });
+    expect(mocks.authenticatedUserId).toHaveBeenCalledOnce();
+  });
+
+  it("refuses bypass requests from a non-loopback client behind a loopback Host", async () => {
+    vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        cookie: "offerlab-local-bypass=local-test-request-secret",
+        host: "127.0.0.1:3000",
+        "x-offerlab-local-client-address": "203.0.113.10",
+      }),
+    );
+
+    await expect(currentMemberAccess()).resolves.toEqual({ status: "unauthenticated" });
+    expect(mocks.authenticatedUserId).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a spoofed forwarding address without launcher-stamped transport proof", async () => {
+    vi.stubEnv("LOCAL_AUTH_BYPASS_ROLE", "administrator");
+    mocks.headers.mockResolvedValue(
+      new Headers({
+        host: "127.0.0.1:3000",
+        "x-forwarded-for": "127.0.0.1",
+        "x-offerlab-local-client-address": "127.0.0.1",
+      }),
+    );
 
     await expect(currentMemberAccess()).resolves.toEqual({ status: "unauthenticated" });
     expect(mocks.authenticatedUserId).toHaveBeenCalledOnce();
