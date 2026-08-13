@@ -194,14 +194,27 @@ describe("source discovery pipeline", () => {
   });
 
   it("computes platform coverage from research, candidate and live evidence", async () => {
-    await setupCompanyAndCandidate({
+    const { companyId } = await setupCompanyAndCandidate({
       candidateUrl: `https://jobs.lever.co/acme-coverage-${uniqueSlug("l")}`,
       platformHint: "Lever",
       tier: "P1",
       atsPlatform: "Workday",
       researchStatus: "verified_platform",
     });
+    await migrationDatabase`
+      insert into app.employer_research_snapshot (
+        company_id, canonical_name, dataset_version, research_date, priority_tier,
+        internal_rank, research_status, ats_platform
+      ) values (
+        ${companyId}::uuid, 'Historical Coverage Co', ${`historical-${uniqueSlug("h")}`},
+        '2026-08-11'::date, 'P3', ${Math.floor(Math.random() * 1000) + 2000},
+        'verified_platform', 'Greenhouse'
+      )
+    `;
     const data = await migrationDatabase.begin((t) => readPlatformCoverageData(t));
+    expect(data.snapshots.filter((snapshot) => snapshot.companyId === companyId)).toEqual([
+      { atsPlatform: "Workday", companyId, tier: "P1" },
+    ]);
     const coverage = computePlatformCoverage(data);
     expect(coverage.totals.employers).toBeGreaterThan(0);
     expect(coverage.totals.p0 + coverage.totals.p1).toBeGreaterThan(0);

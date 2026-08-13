@@ -135,8 +135,11 @@ export async function readPlatformCoverageData(
 ): Promise<PlatformCoverageSourceData> {
   const [snapshots, candidates, jobSources] = await Promise.all([
     database<{ companyId: string | null; tier: string | null; atsPlatform: string | null }[]>`
-      select company_id as "companyId", priority_tier as tier, ats_platform as "atsPlatform"
+      select distinct on (company_id)
+        company_id as "companyId", priority_tier as tier, ats_platform as "atsPlatform"
       from app.employer_research_snapshot
+      where company_id is not null
+      order by company_id, research_date desc, dataset_version desc
     `,
     database<{ companyId: string | null; platformHint: string | null; status: string }[]>`
       select company_id as "companyId", platform_hint as "platformHint", status
