@@ -79,6 +79,30 @@ The import is typed, deterministic, idempotent and provenance-preserving. It:
   `app.job_source`;
 - never touches `app.job_source`; existing live sources are preserved.
 
+## Taxonomy dimensions (Phase D)
+
+The employer-industry, job-function and career-level dimensions are
+backward-compatible additions over the legacy sector/subsector model. After
+the migration, populate them from research and legacy classification:
+
+```bash
+pnpm jobs:taxonomy:backfill            # dry-run report of planned updates
+pnpm jobs:taxonomy:backfill --confirm  # fill only NULL cells; idempotent
+```
+
+Rules:
+
+- employer industry comes from the Top 1,000 research snapshot sector, falling
+  back to the legacy directory sector;
+- job function derives from the job's own legacy subsector classification,
+  never from employer industry;
+- career level derives from opportunity type and seniority; general and
+  experienced roles remain valid catalogue records;
+- the deterministic classification pipeline writes the new job dimensions for
+  every discovered or changed job (review-gated like the legacy dimensions);
+- nothing reads the new dimensions publicly yet; public facets and onboarding
+  migrate in later phases.
+
 Research tables (`app.employer_alias`, `app.employer_sponsor_entity`,
 `app.employer_research_snapshot`, `app.job_source_candidate`) are
 administrator-only. The `/admin/employers` page is the research/operations

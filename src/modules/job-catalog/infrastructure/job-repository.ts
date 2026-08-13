@@ -13,6 +13,8 @@ export type PublicationStatus = "draft" | "published" | "suppressed" | "expired"
 export type ClassificationSource = "source" | "deterministic" | "administrator" | "ai_assisted";
 
 export type JobClassificationWrite = Readonly<{
+  careerLevelKey: string | null;
+  jobFunctionKey: string | null;
   sectorKey: string | null;
   subsectorKey: string | null;
   opportunityType: OpportunityType;
@@ -115,7 +117,7 @@ export async function applyCrawlPlan(
           employment_type, remote_type, salary_min, salary_max, salary_currency,
           salary_period, content_hash, source_payload, enrichment_status,
           first_seen_at, last_seen_at, last_changed_at,
-          sector_key, subsector_key, opportunity_type,
+          sector_key, subsector_key, opportunity_type, job_function_key, career_level_key,
           eligibility_status, eligibility_reasons, eligibility_evidence,
           publication_status, classification_source, classification_version
         )
@@ -128,6 +130,7 @@ export async function applyCrawlPlan(
           ${contentHashForDiscovered(discovered)}, ${jsonParameter(database, discovered.sourcePayload ?? {})},
           'pending', ${options.now}, ${options.now}, ${options.now},
           ${classification.sectorKey}, ${classification.subsectorKey}, ${classification.opportunityType},
+          ${classification.jobFunctionKey}, ${classification.careerLevelKey},
           ${classification.eligibilityStatus}, ${classification.eligibilityReasons}, ${classification.eligibilityEvidence},
           ${classification.publicationStatus}, ${classification.classificationSource}, 1
         )
@@ -299,6 +302,8 @@ async function updateJobFromDiscovered(
         sector_key = case when ${classification !== null} then ${classification?.sectorKey ?? null} else sector_key end,
         subsector_key = case when ${classification !== null} then ${classification?.subsectorKey ?? null} else subsector_key end,
         opportunity_type = case when ${classification !== null} then ${classification?.opportunityType ?? "unknown"} else opportunity_type end,
+        job_function_key = case when ${classification !== null} then ${classification?.jobFunctionKey ?? null} else job_function_key end,
+        career_level_key = case when ${classification !== null} then ${classification?.careerLevelKey ?? null} else career_level_key end,
         eligibility_status = case when ${classification !== null} then ${classification?.eligibilityStatus ?? "needs_review"} else eligibility_status end,
         eligibility_reasons = case when ${classification !== null} then ${classification?.eligibilityReasons ?? []} else eligibility_reasons end,
         eligibility_evidence = case when ${classification !== null} then ${classification?.eligibilityEvidence ?? null} else eligibility_evidence end,

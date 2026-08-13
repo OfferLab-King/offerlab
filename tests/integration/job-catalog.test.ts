@@ -550,10 +550,12 @@ function existingRecordForTest(row: Awaited<ReturnType<typeof listJobsForSource>
 
 function testClassificationWrite(): JobClassificationWrite {
   return {
+    careerLevelKey: null,
     classificationSource: "deterministic",
     eligibilityEvidence: null,
     eligibilityReasons: [],
     eligibilityStatus: "eligible",
+    jobFunctionKey: null,
     opportunityType: "unknown",
     publicationStatus: "published",
     sectorKey: null,
