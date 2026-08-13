@@ -33,9 +33,15 @@ The current implementation contract covers:
   graduate and other early-career opportunities, with deterministic listing eligibility and
   publication pipelines, independently monitored official sources, owner-scoped member saves, honest freshness
   and official application links (see amended ADR 0023);
-- one combined Employers & sectors directory, with a priority cohort
-  of up to 500 UK-relevant employers and honest zero-current-role states; legacy standalone sector
+- one combined Employers & sectors directory, with a researched UK employer
+  universe (the Top 1,000 sponsor-aware dataset is the scalable foundation; the
+  historical 500-employer ceiling is removed in favour of quality-based
+  visibility) and honest zero-current-role states; legacy standalone sector
   routes redirect into this directory;
+- an employer-research layer (Top 1,000 research import): canonical employer
+  aliases, Home Office sponsor legal entities, dated research snapshots and
+  source-discovery candidates, kept separate from the live crawler source
+  registry and never activating crawling automatically;
 - content-free, database-enforced member and account request ceilings for outbound job search;
 - preparation resources, taxonomy, learning paths and deterministic recommendations;
 - contextual evidence-building projects and curated, commercially disclosed external learning

@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-08-10
-- Amended: 2026-08-12
+- Amended: 2026-08-12, 2026-08-13 (Top 1,000 research universe)
 
 ## Context
 
@@ -65,7 +65,7 @@ only, never a data source.
    taxonomy. Job-list sector filters remain URL-backed on `/jobs`.
 9. **Directory metadata is not source state.** `app.company` stores an
    editorial `directory_sector_key`, optional internal
-   `directory_priority_rank` (1–500) and `directory_visible`. These fields let
+   `directory_priority_rank` and `directory_visible`. These fields let
    a reviewed priority employer appear honestly with zero current roles. They
    never changes source status, eligibility or publication. Public directory
    queries union visible zero-role employers with employers that have current
@@ -79,8 +79,9 @@ only, never a data source.
   has machine-readable eligibility reasons and evidence.
 - Administrator overrides are explicit, owner-attributed, versioned and
   audited.
-- Incomplete sources stay inactive; the first rollout prioritises approximately
-  100 verified UK-relevant employers and supports expansion to 500.
+- Incomplete sources stay inactive; the verified cohort manifest bootstraps the
+  catalogue and the researched Top 1,000 employer universe (founder decision
+  2026-08-13) scales the registry beyond the historical 500-employer ceiling.
 - The combined directory may be broader than the current job catalogue, but it
   labels zero-role employers and never manufactures vacancy counts.
 - The pipeline is an expansion of ADR 0022; that ADR remains valid for the

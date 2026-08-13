@@ -51,6 +51,39 @@ Relevant keys:
 | `JOB_CRAWLER_MODEL_DATA_APPROVED`                           | —                              | Required `true` in production when enrichment is on and DeepSeek keys are set |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | —                              | Shared DeepSeek config reused by enrichment                                   |
 
+## Employer research universe (Top 1,000)
+
+The workbook at `data/research/employer-targets/` is the human research
+artifact; the deterministic machine-readable derivative lives at
+`data/generated/employer-targets/top-1000.json` and is generated from the
+workbook so they cannot drift.
+
+```bash
+pnpm jobs:targets:validate   # parse and validate the workbook (no DB)
+pnpm jobs:targets:export     # regenerate data/generated/employer-targets/top-1000.json
+pnpm jobs:targets:import --dry-run   # diff the dataset against the database
+pnpm jobs:targets:import --confirm   # apply idempotently
+```
+
+The import is typed, deterministic, idempotent and provenance-preserving. It:
+
+- matches researched employers to canonical `app.company` identities with a
+  confidence-gated matcher; ambiguous identities stay research-only for
+  administrator review;
+- creates canonical employer identity rows (never activating sources);
+- records Home Office sponsor legal entities one-to-many per employer;
+- stores dated research snapshots with scores, employee evidence, ownership
+  and confidence (internal research data, never public rankings);
+- creates unverified `app.job_source_candidate` rows for researched career
+  URLs; candidates are never crawled and never auto-promoted to
+  `app.job_source`;
+- never touches `app.job_source`; existing live sources are preserved.
+
+Research tables (`app.employer_alias`, `app.employer_sponsor_entity`,
+`app.employer_research_snapshot`, `app.job_source_candidate`) are
+administrator-only. The `/admin/employers` page is the research/operations
+view; `/admin/job-sources` remains the live source operations page.
+
 ## Local CMS-triggered crawling
 
 The CMS **Run now** control never crawls inside the web request. It records a
@@ -129,7 +162,12 @@ adds ±10% jitter to every next-check time so sources do not burst together.
 
 ## Priority UK employer cohort
 
-The first source-onboarding programme is capped at 500 UK-relevant employers.
+The researched Top 1,000 employer universe (founder decision 2026-08-13)
+supersedes the historical 500-employer ceiling. Visibility is driven by data
+quality and product usefulness; researched employers, public profiles, source
+candidates, verified sources and active sources may each have different
+counts. The versioned cohort manifest remains a bootstrap/core source
+manifest.
 `directory_priority_rank` is an internal processing order, not a public league
 table. `directory_visible` controls directory presence independently from each
 source's operational status.
@@ -152,8 +190,9 @@ source, separately verify the official careers URL and ATS identifier, review
 the connector endpoint. Never copy a commercial
 directory's descriptions, rankings, jobs, logos or private identifiers.
 
-Expand the versioned cohort toward 500 through the same verified import path;
-activate only records with confirmed connector configuration.
+Expand through the researched employer universe import path
+(`pnpm jobs:targets:import`); a spreadsheet row never activates crawling, and
+only records with confirmed connector configuration become live sources.
 
 ## Scheduling on the deployment host
 
