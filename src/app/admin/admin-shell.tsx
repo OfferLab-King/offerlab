@@ -17,6 +17,7 @@ const primaryLinks = [
   { href: "/admin/group-mock", label: "Group Mock", section: "group-mock" },
   { href: "/admin/operations", label: "Operations", section: "operations" },
   { href: "/admin/job-sources", label: "Job sources", section: "job-sources" },
+  { href: "/admin/employers", label: "Employers", section: "employers" },
 ] as const;
 
 function getActiveSection(pathname: string, type: string | null) {
@@ -27,6 +28,7 @@ function getActiveSection(pathname: string, type: string | null) {
   if (pathname.startsWith("/admin/group-mock")) return "group-mock";
   if (pathname === "/admin/operations") return "operations";
   if (pathname === "/admin/job-sources") return "job-sources";
+  if (pathname.startsWith("/admin/employers")) return "employers";
   if (pathname === "/admin/content" && type === "coaching_case") return "coaching";
   if (pathname.startsWith("/admin/content")) return "content";
   return null;
