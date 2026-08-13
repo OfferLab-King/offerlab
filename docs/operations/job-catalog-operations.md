@@ -170,6 +170,28 @@ new research evidence), register the connector in
 `source_type` enum value and update `sourceTypeForPlatform` in
 `ats-fingerprint.ts`.
 
+## Public employer directory (Phase E)
+
+The public `/employers` directory and `/employers/[slug]` profiles read the
+`app.employer_public_profile` security-barrier view — the privacy-safe
+contract between the researched universe and the public routes.
+
+- The view exposes only verifiable employer facts (industry, size band,
+  ownership, ticker/exchange, sponsor presence and snapshot date, official
+  URLs, current roles). Internal research fields (tier, rank, scores,
+  confidence, notes) are never selected by the view and never reach public
+  pages.
+- Visibility is quality-based: an employer is listed when it has current
+  published roles, is explicitly curated (`directory_visible`), or carries a
+  credible researched profile (verified industry plus size/ownership/sponsor
+  evidence and an official URL). Placeholder `employer.invalid` URLs are
+  treated as absent, so nothing public links to them.
+- Search and filters (industry, size, ownership, sponsor, hiring) are
+  URL-backed; hiring-first, most-roles and A–Z sorts are supported.
+- SEO: `isEmployerIndexable` now also qualifies credible researched profiles
+  (no filler required), and the sitemap includes them; filtered directory
+  URLs stay noindex.
+
 ## Local CMS-triggered crawling
 
 The CMS **Run now** control never crawls inside the web request. It records a

@@ -2,16 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/modules/job-catalog/application/catalog", () => ({
   readEmployerActiveJobs: vi.fn(async () => []),
-  readEmployerDirectory: vi.fn(async () => []),
+  readEmployerDirectoryEntries: vi.fn(async () => []),
   readEmployerProfile: vi.fn(async () => null),
   readSectorJobCounts: vi.fn(async () => []),
 }));
 vi.mock("../../src/app/jobs/job-card", () => ({ JobCard: () => null }));
 vi.mock("../../src/app/jobs/employer-mark", () => ({ EmployerMark: () => null }));
 vi.mock("../../src/app/components/site-header", () => ({ SiteHeader: () => null }));
-vi.mock("../../src/app/employers/employer-directory-view", () => ({
-  EmployerDirectoryView: () => null,
-}));
 
 import { generateMetadata as employerMetadata } from "../../src/app/employers/[slug]/page";
 import { generateMetadata as directoryMetadata } from "../../src/app/employers/page";
@@ -36,6 +33,7 @@ function profile(overrides: Partial<EmployerProfileView>): EmployerProfileView {
     name: "Example Bank",
     slug: "example-bank",
     website_url: "https://www.example-bank.com",
+    publicProfile: null,
     ...overrides,
   };
 }
@@ -93,8 +91,8 @@ describe("employer directory metadata", () => {
   });
 
   it.each([
-    [{ sector: "financial_services" }],
-    [{ sector: "financial_services", subsector: "retail_corporate_banking" }],
+    [{ industry: "financial_services" }],
+    [{ industry: "financial_services", size: "10,000–49,999" }],
     [{ q: "bank" }],
   ])("marks filtered directory URLs as noindex, follow for %o", async (params) => {
     const metadata = await directoryMetadata({ searchParams: Promise.resolve(params) });

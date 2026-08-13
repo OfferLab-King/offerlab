@@ -73,9 +73,10 @@ describe("taxonomy dimensions", () => {
   });
 
   it("backfills employer industry from research evidence without touching jobs", async () => {
+    const careersUrl = `https://taxco-${uniqueSlug("t")}.example.com/careers`;
     const company = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type, directory_sector_key)
-      values ('Taxonomy Co', ${uniqueSlug("taxco")}, 'https://taxco.example.com/careers', 'unknown', 'technology_it')
+      values ('Taxonomy Co', ${uniqueSlug("taxco")}, ${careersUrl}, 'unknown', 'technology_it')
       returning id
     `;
     await migrationDatabase`

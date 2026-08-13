@@ -10,6 +10,7 @@ function evidence(
     description: null,
     hasImportedJobs: false,
     hasOfficialEmployerInfo: true,
+    hasCredibleProfile: false,
     ...overrides,
   };
 }
@@ -78,6 +79,26 @@ describe("employer indexability policy", () => {
       isEmployerIndexable(
         evidence({
           hasImportedJobs: false,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("indexes a credible researched profile without imported jobs", () => {
+    expect(
+      isEmployerIndexable(
+        evidence({
+          hasCredibleProfile: true,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("never treats a name-only researched profile as credible", () => {
+    expect(
+      isEmployerIndexable(
+        evidence({
+          hasCredibleProfile: false,
         }),
       ),
     ).toBe(false);

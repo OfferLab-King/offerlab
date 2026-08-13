@@ -9,11 +9,13 @@ import {
 import type { JobCatalogFilters } from "../domain/catalog";
 import {
   findEmployerProfile,
+  findEmployerPublicProfile,
   findJobDetail,
   findJobsByIds,
   listCatalogJobsForSitemap,
   listCompanyActiveJobs,
   listEmployerDirectory,
+  listEmployerPublicDirectory,
   listIndexableEmployersForSitemap,
   listRelatedEmployerJobs,
   listSimilarJobs,
@@ -21,6 +23,7 @@ import {
   searchJobsFaceted,
   type EmployerDirectoryRow,
   type EmployerProfileRow,
+  type EmployerPublicProfileRow,
   type EmployerSitemapRow,
   type FacetCountRow,
   type JobCardRow,
@@ -135,11 +138,19 @@ export function readEmployerDirectory(): Promise<EmployerDirectoryRow[]> {
   return withApplicationRole((database) => listEmployerDirectory(database));
 }
 
-export type EmployerProfileView = EmployerProfileRow & Readonly<{ indexable: boolean }>;
+export function readEmployerDirectoryEntries(): Promise<readonly EmployerPublicProfileRow[]> {
+  return withApplicationRole((database) => listEmployerPublicDirectory(database));
+}
+
+export type EmployerProfileView = EmployerProfileRow &
+  Readonly<{ indexable: boolean; publicProfile: EmployerPublicProfileRow | null }>;
 
 export async function readEmployerProfile(slug: string): Promise<EmployerProfileView | null> {
   return withApplicationRole(async (database) => {
-    const row = await findEmployerProfile(database, slug);
+    const [row, publicProfile] = await Promise.all([
+      findEmployerProfile(database, slug),
+      findEmployerPublicProfile(database, slug),
+    ]);
     if (!row) return null;
     return {
       ...row,
@@ -148,7 +159,15 @@ export async function readEmployerProfile(slug: string): Promise<EmployerProfile
         description: row.description,
         hasImportedJobs: row.has_imported_jobs,
         hasOfficialEmployerInfo: row.website_url !== null || row.careers_url !== null,
+        hasCredibleProfile:
+          publicProfile !== null &&
+          publicProfile.employer_industry_key !== null &&
+          (publicProfile.employee_band !== null ||
+            publicProfile.ownership_type !== null ||
+            publicProfile.has_sponsor) &&
+          (publicProfile.website_url !== null || publicProfile.careers_url !== null),
       }),
+      publicProfile,
     };
   });
 }

@@ -463,6 +463,57 @@ export async function listEmployerDirectory(
   `;
 }
 
+export type EmployerPublicProfileRow = Readonly<{
+  id: string;
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  description: string | null;
+  directory_visible: boolean;
+  website_url: string | null;
+  careers_url: string | null;
+  employer_industry_key: string | null;
+  employer_subindustry_key: string | null;
+  employee_band: string | null;
+  employee_scope: string | null;
+  ownership_type: string | null;
+  ticker: string | null;
+  exchange: string | null;
+  facts_as_of: Date | null;
+  has_sponsor: boolean;
+  sponsor_snapshot_date: Date | null;
+  current_jobs: number;
+  live_sources: number;
+}>;
+
+export async function listEmployerPublicDirectory(
+  database: TransactionSql,
+): Promise<EmployerPublicProfileRow[]> {
+  return database<EmployerPublicProfileRow[]>`
+    select id, slug, name, logo_url, description, directory_visible,
+      website_url, careers_url, employer_industry_key, employer_subindustry_key,
+      employee_band, employee_scope, ownership_type, ticker, exchange,
+      facts_as_of, has_sponsor, sponsor_snapshot_date, current_jobs, live_sources
+    from app.employer_public_profile
+  `;
+}
+
+export async function findEmployerPublicProfile(
+  database: TransactionSql,
+  slug: string,
+): Promise<EmployerPublicProfileRow | null> {
+  const rows = await database<EmployerPublicProfileRow[]>`
+    select id, slug, name, logo_url, description, directory_visible,
+      website_url, careers_url, employer_industry_key, employer_subindustry_key,
+      employee_band, employee_scope, ownership_type, ticker, exchange,
+      facts_as_of, has_sponsor, sponsor_snapshot_date, current_jobs, live_sources
+    from app.employer_public_profile
+    where slug = ${slug}
+    limit 1
+  `;
+  return rows[0] ?? null;
+}
+
 export type EmployerProfileRow = Readonly<{
   active: boolean;
   active_jobs: number;
@@ -521,19 +572,25 @@ export async function listIndexableEmployersForSitemap(
   limit: number,
 ): Promise<EmployerSitemapRow[]> {
   return database<EmployerSitemapRow[]>`
-    select c.slug,
+    select p.slug,
       greatest(c.updated_at, coalesce(max(j.last_changed_at), c.updated_at)) as last_modified
-    from app.company c
+    from app.employer_public_profile p
+    join app.company c on c.id = p.id
     left join app.job j on j.company_id = c.id
     where c.active
       and (
         (c.description is not null and c.description <> '')
         or (
           j.id is not null
-          and (c.website_url is not null or c.careers_url is not null)
+          and (p.website_url is not null or p.careers_url is not null)
+        )
+        or (
+          p.employer_industry_key is not null
+          and (p.employee_band is not null or p.ownership_type is not null or p.has_sponsor)
+          and (p.website_url is not null or p.careers_url is not null)
         )
       )
-    group by c.id
+    group by p.id, p.slug, c.id
     order by last_modified desc
     limit ${limit}
   `;
