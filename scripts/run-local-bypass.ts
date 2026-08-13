@@ -1,12 +1,22 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
-import { constants } from "node:os";
-import postgres from "postgres";
 
 import {
   isLoopbackUrl,
   localAuthBypassMember,
   parseLocalAuthBypassArguments,
 } from "../src/infrastructure/config/local-development";
+import {
+  openLocalBypassDatabaseSession,
+  type LocalBypassDatabaseSession,
+} from "./local-bypass-database";
+import {
+  LocalBypassShutdownRequested,
+  signalExitCode,
+  watchLocalBypassShutdown,
+  type LocalBypassShutdownWatcher,
+} from "./local-bypass-signals";
+
+const localBypassLockKey = "offerlab:local-auth-bypass";
 
 function runRequired(command: string, arguments_: readonly string[]) {
   const result = spawnSync(command, arguments_, { encoding: "utf8" });
@@ -46,51 +56,54 @@ function waitForChildExit(child: ChildProcess): Promise<ChildExit> {
   });
 }
 
-function signalExitCode(signal: NodeJS.Signals): number {
-  return 128 + (constants.signals[signal] ?? 1);
-}
-
 async function runNextDevelopmentServer(
   environment: NodeJS.ProcessEnv,
   port: string,
+  databaseSessionSignal: AbortSignal,
+  shutdown: LocalBypassShutdownWatcher,
 ): Promise<number> {
+  shutdown.throwIfRequested();
+  if (databaseSessionSignal.aborted) {
+    throw databaseSessionSignal.reason;
+  }
   const child = spawn("pnpm", ["exec", "next", "dev", "--hostname", "127.0.0.1", "--port", port], {
     detached: true,
     env: environment,
     stdio: "inherit",
   });
-  let forwardedSignal: NodeJS.Signals | null = null;
-  const forwardSignal = (signal: NodeJS.Signals): void => {
-    if (forwardedSignal) return;
-    forwardedSignal = signal;
+  shutdown.attachChild(child);
+  const stopChildAfterDatabaseSessionLoss = (): void => {
     if (child.pid === undefined) return;
     try {
-      process.kill(-child.pid, signal);
+      process.kill(-child.pid, "SIGTERM");
     } catch {
-      child.kill(signal);
+      child.kill("SIGTERM");
     }
   };
-  const handleSigint = (): void => forwardSignal("SIGINT");
-  const handleSigterm = (): void => forwardSignal("SIGTERM");
-  process.on("SIGINT", handleSigint);
-  process.on("SIGTERM", handleSigterm);
+  databaseSessionSignal.addEventListener("abort", stopChildAfterDatabaseSessionLoss, {
+    once: true,
+  });
+  if (databaseSessionSignal.aborted) stopChildAfterDatabaseSessionLoss();
 
   let childExit: ChildExit;
   try {
     childExit = await waitForChildExit(child);
   } finally {
-    process.off("SIGINT", handleSigint);
-    process.off("SIGTERM", handleSigterm);
+    databaseSessionSignal.removeEventListener("abort", stopChildAfterDatabaseSessionLoss);
+    shutdown.detachChild(child);
   }
 
-  if (forwardedSignal) {
+  if (databaseSessionSignal.aborted) {
+    throw databaseSessionSignal.reason;
+  }
+  if (shutdown.requestedSignal) {
     const childResult = childExit.signal
       ? `signal ${childExit.signal}`
       : `exit code ${childExit.code ?? "unknown"}`;
     process.stdout.write(
-      `Local bypass shutdown forwarded ${forwardedSignal}; Next.js ended with ${childResult}.\n`,
+      `Local bypass shutdown forwarded ${shutdown.requestedSignal}; Next.js ended with ${childResult}.\n`,
     );
-    return signalExitCode(forwardedSignal);
+    return signalExitCode(shutdown.requestedSignal);
   }
   if (childExit.signal) {
     throw new Error(`Next.js development server stopped from signal ${childExit.signal}.`);
@@ -128,18 +141,26 @@ if (!isLoopbackUrl(databaseUrl) || !isLoopbackUrl(supabaseUrl)) {
   throw new Error("The local bypass requires the loopback Supabase development stack.");
 }
 
-const database = postgres(databaseUrl, { max: 1, prepare: false });
 let launcherFailure: unknown;
+let databaseSessionFailure: Error | undefined;
+let databaseSession: LocalBypassDatabaseSession | null | undefined;
 let promotedDeterministicUser = false;
+const databaseSessionController = new AbortController();
+const shutdown = watchLocalBypassShutdown();
 try {
-  const locks = await database<{ acquired: boolean }[]>`
-    select pg_try_advisory_lock(hashtext('offerlab:local-auth-bypass')) as acquired
-  `;
-  if (!locks[0]?.acquired) {
+  databaseSession = await openLocalBypassDatabaseSession(databaseUrl, localBypassLockKey, () => {
+    databaseSessionFailure ??= new Error(
+      "The local bypass database session was lost; stopping Next.js because the launcher lock is no longer held.",
+    );
+    databaseSessionController.abort(databaseSessionFailure);
+  });
+  shutdown.throwIfRequested();
+  if (!databaseSession) {
     throw new Error(
       "Another local bypass launcher is already running. Stop it before starting a new one.",
     );
   }
+  const database = databaseSession.connection;
 
   let bypassUserId: string = localAuthBypassMember.userId;
   if (bypassRole === "administrator") {
@@ -150,6 +171,7 @@ try {
         and id <> ${localAuthBypassMember.userId}::uuid
       limit 1
     `;
+    shutdown.throwIfRequested();
     const existingAdministrator = administrators[0];
     if (existingAdministrator) {
       bypassUserId = existingAdministrator.id;
@@ -159,6 +181,7 @@ try {
           select 1 from app."user" where id=${localAuthBypassMember.userId}::uuid
         ) as available
       `;
+      shutdown.throwIfRequested();
       if (!rows[0]?.available) {
         throw new Error(
           "The local test member is missing. Run pnpm db:reset once, then try again.",
@@ -170,6 +193,7 @@ try {
         where id = ${localAuthBypassMember.userId}::uuid
       `;
       promotedDeterministicUser = true;
+      shutdown.throwIfRequested();
     }
   } else {
     const rows = await database<{ available: boolean }[]>`
@@ -177,6 +201,7 @@ try {
         select 1 from app."user" where id=${localAuthBypassMember.userId}::uuid
       ) as available
     `;
+    shutdown.throwIfRequested();
     if (!rows[0]?.available) {
       throw new Error("The local test member is missing. Run pnpm db:reset once, then try again.");
     }
@@ -185,6 +210,7 @@ try {
       set role = 'member', updated_at = now()
       where id = ${localAuthBypassMember.userId}::uuid
     `;
+    shutdown.throwIfRequested();
   }
 
   const port = process.env.PORT ?? "3000";
@@ -213,15 +239,21 @@ try {
       NODE_ENV: "development",
     },
     port,
+    databaseSessionController.signal,
+    shutdown,
   );
 } catch (error) {
-  launcherFailure = error;
+  if (error instanceof LocalBypassShutdownRequested) {
+    process.exitCode = signalExitCode(error.signal);
+  } else {
+    launcherFailure = error;
+  }
 } finally {
   let restorationFailure: unknown;
   let connectionCloseFailure: unknown;
   try {
-    if (promotedDeterministicUser) {
-      await database`
+    if (promotedDeterministicUser && databaseSession && !databaseSessionFailure) {
+      await databaseSession.connection`
         update app."user"
         set role = 'member', updated_at = now()
         where id = ${localAuthBypassMember.userId}::uuid
@@ -231,20 +263,29 @@ try {
     restorationFailure = error;
   } finally {
     try {
-      await database.end();
+      await databaseSession?.close();
     } catch (error) {
       connectionCloseFailure = error;
+    } finally {
+      shutdown.close();
     }
   }
 
-  const failures = [launcherFailure, restorationFailure, connectionCloseFailure].filter(
-    (failure): failure is NonNullable<typeof failure> => failure !== undefined,
-  );
+  const failures = [
+    ...new Set(
+      [launcherFailure, databaseSessionFailure, restorationFailure, connectionCloseFailure].filter(
+        (failure): failure is NonNullable<typeof failure> => failure !== undefined,
+      ),
+    ),
+  ];
   if (failures.length === 1) throw failures[0];
   if (failures.length > 1) {
     throw new AggregateError(
       failures,
       "The local bypass launcher failed and cleanup was incomplete.",
     );
+  }
+  if (shutdown.requestedSignal) {
+    process.exitCode = signalExitCode(shutdown.requestedSignal);
   }
 }
