@@ -37,21 +37,27 @@ Local Supabase is not hardened and must not be exposed publicly.
 
 ### Local test access without sign-in
 
-For rapid local UI testing, including browser work driven by Codex, reset the local database once
-and start the loopback-only bypass server:
+For rapid local UI testing, including browser work driven by Codex, start the loopback-only bypass
+server as a member or administrator:
 
 ```bash
-pnpm db:start
-pnpm db:reset
 pnpm dev:bypass
+pnpm dev:bypass --admin
 ```
 
-Open `http://127.0.0.1:3000/member`. This command uses the deterministic, non-login seed member and
-a synthetic completed profile; it does not create or store a password. It binds Next.js to
-`127.0.0.1` and enables bypass only while `APP_ENV=local`, `NODE_ENV=development`, the configured app
-URL is loopback, and `LOCAL_AUTH_BYPASS_ENABLED=true`. Normal `pnpm dev`, tests, staging and production
-continue to require Supabase authentication. Resetting the local database removes records created
-during bypass testing.
+Open `http://127.0.0.1:3000/member` for `pnpm dev:bypass` or
+`http://127.0.0.1:3000/admin` for `pnpm dev:bypass --admin`. The launcher uses the deterministic,
+non-login seed member and a synthetic completed profile; it does not create or store a password.
+
+The administrator command temporarily changes that deterministic user's role in the local database so
+database policies match the administrator UI access. When the administrator server exits cleanly, the
+launcher restores the role to `member`; starting member mode always sets the role to `member` before it
+launches, recovering from an interrupted administrator process. The launcher binds Next.js to
+`127.0.0.1` and requires both Supabase database and API URLs to be loopback. Normal `pnpm dev`, tests,
+staging and production continue to require Supabase authentication.
+
+The launcher never resets the database. If the local Supabase status omits `API_URL` after startup, run
+`pnpm db:stop && pnpm db:start` and then re-run the launcher.
 
 ## Validation
 
