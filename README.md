@@ -60,6 +60,9 @@ staging and production continue to require Supabase authentication.
 The launcher never resets the database. If the local Supabase status omits `API_URL` after startup, run
 `pnpm db:stop && pnpm db:start` and then re-run the launcher.
 
+Only one local bypass launcher may run at a time. A second launch fails before Next.js starts, preserving
+the selected authorization identity and database role for the active launcher.
+
 ## Validation
 
 Run the complete non-browser validation chain with:

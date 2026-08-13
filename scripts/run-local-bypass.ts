@@ -132,33 +132,38 @@ const database = postgres(databaseUrl, { max: 1, prepare: false });
 let launcherFailure: unknown;
 let promotedDeterministicUser = false;
 try {
-  const rows = await database<{ available: boolean }[]>`
-    select exists(
-      select 1 from app."user" where id=${localAuthBypassMember.userId}::uuid
-    ) as available
+  const locks = await database<{ acquired: boolean }[]>`
+    select pg_try_advisory_lock(hashtext('offerlab:local-auth-bypass')) as acquired
   `;
-  if (!rows[0]?.available) {
-    throw new Error("The local test member is missing. Run pnpm db:reset once, then try again.");
+  if (!locks[0]?.acquired) {
+    throw new Error(
+      "Another local bypass launcher is already running. Stop it before starting a new one.",
+    );
   }
 
   let bypassUserId: string = localAuthBypassMember.userId;
-  if (bypassRole === "member") {
-    await database`
-      update app."user"
-      set role = 'member', updated_at = now()
-      where id = ${localAuthBypassMember.userId}::uuid
-    `;
-  } else {
+  if (bypassRole === "administrator") {
     const administrators = await database<{ id: string }[]>`
       select id::text
       from app."user"
       where role = 'administrator'
+        and id <> ${localAuthBypassMember.userId}::uuid
       limit 1
     `;
     const existingAdministrator = administrators[0];
     if (existingAdministrator) {
       bypassUserId = existingAdministrator.id;
     } else {
+      const rows = await database<{ available: boolean }[]>`
+        select exists(
+          select 1 from app."user" where id=${localAuthBypassMember.userId}::uuid
+        ) as available
+      `;
+      if (!rows[0]?.available) {
+        throw new Error(
+          "The local test member is missing. Run pnpm db:reset once, then try again.",
+        );
+      }
       await database`
         update app."user"
         set role = 'administrator', updated_at = now()
@@ -166,6 +171,20 @@ try {
       `;
       promotedDeterministicUser = true;
     }
+  } else {
+    const rows = await database<{ available: boolean }[]>`
+      select exists(
+        select 1 from app."user" where id=${localAuthBypassMember.userId}::uuid
+      ) as available
+    `;
+    if (!rows[0]?.available) {
+      throw new Error("The local test member is missing. Run pnpm db:reset once, then try again.");
+    }
+    await database`
+      update app."user"
+      set role = 'member', updated_at = now()
+      where id = ${localAuthBypassMember.userId}::uuid
+    `;
   }
 
   const port = process.env.PORT ?? "3000";

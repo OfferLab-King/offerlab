@@ -4,7 +4,7 @@
 
 **Goal:** Add a safe `pnpm dev:bypass --admin` mode that satisfies both server authorization and administrator RLS during loopback-only local testing.
 
-**Architecture:** Extend the existing local-development configuration with validated bypass role and selected-user variables plus a small CLI argument parser. Member mode always uses the deterministic user. Admin mode reuses an existing local administrator without mutation, or temporarily promotes the deterministic user only when no administrator exists; the launcher passes the selected role and user ID to Next.js and restores member state only after its own temporary promotion.
+**Architecture:** Extend the existing local-development configuration with validated bypass role and selected-user variables plus a small CLI argument parser. A session-level database advisory lock serializes all launcher modes. Member mode always uses the deterministic user. Admin mode first reuses an existing non-deterministic local administrator without mutation, or temporarily promotes the deterministic user only when no administrator exists; the launcher passes the selected role and user ID to Next.js and restores member state only after its own temporary promotion.
 
 **Tech Stack:** TypeScript, Next.js 16, Zod environment validation, Postgres.js, Vitest, local Supabase.
 
@@ -14,6 +14,7 @@
 - Permit bypass roles only under the existing explicit loopback local-development gate.
 - Do not create a permanent seeded administrator, promote, demote, or otherwise change an existing real administrator.
 - Do not reset, destroy, or recreate any database automatically.
+- Serialize member and administrator launcher processes with a long-lived session-level database advisory lock.
 - Reuse the existing local-development and authorization tests; add no parallel test suite.
 - Leave the unrelated generated `next-env.d.ts` worktree change untouched.
 
@@ -88,11 +89,11 @@ git commit -m "feat: select local bypass administrator role"
 
 - [ ] **Step 1: Update the launcher around the tested role parser**
 
-Parse the CLI mode before starting services. After reading local Supabase status, distinguish missing `API_URL` from a non-loopback URL and report a safe `pnpm db:stop && pnpm db:start` recovery without invoking reset. Verify the deterministic user exists. Member mode sets it to `member`; admin mode reuses an existing administrator's ID without mutation or temporarily promotes the deterministic user only when none exists. Pass the selected user ID to Next.js and print the selected `/member` or `/admin` URL.
+Parse the CLI mode before starting services. After reading local Supabase status, distinguish missing `API_URL` from a non-loopback URL and report a safe `pnpm db:stop && pnpm db:start` recovery without invoking reset. Acquire and hold a session-level advisory lock before identity selection. Member mode verifies the deterministic user then sets it to `member`. Admin mode first reuses an existing administrator other than the deterministic user without mutation or seed dependency; only when none exists does it verify and temporarily promote the deterministic user. Pass the selected user ID to Next.js and print the selected `/member` or `/admin` URL.
 
 - [ ] **Step 2: Restore safe member state**
 
-Wrap the child server launch so normal or signal-driven exit restores the deterministic user's persisted role to `member` only when that launch promoted it. Always set member mode to `member` before launch so it recovers after an interrupted admin process. Never mutate an existing administrator.
+Wrap the child server launch so normal or signal-driven exit restores the deterministic user's persisted role to `member` only when that launch promoted it. Always set member mode to `member` before launch so it recovers after an interrupted admin process. Release the advisory lock by closing its long-lived database connection even if role cleanup fails. Never mutate an existing administrator.
 
 - [ ] **Step 3: Document both commands and recovery behavior**
 
