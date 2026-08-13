@@ -26,6 +26,7 @@ export type DiscoveryCandidate = Readonly<{
 }>;
 
 export type DiscoveryFilters = Readonly<{
+  candidateId: string | null;
   companySlug: string | null;
   tier: string | null;
   platform: string | null;
@@ -70,19 +71,21 @@ export async function listDiscoveryCandidates(
     join app.company c on c.id = jc.company_id
     left join latest_snapshot s on s.company_id = c.id
     where 1 = 1
-      and ($1::text is null or c.slug = $1)
-      and ($2::text is null or s.priority_tier = $2)
-      and ($3::text is null or lower(jc.platform_hint) = lower($3))
-      and ($4::text is null or jc.status = $4)
+      and ($1::uuid is null or jc.id = $1)
+      and ($2::text is null or c.slug = $2)
+      and ($3::text is null or s.priority_tier = $3)
+      and ($4::text is null or lower(jc.platform_hint) = lower($4))
+      and ($5::text is null or jc.status = $5)
       and (
-        $5::text is null
-        or c.name ilike '%' || $5 || '%'
-        or c.slug ilike '%' || $5 || '%'
+        $6::text is null
+        or c.name ilike '%' || $6 || '%'
+        or c.slug ilike '%' || $6 || '%'
       )
     order by coalesce(s.crawler_priority_score, 0) desc, c.name asc
-    limit $6
+    limit $7
   `,
     [
+      filters.candidateId ?? null,
       filters.companySlug ?? null,
       filters.tier ?? null,
       filters.platform ?? null,
@@ -229,6 +232,88 @@ export async function findJobSourceByCompanyAndUrl(
     limit 1
   `;
   return rows[0] ?? null;
+}
+
+export type EmployerMissingCandidate = Readonly<{
+  companyId: string;
+  companyName: string;
+  companySlug: string;
+  tier: string | null;
+  crawlerPriorityScore: number | null;
+  homepageUrl: string;
+}>;
+
+export async function listEmployersMissingCandidates(
+  database: TransactionSql,
+  filters: Readonly<{ tier: string | null; limit: number }>,
+): Promise<EmployerMissingCandidate[]> {
+  const rows = await database.unsafe<Record<string, unknown>[]>(
+    `
+    with latest_snapshot as (
+      select distinct on (coalesce(company_id::text, 'unresolved:' || internal_rank::text)) *
+      from app.employer_research_snapshot
+      order by coalesce(company_id::text, 'unresolved:' || internal_rank::text),
+        research_date desc, dataset_version desc
+    )
+    select
+      c.id as "companyId",
+      c.name as "companyName",
+      c.slug as "companySlug",
+      s.priority_tier as tier,
+      s.crawler_priority_score as "crawlerPriorityScore",
+      coalesce(nullif(c.website_url, ''), c.careers_url) as "homepageUrl"
+    from app.company c
+    join latest_snapshot s on s.company_id = c.id
+    where coalesce(nullif(c.website_url, ''), c.careers_url) is not null
+      and coalesce(nullif(c.website_url, ''), c.careers_url) not like '%employer.invalid%'
+      and s.priority_tier in ('P0', 'P1')
+      and ($1::text is null or s.priority_tier = $1)
+      and not exists (
+        select 1 from app.job_source_candidate jc where jc.company_id = c.id
+      )
+      and not exists (
+        select 1 from app.job_source js where js.company_id = c.id
+      )
+    order by s.crawler_priority_score desc nulls last, c.name asc
+    limit $2
+  `,
+    [filters.tier ?? null, filters.limit],
+  );
+  return rows.map((row) => ({
+    companyId: row.companyId as string,
+    companyName: row.companyName as string,
+    companySlug: row.companySlug as string,
+    tier: (row.tier as string | null) ?? null,
+    crawlerPriorityScore: (row.crawlerPriorityScore as number | null) ?? null,
+    homepageUrl: row.homepageUrl as string,
+  }));
+}
+
+export type DiscoveryCandidateWrite = Readonly<{
+  companyId: string;
+  url: string;
+  platformHint: string | null;
+  status: string;
+  discoveryMethod: string;
+  evidence: readonly string[];
+  notes: string | null;
+}>;
+
+export async function upsertDiscoveryCandidate(
+  database: TransactionSql,
+  write: DiscoveryCandidateWrite,
+): Promise<"inserted" | "unchanged"> {
+  const rows = await database<{ id: string }[]>`
+    insert into app.job_source_candidate (
+      company_id, candidate_url, platform_hint, status, discovery_method, evidence, notes
+    ) values (
+      ${write.companyId}::uuid, ${write.url}, ${write.platformHint}, ${write.status},
+      ${write.discoveryMethod}, ${write.evidence.join("\n")}, ${write.notes}
+    )
+    on conflict (company_id, candidate_url) do nothing
+    returning id
+  `;
+  return rows.length === 1 ? "inserted" : "unchanged";
 }
 
 export type PromotionWrite = Readonly<{

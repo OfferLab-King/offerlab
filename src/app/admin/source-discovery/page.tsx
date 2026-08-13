@@ -8,6 +8,7 @@ import {
   platformDisplayName,
 } from "../../../modules/employer-research/application/source-discovery-view";
 import { readSourceDiscovery } from "../../../modules/employer-research/application/employer-research";
+import { promoteVerifiedCandidate } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -150,6 +151,7 @@ export default async function SourceDiscoveryPage({
                 <th>Method</th>
                 <th>Verification</th>
                 <th>Live sources</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -177,11 +179,23 @@ export default async function SourceDiscoveryPage({
                       : ""}
                   </td>
                   <td>{candidate.liveSources > 0 ? candidate.liveSources : "–"}</td>
+                  <td>
+                    {candidate.status === "verified" || candidate.verifiedAt !== null ? (
+                      <form action={promoteVerifiedCandidate}>
+                        <input type="hidden" name="candidateId" value={candidate.candidateId} />
+                        <button type="submit" className="button-link">
+                          Promote (paused)
+                        </button>
+                      </form>
+                    ) : (
+                      <span className="hint">–</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {queue.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="hint">
+                  <td colSpan={11} className="hint">
                     No discovery candidates match the current filters.
                   </td>
                 </tr>

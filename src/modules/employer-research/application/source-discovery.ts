@@ -7,14 +7,17 @@ import {
   type AtsPlatform,
   type UrlFingerprint,
 } from "../domain/ats-fingerprint";
+import { planHomepageCareersUrl } from "../domain/careers-url-discovery";
 import type {
   DiscoveryCandidate,
+  EmployerMissingCandidate,
   PlatformCoverageSourceData,
   PromotionWrite,
 } from "../infrastructure/discovery-repository";
 import {
   promoteCandidateToSource,
   updateCandidateFingerprint,
+  upsertDiscoveryCandidate,
 } from "../infrastructure/discovery-repository";
 
 // ---------------------------------------------------------------------------
@@ -372,6 +375,127 @@ export function formatDiscoveryReport(
     lines.push("", "promotable candidates (create paused sources):");
     for (const plan of promotable) {
       lines.push(`  ${plan.companyName}: ${platformLabel(plan.platform)} @ ${plan.url}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Homepage careers-link discovery (measurement pass)
+// ---------------------------------------------------------------------------
+
+export type HomepageFetcher = (url: string) => Promise<{
+  body: string;
+  finalUrl: string;
+  status: number;
+}>;
+
+export type RobotsDecisionProvider = (url: string) => Promise<"allowed" | "blocked" | "unknown">;
+
+export type HomepageDiscoveryOutcome = Readonly<{
+  planned: number;
+  inserted: number;
+  existing: number;
+  failed: number;
+  robotsBlocked: number;
+  perPlatform: Readonly<Record<string, number>>;
+  discoveries: readonly { companyName: string; url: string; platform: string; status: string }[];
+}>;
+
+export async function runHomepageCareersDiscovery(
+  database: TransactionSql,
+  employers: readonly EmployerMissingCandidate[],
+  options: Readonly<{
+    apply: boolean;
+    checkRobots: RobotsDecisionProvider;
+    fetchHomepage: HomepageFetcher;
+  }>,
+): Promise<HomepageDiscoveryOutcome> {
+  let inserted = 0;
+  let existing = 0;
+  let failed = 0;
+  let robotsBlocked = 0;
+  const perPlatform = new Map<string, number>();
+  const discoveries: {
+    companyName: string;
+    url: string;
+    platform: string;
+    status: string;
+  }[] = [];
+
+  for (const employer of employers) {
+    try {
+      const decision = await options.checkRobots(employer.homepageUrl);
+      if (decision === "blocked") {
+        robotsBlocked += 1;
+        continue;
+      }
+      const response = await options.fetchHomepage(employer.homepageUrl);
+      if (response.status >= 400) {
+        failed += 1;
+        continue;
+      }
+      const plan = planHomepageCareersUrl(response.body, response.finalUrl || employer.homepageUrl);
+      if (!plan) {
+        failed += 1;
+        continue;
+      }
+      const platform = platformLabel(plan.fingerprintPlatform as AtsPlatform);
+      perPlatform.set(platform, (perPlatform.get(platform) ?? 0) + 1);
+      discoveries.push({
+        companyName: employer.companyName,
+        url: plan.candidateUrl,
+        platform,
+        status: plan.status,
+      });
+      if (!options.apply) continue;
+      const outcome = await upsertDiscoveryCandidate(database, {
+        companyId: employer.companyId,
+        url: plan.candidateUrl,
+        platformHint: platform,
+        status: plan.status,
+        discoveryMethod: "homepage_discovery",
+        evidence: plan.evidence,
+        notes: `Discovered from ${employer.homepageUrl}; homepage fingerprint ${plan.fingerprintConfidence} confidence.`,
+      });
+      if (outcome === "inserted") inserted += 1;
+      else existing += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+
+  return {
+    planned: employers.length,
+    inserted,
+    existing,
+    failed,
+    robotsBlocked,
+    perPlatform: Object.fromEntries(perPlatform),
+    discoveries,
+  };
+}
+
+export function formatHomepageDiscoveryReport(outcome: HomepageDiscoveryOutcome): string {
+  const lines = [
+    `\n== Homepage careers-link discovery ==`,
+    `employers probed: ${outcome.planned}`,
+    `candidates inserted: ${outcome.inserted} / already present: ${outcome.existing}`,
+    `failed or no careers link: ${outcome.failed} / robots blocked: ${outcome.robotsBlocked}`,
+    `platforms discovered:`,
+    ...[...Object.entries(outcome.perPlatform)]
+      .sort((a, b) => b[1] - a[1])
+      .map(([platform, count]) => `  ${platform}: ${count}`),
+  ];
+  if (outcome.discoveries.length > 0) {
+    lines.push("", "discoveries:");
+    for (const discovery of outcome.discoveries.slice(0, 40)) {
+      lines.push(
+        `  ${discovery.companyName}: ${discovery.platform} ${discovery.status} @ ${discovery.url}`,
+      );
+    }
+    if (outcome.discoveries.length > 40) {
+      lines.push(`  ... and ${outcome.discoveries.length - 40} more`);
     }
   }
   return lines.join("\n");

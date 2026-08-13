@@ -7,9 +7,12 @@ import {
   computePlatformCoverage,
   planCandidatePromotions,
   planDiscoveryFingerprints,
+  runHomepageCareersDiscovery,
+  type HomepageFetcher,
 } from "../../src/modules/employer-research/application/source-discovery";
 import {
   listDiscoveryCandidates,
+  listEmployersMissingCandidates,
   promoteCandidateToSource,
   readPlatformCoverageData,
 } from "../../src/modules/employer-research/infrastructure/discovery-repository";
@@ -80,6 +83,7 @@ describe("source discovery pipeline", () => {
     });
     const candidates = await migrationDatabase.begin((t) =>
       listDiscoveryCandidates(t, {
+        candidateId: null,
         companySlug: null,
         tier: null,
         platform: null,
@@ -117,6 +121,7 @@ describe("source discovery pipeline", () => {
     });
     const candidates = await migrationDatabase.begin((t) =>
       listDiscoveryCandidates(t, {
+        candidateId: null,
         companySlug: null,
         tier: null,
         platform: null,
@@ -166,6 +171,7 @@ describe("source discovery pipeline", () => {
     `;
     const candidates = await migrationDatabase.begin((t) =>
       listDiscoveryCandidates(t, {
+        candidateId: null,
         companySlug: null,
         tier: null,
         platform: null,
@@ -250,5 +256,125 @@ describe("promoteCandidateToSource guards", () => {
       }),
     );
     expect(outcome).toBe("skipped");
+  });
+});
+
+describe("homepage careers-link discovery", () => {
+  it("discovers, fingerprints and inserts candidates for employers without one", async () => {
+    const runKey = uniqueSlug("hp");
+    const company = await migrationDatabase<{ id: string }[]>`
+      insert into app.company (name, slug, careers_url, source_type)
+      values ('Homepage Co', ${uniqueSlug("homepage")},
+        ${`https://homepage-${runKey}.example.com/`}, 'unknown')
+      returning id
+    `;
+    const companyId = company[0]!.id;
+    await migrationDatabase`
+      insert into app.employer_research_snapshot (
+        company_id, canonical_name, dataset_version, research_date, priority_tier,
+        internal_rank, research_status
+      ) values (
+        ${companyId}::uuid, 'Homepage Co', ${`homepage-test-${runKey}`},
+        '2026-08-12'::date, 'P0', ${Math.floor(Math.random() * 900) + 3000}, 'not_researched'
+      )
+    `;
+
+    const employers = await migrationDatabase.begin((t) =>
+      listEmployersMissingCandidates(t, { tier: null, limit: 50 }),
+    );
+    const target = employers.find((employer) => employer.companyId === companyId)!;
+    expect(target).toBeDefined();
+
+    const fetchHomepage: HomepageFetcher = async () => ({
+      body:
+        '<a href="/careers">Careers</a>' +
+        '<a href="https://homepage-wd.wd3.myworkdayjobs.com/careers">Workday jobs</a>',
+      finalUrl: `https://homepage-${runKey}.example.com/`,
+      status: 200,
+    });
+
+    const outcome = await migrationDatabase.begin((t) =>
+      runHomepageCareersDiscovery(t, [target], {
+        apply: true,
+        checkRobots: async () => "allowed",
+        fetchHomepage,
+      }),
+    );
+    expect(outcome.inserted).toBe(1);
+    expect(outcome.perPlatform).toMatchObject({ Workday: 1 });
+
+    const candidates = await migrationDatabase.begin((t) =>
+      listDiscoveryCandidates(t, {
+        candidateId: null,
+        companySlug: null,
+        tier: null,
+        platform: null,
+        status: null,
+        search: null,
+        limit: 50,
+      }),
+    );
+    const inserted = candidates.find((candidate) => candidate.companyId === companyId)!;
+    expect(inserted.platformHint).toBe("Workday");
+    expect(inserted.status).toBe("platform_identified");
+    expect(inserted.discoveryMethod).toBe("homepage_discovery");
+
+    const second = await migrationDatabase.begin((t) =>
+      runHomepageCareersDiscovery(t, [target], {
+        apply: true,
+        checkRobots: async () => "allowed",
+        fetchHomepage,
+      }),
+    );
+    expect(second.inserted).toBe(0);
+    expect(second.existing).toBe(1);
+  });
+
+  it("isolates fetch failures and respects robots blocks", async () => {
+    const runKey = uniqueSlug("iso");
+    const company = await migrationDatabase<{ id: string }[]>`
+      insert into app.company (name, slug, careers_url, source_type)
+      values ('Isolated Homepage Co', ${uniqueSlug("iso-homepage")},
+        ${`https://isolated-${runKey}.example.com/`}, 'unknown')
+      returning id
+    `;
+    await migrationDatabase`
+      insert into app.employer_research_snapshot (
+        company_id, canonical_name, dataset_version, research_date, priority_tier,
+        internal_rank, research_status
+      ) values (
+        ${company[0]!.id}::uuid, 'Isolated Homepage Co', ${`homepage-iso-${runKey}`},
+        '2026-08-12'::date, 'P1', ${Math.floor(Math.random() * 900) + 3000}, 'not_researched'
+      )
+    `;
+    const employers = await migrationDatabase.begin((t) =>
+      listEmployersMissingCandidates(t, { tier: null, limit: 50 }),
+    );
+    const targets = employers.filter((employer) => employer.companyId === company[0]!.id);
+    expect(targets).toHaveLength(1);
+
+    const outcome = await migrationDatabase.begin((t) =>
+      runHomepageCareersDiscovery(t, targets, {
+        apply: true,
+        checkRobots: async () => "blocked",
+        fetchHomepage: async () => {
+          throw new Error("should not be called");
+        },
+      }),
+    );
+    expect(outcome.robotsBlocked).toBe(1);
+    expect(outcome.failed).toBe(0);
+
+    const failing = await migrationDatabase.begin((t) =>
+      runHomepageCareersDiscovery(t, targets, {
+        apply: true,
+        checkRobots: async () => "allowed",
+        fetchHomepage: async () => {
+          throw new Error("network down");
+        },
+      }),
+    );
+    expect(failing.failed).toBe(1);
+    expect(failing.inserted).toBe(0);
   });
 });

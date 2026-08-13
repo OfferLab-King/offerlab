@@ -10,10 +10,15 @@ import {
   applyCandidateFingerprintPlans,
   applyCandidatePromotions,
   formatDiscoveryReport,
+  formatHomepageDiscoveryReport,
   planCandidatePromotions,
   planDiscoveryFingerprints,
+  runHomepageCareersDiscovery,
 } from "../../src/modules/employer-research/application/source-discovery";
-import { listDiscoveryCandidates } from "../../src/modules/employer-research/infrastructure/discovery-repository";
+import {
+  listDiscoveryCandidates,
+  listEmployersMissingCandidates,
+} from "../../src/modules/employer-research/infrastructure/discovery-repository";
 import { markCandidateVerified } from "../../src/modules/employer-research/infrastructure/discovery-repository";
 import { isLocalDatabaseUrl } from "../learn-demo-content";
 import { loadLocalEnvironment } from "../shared/load-local-environment";
@@ -36,6 +41,7 @@ if (!Number.isInteger(rawLimit) || rawLimit < 1 || rawLimit > 500) {
 const dryRun = !process.argv.includes("--confirm");
 const verify = process.argv.includes("--verify");
 const promote = process.argv.includes("--promote");
+const homepageDiscovery = process.argv.includes("--homepage");
 
 const databaseUrl = process.env.DATABASE_MIGRATION_URL;
 if (!databaseUrl) throw new Error("Refusing to run discovery: DATABASE_MIGRATION_URL is required.");
@@ -56,6 +62,7 @@ const robotsGate = new RobotsGate({ httpClient });
 
 const report = await database.begin(async (transaction) => {
   const candidates = await listDiscoveryCandidates(transaction, {
+    candidateId: null,
     companySlug: company,
     tier,
     platform: platformFilter,
@@ -128,11 +135,32 @@ const report = await database.begin(async (transaction) => {
     !dryRun && promote,
   );
 
+  let homepageOutcome = null;
+  if (homepageDiscovery) {
+    const employers = await listEmployersMissingCandidates(transaction, {
+      tier,
+      limit: rawLimit,
+    });
+    if (employers.length === 0) {
+      process.stdout.write("\nNo P0/P1 employers are missing discovery candidates.\n");
+    } else {
+      homepageOutcome = await runHomepageCareersDiscovery(transaction, employers, {
+        apply: !dryRun,
+        checkRobots: (url) => robotsGate.check(url, "offerlab"),
+        fetchHomepage: async (url) => {
+          const response = await fetchText(url, { httpClient, retryable: false });
+          return { body: response.body, finalUrl: response.url, status: response.status };
+        },
+      });
+    }
+  }
+
   return {
     fingerprintPlans,
     fingerprintOutcome,
     promotions,
     promotionOutcome,
+    homepageOutcome,
     verifiedCount,
     verifyFailures,
   };
@@ -159,6 +187,10 @@ try {
     }
     if (dryRun) {
       process.stdout.write("Dry run - no writes. Re-run with --confirm to apply.\n");
+    }
+    if (report.homepageOutcome) {
+      process.stdout.write(formatHomepageDiscoveryReport(report.homepageOutcome));
+      process.stdout.write("\n");
     }
   }
 } finally {

@@ -94,6 +94,7 @@ pnpm jobs:discover-source                      # fingerprint candidates (dry run
 pnpm jobs:discover-source --confirm            # apply fingerprint updates
 pnpm jobs:discover-source --verify             # bounded HTTP verification of careers URLs
 pnpm jobs:discover-source --promote --confirm  # create paused sources for verified candidates
+pnpm jobs:discover-source --homepage           # discover careers links for P0/P1 employers without candidates
 pnpm jobs:discover-source --company=<slug>     # one employer
 pnpm jobs:discover-source --tier=P0 --limit=50 # a cohort, ordered by crawler priority
 ```
@@ -105,10 +106,14 @@ Behaviour:
   Teamtailor, Personio, Workable, PageUp, Recruitee, Eightfold) with no LLM;
 - `--verify` respects robots.txt through the crawler's `RobotsGate` and marks
   candidates `verified` only after a successful bounded fetch;
+- `--homepage` fetches employer homepages (robots-gated, bounded) for P0/P1
+  employers that have real website evidence but no discovery candidate, scores
+  careers links deterministically and inserts new `job_source_candidate` rows;
 - `--promote` creates `app.job_source` rows in `paused` state for verified,
   high-confidence candidates; sources are never activated by discovery;
   re-running is idempotent and never overwrites existing sources for the same
-  URL or a manually-overridden source;
+  URL or a manually-overridden source; verified candidates can also be
+  promoted from the `/admin/source-discovery` queue;
 - `/admin/source-discovery` shows platform-grouped coverage (employers per
   platform by tier, verified and live counts) and the candidate queue; live
   source operations remain in `/admin/job-sources`.
@@ -116,6 +121,30 @@ Behaviour:
 The promotion guard uses the fingerprint high-confidence host match and the
 existing URL-identity check, so a spreadsheet row or guessed URL can never
 become an active crawler source.
+
+## Platform adapter prioritisation (Phase C measurement)
+
+Measured coverage of the researched universe (2026-08-12 dataset, as of the
+2026-08-13 discovery run) drives adapter decisions:
+
+- **Workday: 15 employers, all P0** — the dominant reusable platform; the
+  native Workday CXS/RaaS connectors already cover it.
+- **Greenhouse / Lever / Ashby / SmartRecruiters: 4 employers each** — native
+  connectors already cover them.
+- **Custom branded careers portals: ~9 employers** (Amazon jobs, Google
+  careers, Apple, EY, PwC, Babcock, Marriott, Admiral) — employer-specific;
+  covered by `direct_html` and browser connectors, not reusable adapters.
+- **Oracle: 1, SuccessFactors: 1, TAL: 0** — no missing platform currently
+  unlocks more than one employer, so no new typed adapter is justified yet.
+
+Adapter build rule (from the founder directive): implement a typed reusable
+connector only when a platform shows repeated measured frequency (at least
+2-3 verified employers). The discovery pipeline is the measurement tool; the
+moment a platform crosses the threshold (e.g. after `--homepage` expansion or
+new research evidence), register the connector in
+`src/modules/job-catalog/infrastructure/connectors/registry.ts`, add the
+`source_type` enum value and update `sourceTypeForPlatform` in
+`ats-fingerprint.ts`.
 
 ## Local CMS-triggered crawling
 
