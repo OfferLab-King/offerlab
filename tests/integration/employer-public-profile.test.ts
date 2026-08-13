@@ -65,7 +65,7 @@ async function setupEmployer(
       insert into app.employer_sponsor_entity (
         company_id, legal_name, source_snapshot_date, active_in_snapshot
       ) values (
-        ${companyId}::uuid, ${`${input.name} Ltd`}, '2026-08-12'::date, true
+        ${companyId}::uuid, ${`${input.name} Ltd ${uniqueSlug("s")}`}, '2026-08-12'::date, true
       )
     `;
   }

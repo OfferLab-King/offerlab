@@ -34,17 +34,32 @@ function buildChips(filters: JobCatalogFilters): readonly ActiveChip[] {
   for (const value of filters.subsectors) {
     chips.push({ group: "subsectors", label: value.replaceAll("_", " "), value });
   }
+  for (const value of filters.industries) {
+    chips.push({ group: "industries", label: value.replaceAll("_", " "), value });
+  }
+  for (const value of filters.functions) {
+    chips.push({ group: "functions", label: value.replaceAll("_", " "), value });
+  }
+  for (const value of filters.levels) {
+    chips.push({ group: "levels", label: value.replaceAll("_", " "), value });
+  }
   for (const value of filters.employers) {
     chips.push({ group: "employers", label: value, value });
   }
   for (const value of filters.locations) {
     chips.push({ group: "locations", label: value, value });
   }
+  for (const value of filters.workModes) {
+    chips.push({ group: "workModes", label: value.replaceAll("_", " "), value });
+  }
   for (const value of filters.jobTypes) {
     chips.push({ group: "jobTypes", label: value.replaceAll("_", " "), value });
   }
   for (const value of filters.sponsorship) {
     chips.push({ group: "sponsorship", label: value.replaceAll("_", " "), value });
+  }
+  if (filters.sponsorLicence) {
+    chips.push({ group: "sponsorLicence", label: "Employer is a UK licensed sponsor", value: "1" });
   }
   if (filters.deadline !== "any") {
     chips.push({
@@ -162,7 +177,11 @@ export function JobCatalogueView({
         return;
       }
       const key = group as CatalogFacetGroup;
-      commit({ ...filters, [key]: toggleValue(filters[key], value), page: 1 });
+      if (key === "sponsorLicence") {
+        commit({ ...filters, page: 1, sponsorLicence: !filters.sponsorLicence });
+        return;
+      }
+      commit({ ...filters, [key]: toggleValue(filters[key] as readonly string[], value), page: 1 });
     },
     [commit, filters],
   );
@@ -182,6 +201,10 @@ export function JobCatalogueView({
         return;
       }
       const key = group as CatalogFacetGroup;
+      if (key === "sponsorLicence") {
+        commit({ ...filters, page: 1, sponsorLicence: false });
+        return;
+      }
       commit({ ...filters, [key]: [], page: 1 });
     },
     [commit, filters],

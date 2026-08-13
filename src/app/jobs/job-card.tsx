@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { careerLevelLabel, type CareerLevelKey } from "../../modules/taxonomy/career-level";
+import { jobFunctionLabels, type JobFunctionKey } from "../../modules/taxonomy/job-function";
+import { employerIndustryLabel } from "../../modules/job-catalog/domain/employer-directory";
 import {
   jobSectorLabel,
   opportunityTypeLabels,
@@ -40,6 +43,11 @@ export function JobCard({
       ? opportunityTypeLabels[job.opportunity_type as keyof typeof opportunityTypeLabels]
       : null;
   const sectorLabel = jobSectorLabel(job.sector_key);
+  const functionLabel = job.job_function_key
+    ? (jobFunctionLabels[job.job_function_key as JobFunctionKey] ?? null)
+    : null;
+  const levelLabel = careerLevelLabel(job.career_level_key as CareerLevelKey | null);
+  const industryLabel = employerIndustryLabel(job.employer_industry_key);
 
   return (
     <article className="job-card">
@@ -53,12 +61,16 @@ export function JobCard({
             <Link href={`/jobs/${job.slug}`}>{job.normalized_title ?? job.title}</Link>
           </h2>
           {job.location_text && <p className="job-card-location">{job.location_text}</p>}
+          {job.company_has_sponsor && <span className="job-card-sponsor">UK licensed sponsor</span>}
         </div>
 
         <div className="job-card-details">
           <div className="job-card-meta">
+            {levelLabel && <span className="job-tag">{levelLabel}</span>}
+            {functionLabel && <span className="job-tag">{functionLabel}</span>}
             {typeLabel && <span className="job-tag">{typeLabel}</span>}
             {workLabel && <span className="job-tag">{workLabel}</span>}
+            {industryLabel && <span className="job-tag">{industryLabel}</span>}
             {sectorLabel && <span className="job-tag">{sectorLabel}</span>}
           </div>
           <div className="job-card-facts">

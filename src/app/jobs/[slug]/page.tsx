@@ -15,6 +15,9 @@ import {
   remoteTypeLabels,
   visaSponsorshipLabels,
 } from "../../../modules/job-catalog/domain/taxonomy";
+import { jobFunctionLabels, type JobFunctionKey } from "../../../modules/taxonomy/job-function";
+import { careerLevelLabel, type CareerLevelKey } from "../../../modules/taxonomy/career-level";
+import { employerIndustryLabel } from "../../../modules/job-catalog/domain/employer-directory";
 import { formatDate, formatRelativeTime, formatSalary, isDeadlinePassed } from "../job-display";
 import { SiteHeader } from "../../components/site-header";
 import { JobCard } from "../job-card";
@@ -60,6 +63,14 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
     : false;
   const subsectorLabel = jobSubsectorLabel(job.subsector_key);
   const sectorLabel = jobSectorLabel(job.sector_key);
+  const functionLabel = job.job_function_key
+    ? (jobFunctionLabels[job.job_function_key as JobFunctionKey] ?? null)
+    : null;
+  const subfunctionLabel = job.job_subfunction_key
+    ? job.job_subfunction_key.replaceAll("_", " ")
+    : null;
+  const levelLabel = careerLevelLabel(job.career_level_key as CareerLevelKey | null);
+  const industryLabel = employerIndustryLabel(job.employer_industry_key);
   const related = await readRelatedJobs(job);
 
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
@@ -110,6 +121,21 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
         </header>
 
         <dl className="job-detail-facts">
+          {levelLabel && (
+            <div>
+              <dt>Career level</dt>
+              <dd>{levelLabel}</dd>
+            </div>
+          )}
+          {functionLabel && (
+            <div>
+              <dt>Job function</dt>
+              <dd>
+                {functionLabel}
+                {subfunctionLabel ? ` · ${subfunctionLabel}` : ""}
+              </dd>
+            </div>
+          )}
           {job.opportunity_type && job.opportunity_type !== "unknown" && (
             <div>
               <dt>Opportunity type</dt>
@@ -201,6 +227,54 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
             </dd>
           </div>
         </dl>
+
+        <section className="job-detail-section job-detail-employer" aria-labelledby="job-employer">
+          <h2 id="job-employer">About {job.company_name}</h2>
+          <dl className="job-detail-employer-facts">
+            {industryLabel && (
+              <div>
+                <dt>Industry</dt>
+                <dd>{industryLabel}</dd>
+              </div>
+            )}
+            {job.company_employee_band && (
+              <div>
+                <dt>Company size</dt>
+                <dd>{job.company_employee_band}</dd>
+              </div>
+            )}
+            {job.company_ownership_type && (
+              <div>
+                <dt>Ownership</dt>
+                <dd>{job.company_ownership_type}</dd>
+              </div>
+            )}
+            {job.company_has_sponsor && (
+              <div>
+                <dt>UK licensed sponsor</dt>
+                <dd>
+                  On the Home Office sponsor register
+                  {job.company_sponsor_snapshot_date
+                    ? ` · ${job.company_sponsor_snapshot_date.toISOString().slice(0, 10)}`
+                    : ""}
+                </dd>
+              </div>
+            )}
+          </dl>
+          <p className="job-detail-employer-link">
+            <Link href={`/employers/${job.company_slug}` as never}>
+              View {job.company_name} employer profile and current roles
+            </Link>
+            {job.company_careers_url && (
+              <>
+                {" · "}
+                <a href={job.company_careers_url} rel="noreferrer" target="_blank">
+                  Official careers page
+                </a>
+              </>
+            )}
+          </p>
+        </section>
 
         {job.description_summary && (
           <section

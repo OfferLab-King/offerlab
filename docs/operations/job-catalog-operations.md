@@ -192,6 +192,27 @@ contract between the researched universe and the public routes.
   (no filler required), and the sitemap includes them; filtered directory
   URLs stay noindex.
 
+## Public jobs facets (Phase F)
+
+The `/jobs` catalogue search uses the new dimensions alongside the legacy
+sector model:
+
+- **Employer industry** (`c.employer_industry_key`) — what the employer is.
+- **Job function** (`j.job_function_key`) — what the role does, never inferred
+  from employer industry.
+- **Career level** (`j.career_level_key`) — a filter, never a publication gate.
+- **Work arrangement** (`j.remote_type`) is a separate facet from **Location**
+  (cities only); legacy `locations=remote` URLs still filter.
+- **Employer sponsor licence** filters through the public profile view
+  (`employer_public_profile.has_sponsor`) and is distinct from **role-level
+  sponsorship** (`j.visa_sponsorship_status`).
+- Facet semantics stay disjunctive (OR inside a facet, AND across facets,
+  counts exclude the counted facet's own selections); all filters are
+  URL-addressable and filtered URLs remain noindex.
+- Job cards and job detail pages surface the new dimensions plus the
+  employer context panel (industry, size, ownership, sponsor status, official
+  careers link). Internal crawler and research fields never render.
+
 ## Local CMS-triggered crawling
 
 The CMS **Run now** control never crawls inside the web request. It records a

@@ -110,7 +110,7 @@ describe("taxonomy dimensions", () => {
   it("backfills job function and career level from legacy classification, preserving publication state", async () => {
     const company = await migrationDatabase<{ id: string }[]>`
       insert into app.company (name, slug, careers_url, source_type)
-      values ('Backfill Co', ${uniqueSlug("backfill")}, 'https://backfill.example.com/careers', 'unknown')
+      values ('Backfill Co', ${uniqueSlug("backfill")}, ${`https://backfill-${uniqueSlug("b")}.example.com/careers`}, 'unknown')
       returning id
     `;
     const job = await migrationDatabase<{ id: string }[]>`

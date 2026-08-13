@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { employerIndustries } from "../../taxonomy/employer-industry";
+import { jobFunctions } from "../../taxonomy/job-function";
+import { careerLevels } from "../../taxonomy/career-level";
 import {
   jobSectorKeys,
   jobSubsectorKeys,
@@ -16,10 +19,15 @@ export type JobCatalogFilters = Readonly<{
   query: string;
   sectors: readonly string[];
   subsectors: readonly string[];
+  industries: readonly string[];
+  functions: readonly string[];
+  levels: readonly string[];
   employers: readonly string[];
   locations: readonly string[];
+  workModes: readonly string[];
   jobTypes: readonly string[];
   sponsorship: readonly string[];
+  sponsorLicence: boolean;
   deadline: "any" | "upcoming" | "none";
   postedWithinDays: number | null;
   sort: JobCatalogSort;
@@ -29,7 +37,10 @@ export type JobCatalogFilters = Readonly<{
 export const defaultJobCatalogFilters: JobCatalogFilters = {
   deadline: "any",
   employers: [],
+  functions: [],
+  industries: [],
   jobTypes: [],
+  levels: [],
   locations: [],
   page: 1,
   postedWithinDays: null,
@@ -37,19 +48,36 @@ export const defaultJobCatalogFilters: JobCatalogFilters = {
   sectors: [],
   sort: "newest",
   sponsorship: [],
+  sponsorLicence: false,
   subsectors: [],
+  workModes: [],
 };
 
 export type CatalogFacetGroup =
-  "sectors" | "subsectors" | "employers" | "locations" | "jobTypes" | "sponsorship";
+  | "sectors"
+  | "subsectors"
+  | "industries"
+  | "functions"
+  | "levels"
+  | "employers"
+  | "locations"
+  | "workModes"
+  | "jobTypes"
+  | "sponsorship"
+  | "sponsorLicence";
 
 export const catalogFacetGroups: readonly CatalogFacetGroup[] = [
   "sectors",
   "subsectors",
+  "industries",
+  "functions",
+  "levels",
   "employers",
   "locations",
+  "workModes",
   "jobTypes",
   "sponsorship",
+  "sponsorLicence",
 ];
 
 /** Stable machine key -> URL slug (e.g. financial_services -> financial-services). */
@@ -112,9 +140,22 @@ export function parseJobCatalogFilters(searchParams: URLSearchParams): JobCatalo
   const jobTypes = listParam(searchParams, "job_types")
     .map((value) => allowedKeys(opportunityTypes, true).catch(undefined).parse(value))
     .filter((value): value is string => value !== undefined);
+  const industries = listParam(searchParams, "industries")
+    .map((value) => allowedKeys(employerIndustries, true).catch(undefined).parse(value))
+    .filter((value): value is string => value !== undefined);
+  const functions = listParam(searchParams, "functions")
+    .map((value) => allowedKeys(jobFunctions, true).catch(undefined).parse(value))
+    .filter((value): value is string => value !== undefined);
+  const levels = listParam(searchParams, "levels")
+    .map((value) => allowedKeys(careerLevels, true).catch(undefined).parse(value))
+    .filter((value): value is string => value !== undefined);
+  const workModes = listParam(searchParams, "work_modes")
+    .map((value) => allowedKeys(workModeValues, false).catch(undefined).parse(value))
+    .filter((value): value is string => value !== undefined);
   const sponsorship = listParam(searchParams, "sponsorship")
     .map((value) => allowedKeys(visaSponsorshipStatuses, false).catch(undefined).parse(value))
     .filter((value): value is string => value !== undefined);
+  const sponsorLicence = searchParams.get("sponsor_licence") === "1";
   const deadline = z
     .enum(["any", "upcoming", "none"])
     .catch("any")
@@ -142,7 +183,10 @@ export function parseJobCatalogFilters(searchParams: URLSearchParams): JobCatalo
   return {
     deadline,
     employers,
+    functions,
+    industries,
     jobTypes,
+    levels,
     locations: locations.map((value) => value.toLowerCase()),
     page,
     postedWithinDays: postedWithinDays ?? null,
@@ -150,7 +194,9 @@ export function parseJobCatalogFilters(searchParams: URLSearchParams): JobCatalo
     sectors,
     sort,
     sponsorship: [...new Set(sponsorship)],
+    sponsorLicence,
     subsectors,
+    workModes,
   };
 }
 
@@ -162,10 +208,15 @@ export function serializeJobCatalogFilters(filters: JobCatalogFilters): URLSearc
   if (filters.query) params.set("q", filters.query);
   setList("sectors", filters.sectors, true);
   setList("subsectors", filters.subsectors, true);
+  setList("industries", filters.industries, true);
+  setList("functions", filters.functions, true);
+  setList("levels", filters.levels, true);
   setList("employers", filters.employers, false);
   setList("locations", filters.locations, false);
+  setList("work_modes", filters.workModes, false);
   setList("job_types", filters.jobTypes, true);
   setList("sponsorship", filters.sponsorship, false);
+  if (filters.sponsorLicence) params.set("sponsor_licence", "1");
   if (filters.deadline !== "any") params.set("deadline", filters.deadline);
   if (filters.postedWithinDays) params.set("posted", String(filters.postedWithinDays));
   if (filters.sort !== "newest") params.set("sort", filters.sort);
@@ -181,10 +232,15 @@ export function activeFilterCount(filters: JobCatalogFilters): number {
   return (
     (filters.sectors.length > 0 ? 1 : 0) +
     (filters.subsectors.length > 0 ? 1 : 0) +
+    (filters.industries.length > 0 ? 1 : 0) +
+    (filters.functions.length > 0 ? 1 : 0) +
+    (filters.levels.length > 0 ? 1 : 0) +
     (filters.employers.length > 0 ? 1 : 0) +
     (filters.locations.length > 0 ? 1 : 0) +
+    (filters.workModes.length > 0 ? 1 : 0) +
     (filters.jobTypes.length > 0 ? 1 : 0) +
     (filters.sponsorship.length > 0 ? 1 : 0) +
+    (filters.sponsorLicence ? 1 : 0) +
     (filters.deadline !== "any" ? 1 : 0) +
     (filters.postedWithinDays !== null ? 1 : 0) +
     (filters.sort !== "newest" ? 1 : 0) +
@@ -214,11 +270,16 @@ export type FacetOption = Readonly<{ value: string; label: string; count: number
 
 export type JobFacetCounts = Readonly<{
   employers: readonly FacetOption[];
+  functions: readonly FacetOption[];
+  industries: readonly FacetOption[];
   jobTypes: readonly FacetOption[];
+  levels: readonly FacetOption[];
   locations: readonly FacetOption[];
   sectors: readonly FacetOption[];
+  sponsorLicence: readonly FacetOption[];
   sponsorship: readonly FacetOption[];
   subsectors: readonly FacetOption[];
+  workModes: readonly FacetOption[];
 }>;
 
 export type FacetGroupKey = keyof JobFacetCounts;
@@ -261,6 +322,26 @@ export function buildJobFilterClauses(
   }
   if (filters.subsectors.length > 0 && options.excludeFacet !== "subsectors") {
     conditions.push(`j.subsector_key = any(${parameter(filters.subsectors)})`);
+  }
+  if (filters.industries.length > 0 && options.excludeFacet !== "industries") {
+    conditions.push(`c.employer_industry_key = any(${parameter(filters.industries)})`);
+  }
+  if (filters.functions.length > 0 && options.excludeFacet !== "functions") {
+    conditions.push(`j.job_function_key = any(${parameter(filters.functions)})`);
+  }
+  if (filters.levels.length > 0 && options.excludeFacet !== "levels") {
+    conditions.push(`j.career_level_key = any(${parameter(filters.levels)})`);
+  }
+  if (filters.workModes.length > 0 && options.excludeFacet !== "workModes") {
+    conditions.push(`j.remote_type = any(${parameter(filters.workModes)})`);
+  }
+  if (filters.sponsorLicence && options.excludeFacet !== "sponsorLicence") {
+    conditions.push(
+      `exists (
+        select 1 from app.employer_public_profile p
+        where p.id = c.id and p.has_sponsor
+      )`,
+    );
   }
   if (filters.employers.length > 0 && options.excludeFacet !== "employers") {
     conditions.push(`c.slug = any(${parameter(filters.employers)})`);

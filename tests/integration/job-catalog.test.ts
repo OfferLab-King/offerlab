@@ -1193,8 +1193,11 @@ describe("faceted catalogue search", () => {
       }),
     );
     const locations = payload.facets.locations;
-    expect(locations.map((option) => option.value)).toContain("remote");
-    const remoteCount = locations.find((option) => option.value === "remote")!.count;
+    expect(locations.map((option) => option.value)).toContain("london");
+    expect(locations.map((option) => option.value)).not.toContain("remote");
+    const workModes = payload.facets.workModes;
+    expect(workModes.map((option) => option.value)).toContain("remote");
+    const remoteCount = workModes.find((option) => option.value === "remote")!.count;
     expect(remoteCount).toBeGreaterThanOrEqual(1);
   });
 });

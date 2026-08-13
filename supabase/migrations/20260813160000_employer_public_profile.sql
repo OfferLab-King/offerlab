@@ -77,6 +77,7 @@ where c.active
   );
 
 grant select on app.employer_public_profile to offerlab_app;
+grant select on app.employer_public_profile to offerlab_crawler;
 
 comment on view app.employer_public_profile is
   'Privacy-safe public employer facts derived from the researched universe; internal research fields are never exposed.';

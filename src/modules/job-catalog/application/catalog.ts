@@ -37,11 +37,16 @@ import {
 export type FacetedSearchPayload = Readonly<{
   facets: Readonly<{
     employers: readonly FacetOptionView[];
+    functions: readonly FacetOptionView[];
+    industries: readonly FacetOptionView[];
     jobTypes: readonly FacetOptionView[];
+    levels: readonly FacetOptionView[];
     locations: readonly FacetOptionView[];
     sectors: readonly FacetOptionView[];
+    sponsorLicence: readonly FacetOptionView[];
     sponsorship: readonly FacetOptionView[];
     subsectors: readonly FacetOptionView[];
+    workModes: readonly FacetOptionView[];
   }>;
   hasSalaryData: boolean;
   result: JobSearchResult;
@@ -95,17 +100,42 @@ export async function searchJobCatalogFaceted(
         label: row.label ?? row.value,
         value: row.value,
       })),
+      functions: facets.functions.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
+      industries: facets.industries.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
       jobTypes: presentWithTaxonomy(
         facets.jobTypes,
         (key) => opportunityTypeLabels[key as keyof typeof opportunityTypeLabels] ?? null,
       ),
+      levels: facets.levels.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
       locations: presentLocations(facets.locations),
       sectors: presentWithTaxonomy(facets.sectors, (key) => jobSectorLabel(key)),
+      sponsorLicence: facets.sponsorLicence.map((row) => ({
+        count: row.count,
+        label: row.label ?? "Employer is a UK licensed sponsor",
+        value: row.value,
+      })),
       sponsorship: presentWithTaxonomy(
         facets.sponsorship,
         (key) => visaSponsorshipLabels[key as keyof typeof visaSponsorshipLabels] ?? null,
       ),
       subsectors: presentWithTaxonomy(facets.subsectors, (key) => jobSubsectorLabel(key)),
+      workModes: facets.workModes.map((row) => ({
+        count: row.count,
+        label: row.label ?? row.value.replaceAll("_", " "),
+        value: row.value,
+      })),
     },
     hasSalaryData,
     result,
