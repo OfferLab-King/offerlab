@@ -1,4 +1,5 @@
 import { employerIndustries, employerIndustryLabels } from "../../taxonomy/employer-industry";
+import { employerIndustryFromDirectorySector } from "../../taxonomy/taxonomy-mapping";
 
 export type EmployerDirectoryEntry = Readonly<{
   id: string;
@@ -46,9 +47,18 @@ export function parseEmployerDirectoryFilters(
     return value;
   };
   const sort = single("sort") ?? "hiring";
+  // Legacy `sector` parameter from the retired sector routes and older links:
+  // legacy directory sector keys map deterministically to employer industries
+  // (raw key form or URL-slug form).
+  const legacySector = single("sector");
+  const sectorIndustry =
+    legacySector !== null
+      ? (employerIndustryFromDirectorySector(legacySector) ??
+        employerIndustryFromDirectorySector(legacySector.replaceAll("-", "_")))
+      : null;
   return {
     query: single("q")?.trim().toLowerCase() ?? null,
-    industry: single("industry") ?? null,
+    industry: single("industry") ?? sectorIndustry,
     sponsor: single("sponsor") === "1",
     hiring: single("hiring") === "1",
     sizeBand: single("size") ?? null,

@@ -297,11 +297,11 @@ test("retired sector routes lead into the combined employer directory", async ({
   test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
   await page.goto("/jobs/sectors/financial-services");
   await expect(page).toHaveURL(/\/employers\?sector=financial_services/);
-  await expect(page.getByRole("heading", { name: /Explore employers by sector/i })).toBeVisible();
-  const financialServices = page.locator("#sector-financial_services");
-  await expect(financialServices.getByRole("link", { name: /Synthetic Bank/ })).toBeVisible();
-  await financialServices.getByRole("link", { name: /All current roles/ }).click();
-  await expect(page).toHaveURL(/\/jobs\?sectors=financial-services/);
+  await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Synthetic Bank" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Synthetic Engineering" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Synthetic Bank" }).click();
+  await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Graduate Analyst" })).toBeVisible();
 });
 
@@ -392,16 +392,11 @@ test("filter reset controls do not shift the sidebar when a sector is selected",
 test("the employer directory shows employers with active counts", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
   await page.goto("/employers");
-  await expect(page.getByRole("heading", { name: /Explore employers/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
   await expect(page.getByRole("link", { name: "Synthetic Engineering" })).toBeVisible();
-  await expect(
-    page.locator("#sector-engineering_energy_infrastructure").getByText("No current roles"),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: /Synthetic Bank/ }).first()).toBeVisible();
-  await page
-    .getByRole("link", { name: /Synthetic Bank/ })
-    .first()
-    .click();
+  await expect(page.getByText("No current OfferLab roles")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Synthetic Bank" })).toBeVisible();
+  await page.getByRole("link", { name: "Synthetic Bank" }).click();
   await expect(page.getByRole("heading", { name: "Synthetic Bank" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Graduate Analyst" })).toBeVisible();
 });
@@ -554,7 +549,7 @@ test("a missing employer profile is not indexable", async ({ page }, testInfo) =
 test("filtered employer-directory URLs are noindex but follow", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "catalogue flows run once on chromium");
   await page.goto("/employers?sector=financial_services");
-  await expect(page.getByRole("heading", { name: /Explore employers/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex,\s*follow/);
 });
 
