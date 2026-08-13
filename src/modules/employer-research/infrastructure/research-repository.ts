@@ -351,10 +351,12 @@ export async function listEmployerResearchRows(
       s.research_date as "researchDate",
       (select count(*)::int from app.employer_sponsor_entity e where e.company_id = c.id) as "sponsorEntities",
       (select count(*)::int from app.job_source_candidate jc where jc.company_id = c.id) as "sourceCandidates",
-      (select count(*)::int from app.job_source js where js.company_id = c.id) as "liveSources",
+      (select count(*)::int from app.job_source js
+        where js.company_id = c.id and js.status = 'active') as "liveSources",
       (select count(*)::int from app.job j where j.company_id = c.id) as "currentJobs",
       (select string_agg(distinct js2.ats_provider, ', ' order by js2.ats_provider)
-        from app.job_source js2 where js2.company_id = c.id) as "atsProviders"
+        from app.job_source js2
+        where js2.company_id = c.id and js2.status = 'active') as "atsProviders"
     from app.company c
     left join latest_snapshot s on s.company_id = c.id
     union all
@@ -649,11 +651,13 @@ export async function readSourceCapabilityStats(
 ): Promise<SourceCapabilityStats> {
   const [sources, jobsByAts, candidates, employers] = await Promise.all([
     database<{ needsBrowser: boolean; sourceType: string }[]>`
-      select needs_browser as "needsBrowser", source_type as "sourceType" from app.job_source
+      select needs_browser as "needsBrowser", source_type as "sourceType"
+      from app.job_source where status = 'active'
     `,
     database<{ atsProvider: string | null; count: number }[]>`
       select ats_provider as "atsProvider", count(*)::int as count
-      from app.job_source group by ats_provider order by count(*) desc
+      from app.job_source where status = 'active'
+      group by ats_provider order by count(*) desc
     `,
     database<{ status: string }[]>`
       select status from app.job_source_candidate
@@ -661,7 +665,8 @@ export async function readSourceCapabilityStats(
     database<{ hasCareersUrl: boolean; hasSource: boolean; hasJobs: boolean }[]>`
       select
         (coalesce(nullif(website_url, ''), careers_url) not like '%employer.invalid%') as "hasCareersUrl",
-        exists (select 1 from app.job_source js where js.company_id = c.id) as "hasSource",
+        exists (select 1 from app.job_source js
+          where js.company_id = c.id and js.status = 'active') as "hasSource",
         exists (select 1 from app.job j where j.company_id = c.id) as "hasJobs"
       from app.company c
     `,

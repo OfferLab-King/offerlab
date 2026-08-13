@@ -85,7 +85,24 @@ describe("admin employer detail reads", () => {
   });
 
   it("returns capability statistics without leaking research fields", async () => {
+    const before = await migrationDatabase.begin((t) => readSourceCapabilityStats(t));
+    const company = await migrationDatabase<{ id: string }[]>`
+      insert into app.company (name, slug, careers_url, source_type)
+      values ('Paused Stats Co', ${uniqueSlug("paused-stats")},
+        ${`https://paused-stats-${uniqueSlug("u")}.example.com/careers`}, 'unknown')
+      returning id
+    `;
+    await migrationDatabase`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, source_type, status, needs_browser
+      ) values (
+        ${company[0]!.id}::uuid, ${uniqueSlug("paused-source")}, 'Paused source', 'general',
+        ${`https://paused-source-${uniqueSlug("u")}.example.com`}, 'custom', 'paused', true
+      )
+    `;
     const stats = await migrationDatabase.begin((t) => readSourceCapabilityStats(t));
+    expect(stats.liveSources).toBe(before.liveSources);
+    expect(stats.employersWithLiveSource).toBe(before.employersWithLiveSource);
     expect(stats.liveSources).toBeGreaterThanOrEqual(0);
     expect(stats.browserSources + stats.httpSources).toBe(stats.liveSources);
     expect(stats.employersWithLiveSource).toBeGreaterThanOrEqual(0);

@@ -154,6 +154,20 @@ describe("source discovery pipeline", () => {
     `;
     expect(candidateRow[0]!.status).toBe("promoted");
 
+    const promotedCandidates = await migrationDatabase.begin((transaction) =>
+      listDiscoveryCandidates(transaction, {
+        candidateId,
+        companySlug: null,
+        tier: null,
+        platform: null,
+        status: null,
+        search: null,
+        limit: 1,
+      }),
+    );
+    expect(promotedCandidates[0]!.liveSources).toBe(0);
+    expect(promotedCandidates[0]!.atsProviders).toBeNull();
+
     await migrationDatabase.begin((transaction) =>
       markCandidateVerified(transaction, candidateId, "https://verified.example.com/careers"),
     );
@@ -220,10 +234,20 @@ describe("source discovery pipeline", () => {
         'verified_platform', 'Greenhouse'
       )
     `;
+    await migrationDatabase`
+      insert into app.job_source (
+        company_id, slug, name, channel, careers_url, source_type, status, ats_provider
+      ) values (
+        ${companyId}::uuid, ${uniqueSlug("paused-coverage")}, 'Paused coverage source', 'general',
+        ${`https://paused-${uniqueSlug("coverage")}.example.com/careers`}, 'greenhouse', 'paused',
+        'Greenhouse'
+      )
+    `;
     const data = await migrationDatabase.begin((t) => readPlatformCoverageData(t));
     expect(data.snapshots.filter((snapshot) => snapshot.companyId === companyId)).toEqual([
       { atsPlatform: "Workday", companyId, tier: "P1" },
     ]);
+    expect(data.jobSources.filter((source) => source.companyId === companyId)).toEqual([]);
     const coverage = computePlatformCoverage(data);
     expect(coverage.totals.employers).toBeGreaterThan(0);
     expect(coverage.totals.p0 + coverage.totals.p1).toBeGreaterThan(0);
