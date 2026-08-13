@@ -16,6 +16,9 @@ import {
 import { JobCard } from "../../jobs/job-card";
 import { EmployerMark } from "../../jobs/employer-mark";
 import { SiteHeader } from "../../components/site-header";
+import { currentMemberAccess } from "../../../modules/identity-access/application/authorization";
+import { isEmployerSavedForMember } from "../../../modules/job-catalog/application/saved-employers";
+import { saveEmployer, unsaveEmployer } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +55,12 @@ export default async function EmployerProfilePage({ params }: { params: Employer
   const employer = await readEmployerProfile(slug);
   if (!employer) notFound();
   const jobs = await readEmployerActiveJobs(employer.id);
+  const access = await currentMemberAccess();
+  const memberId = access.status === "eligible" ? access.authorization.userId : null;
+  const saved =
+    memberId !== null && employer.id
+      ? await isEmployerSavedForMember(memberId, employer.id)
+      : false;
   const now = new Date();
 
   const sectors = [...new Set(jobs.flatMap((job) => (job.sector_key ? [job.sector_key] : [])))];
@@ -269,6 +278,18 @@ export default async function EmployerProfilePage({ params }: { params: Employer
         </dl>
 
         <div className="employer-profile-links">
+          {memberId !== null ? (
+            <form action={saved ? unsaveEmployer : saveEmployer}>
+              <input type="hidden" name="companyId" value={employer.id} />
+              <button className="button-link" type="submit">
+                {saved ? "Remove from saved employers" : "Save employer"}
+              </button>
+            </form>
+          ) : (
+            <Link className="button-link secondary" href="/sign-in">
+              Sign in to save employers
+            </Link>
+          )}
           {employer.website_url && (
             <a
               className="button-link secondary"

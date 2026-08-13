@@ -88,7 +88,12 @@ function toggleValue(list: readonly string[], value: string): string[] {
 export function JobCatalogueView({
   initialData,
   initialUrl,
-}: Readonly<{ initialData: FacetedSearchPayload; initialUrl: string }>) {
+  savedEmployers = [],
+}: Readonly<{
+  initialData: FacetedSearchPayload;
+  initialUrl: string;
+  savedEmployers?: readonly { slug: string; name: string }[];
+}>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -249,6 +254,10 @@ export function JobCatalogueView({
   const chipsVisible = chips.length > 0;
 
   const quickChips: ReadonlyArray<{ label: string; filters: JobCatalogFilters }> = [
+    ...savedEmployers.map((employer) => ({
+      filters: { ...defaultJobCatalogFilters, employers: [employer.slug] },
+      label: `Saved: ${employer.name}`,
+    })),
     {
       filters: { ...defaultJobCatalogFilters, jobTypes: ["graduate_job", "graduate_scheme"] },
       label: "Graduate jobs",

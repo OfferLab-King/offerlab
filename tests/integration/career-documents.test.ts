@@ -110,6 +110,7 @@ async function createFixture(): Promise<Fixture> {
   return asUser(userOne, async (database) => {
     const job = await saveCareerJobTarget(database, userOne, {
       applyUrl: null,
+      companyId: null,
       companyName: "OfferLab Integration Ltd",
       description:
         "Build accessible product features using TypeScript and PostgreSQL, and verify them with automated tests.",
@@ -193,6 +194,7 @@ describe("career document repository ownership", () => {
       asUser(userOne, (database) => listCareerJobTargets(database, userOne)),
     ).resolves.toMatchObject([
       {
+        companyId: null,
         companyName: "OfferLab Integration Ltd",
         id: fixture.jobId,
         provider: "manual",
@@ -563,6 +565,7 @@ describe("career workspace database invariants", () => {
       fetchedAt: new Date("2026-08-07T12:00:00Z"),
       location: "London",
       provider: "jsearch" as const,
+      companyId: null,
       providerJobId: "provider-race-job",
       publishedAt: new Date("2026-08-06T12:00:00Z"),
       roleTitle: "Graduate Developer",

@@ -23,6 +23,7 @@ const applicationValues: ApplicationValues = {
   appliedDate: "2026-07-01",
   applicationDeadline: "2026-07-10",
   company: "State Test Employer",
+  companyId: null,
   industry: null,
   location: null,
   nextStageDeadline: "2026-07-22",

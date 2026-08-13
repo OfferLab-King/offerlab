@@ -15,6 +15,9 @@ const empty: OnboardingAnswers = {
   preparationPriorities: [],
   supportNeeds: [],
   targetCompanies: [],
+  targetFunctions: [],
+  targetIndustries: [],
+  preferredLocations: [],
 };
 
 export default async function OnboardingPage() {

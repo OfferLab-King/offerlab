@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 
 import { searchJobCatalogFaceted } from "../../../modules/job-catalog/application/catalog";
 import { parseJobCatalogFilters } from "../../../modules/job-catalog/domain/catalog";
+import { currentMemberAccess } from "../../../modules/identity-access/application/authorization";
+import { listSavedEmployersForMember } from "../../../modules/job-catalog/application/saved-employers";
 import { SiteHeader } from "../../components/site-header";
 import { JobCatalogueView } from "./job-catalogue-view";
 
@@ -40,6 +42,11 @@ export default async function PublicJobsPage({
   const filters = parseJobCatalogFilters(params);
   const initialUrl = params.toString();
   const initialData = await searchJobCatalogFaceted(filters);
+  const access = await currentMemberAccess();
+  const savedEmployers =
+    access.status === "eligible"
+      ? await listSavedEmployersForMember(access.authorization.userId)
+      : [];
 
   return (
     <main className="catalogue-page">
@@ -58,7 +65,11 @@ export default async function PublicJobsPage({
             <span>No recycled aggregator links</span>
           </div>
         </header>
-        <JobCatalogueView initialData={initialData} initialUrl={initialUrl} />
+        <JobCatalogueView
+          initialData={initialData}
+          initialUrl={initialUrl}
+          savedEmployers={savedEmployers}
+        />
       </div>
     </main>
   );

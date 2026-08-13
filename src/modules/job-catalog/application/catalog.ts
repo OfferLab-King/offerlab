@@ -172,6 +172,36 @@ export function readEmployerDirectoryEntries(): Promise<readonly EmployerPublicP
   return withApplicationRole((database) => listEmployerPublicDirectory(database));
 }
 
+export type EmployerAutocompleteOption = Readonly<{
+  id: string;
+  slug: string;
+  name: string;
+  industryKey: string | null;
+}>;
+
+/** Bounded server-side employer autocomplete matching canonical name or aliases. */
+export async function searchEmployersForAutocomplete(
+  query: string,
+  limit = 8,
+): Promise<EmployerAutocompleteOption[]> {
+  const trimmed = query.trim().toLowerCase();
+  if (trimmed.length < 2) return [];
+  return withApplicationRole(async (database) => {
+    const rows = await database<EmployerAutocompleteOption[]>`
+      select id, slug, name, employer_industry_key as "industryKey"
+      from app.employer_public_profile
+      where name ilike ${`%${trimmed}%`}
+         or exists (
+           select 1 from jsonb_array_elements_text(aliases) as alias
+           where lower(alias) like ${`%${trimmed}%`}
+         )
+      order by name asc
+      limit ${limit}
+    `;
+    return rows;
+  });
+}
+
 export type EmployerProfileView = EmployerProfileRow &
   Readonly<{ indexable: boolean; publicProfile: EmployerPublicProfileRow | null }>;
 

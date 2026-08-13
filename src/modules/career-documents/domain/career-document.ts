@@ -44,6 +44,7 @@ export type CareerDocumentVersionInput = z.infer<typeof careerDocumentVersionInp
 export const careerJobTargetInputSchema = z
   .object({
     applyUrl: z.url().nullable(),
+    companyId: z.string().uuid().nullable().optional().default(null),
     companyName: z.string().trim().min(1).max(160),
     description: z.string().trim().min(1).max(30_000),
     employmentType: z.string().trim().min(1).max(80).nullable(),

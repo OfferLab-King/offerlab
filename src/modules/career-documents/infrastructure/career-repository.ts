@@ -9,6 +9,7 @@ import type { CareerReview } from "../domain/review";
 export type CareerJobTarget = Readonly<{
   applyUrl: string | null;
   archivedAt: Date | null;
+  companyId: string | null;
   companyName: string;
   description: string;
   employmentType: string | null;
@@ -79,6 +80,7 @@ export type StoredCareerReview = CareerReview &
 type JobRow = Readonly<{
   apply_url: string | null;
   archived_at: Date | null;
+  company_id: string | null;
   company_name: string;
   description: string;
   employment_type: string | null;
@@ -206,6 +208,7 @@ function job(row: JobRow): CareerJobTarget {
   return {
     applyUrl: row.apply_url,
     archivedAt: row.archived_at,
+    companyId: row.company_id,
     companyName: row.company_name,
     description: row.description,
     employmentType: row.employment_type,
@@ -479,11 +482,11 @@ export async function saveCareerJobTarget(
 ): Promise<CareerJobTarget> {
   const rows = await database<(JobRow & { inserted: boolean })[]>`
     insert into app.career_job_target(
-      owner_user_id,provider,provider_job_id,source_publisher,role_title,company_name,
+      owner_user_id,provider,provider_job_id,source_publisher,role_title,company_name,company_id,
       location,employment_type,description,apply_url,source_url,published_at,fetched_at
     ) values(
       ${owner}::uuid,${input.provider},${input.providerJobId},${input.sourcePublisher},
-      ${input.roleTitle},${input.companyName},${input.location},${input.employmentType},
+      ${input.roleTitle},${input.companyName},${input.companyId ?? null}::uuid,${input.location},${input.employmentType},
       ${input.description},${input.applyUrl},${input.sourceUrl},${input.publishedAt},${input.fetchedAt}
     )
     on conflict(owner_user_id,provider,provider_job_id) where provider_job_id is not null

@@ -28,6 +28,9 @@ const complete: OnboardingAnswers = {
   preparationPriorities: ["application_cv"],
   supportNeeds: ["feedback"],
   targetCompanies: ["Example Plc"],
+  targetFunctions: [],
+  targetIndustries: [],
+  preferredLocations: [],
 };
 
 async function asUser<T>(

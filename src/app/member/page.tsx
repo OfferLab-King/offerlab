@@ -8,6 +8,7 @@ import {
 import { requireMember } from "../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../modules/member-profile/application/onboarding";
 import { readDashboardRecommendations } from "../../modules/recommendations/application/recommendations";
+import { listSavedEmployersForMember } from "../../modules/job-catalog/application/saved-employers";
 import { MemberApplicationsHeader } from "./applications/member-applications-header";
 import { RecommendationList } from "./recommendation-list";
 
@@ -19,6 +20,7 @@ export default async function MemberPage() {
   const profile = await readOnboardingProfile(authorization.userId);
   if (!profile?.completedAt) redirect("/member/onboarding");
   const applications = await readApplications(authorization.userId);
+  const savedEmployers = await listSavedEmployersForMember(authorization.userId);
   const recommendationContexts = applications.map(recommendationApplicationContext);
   const recommendations = await readDashboardRecommendations(
     authorization.userId,
@@ -80,6 +82,40 @@ export default async function MemberPage() {
             recommendations={recommendations}
             showApplicationLinks
           />
+        </section>
+      )}
+
+      {savedEmployers.length > 0 && (
+        <section className="dashboard-section" aria-labelledby="saved-employers-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="saved-employers-title">Saved employers</h2>
+              <p>Employers you are tracking. Open their current roles or official careers pages.</p>
+            </div>
+            <Link className="button-link" href="/jobs">
+              Browse jobs
+            </Link>
+          </div>
+          <ul className="saved-employer-grid">
+            {savedEmployers.map((employer) => (
+              <li className="saved-employer-card" key={employer.companyId}>
+                <h3>
+                  <Link href={`/employers/${employer.slug}`}>{employer.name}</Link>
+                </h3>
+                <p>
+                  {employer.current_jobs > 0
+                    ? `${employer.current_jobs} current ${employer.current_jobs === 1 ? "role" : "roles"}`
+                    : "No current OfferLab roles"}
+                  {employer.has_sponsor ? " · UK licensed sponsor" : ""}
+                </p>
+                {employer.careers_url && (
+                  <a href={employer.careers_url} rel="noreferrer" target="_blank">
+                    Official careers page →
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </main>

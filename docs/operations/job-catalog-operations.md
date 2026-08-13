@@ -213,6 +213,29 @@ sector model:
   employer context panel (industry, size, ownership, sponsor status, official
   careers link). Internal crawler and research fields never render.
 
+## Member integration (Phase G)
+
+Canonical employers are linked into member workflows while free-text fallback
+is preserved everywhere.
+
+- **Saved employers**: owner-scoped `app.user_saved_employer` with forced RLS
+  (policy and grants mirror `user_saved_job`). Save/remove from employer
+  profiles; the member home shows a saved-employers strip; `/jobs` renders
+  "Saved: <employer>" quick chips for signed-in members. Saves never create
+  notifications or alerts without an explicit member preference.
+- **Employer autocomplete**: `/api/employers/search` matches canonical names
+  and aliases (aliases are exposed through the public profile view, which the
+  member roles can read) and returns canonical company UUIDs. The application
+  form and career job targets accept a nullable `company_id` alongside the
+  required free-text company name.
+- **Onboarding**: `onboarding_profile` gains canonical `target_industries`,
+  `target_functions` and `preferred_locations`; legacy industry choices map
+  deterministically to canonical industries when no explicit preference is
+  supplied. The legacy columns and completion rule are unchanged.
+- The public employer profile view appends an `aliases` jsonb column
+  (employer trading names and sponsor legal entities) for autocomplete and
+  search.
+
 ## Local CMS-triggered crawling
 
 The CMS **Run now** control never crawls inside the web request. It records a

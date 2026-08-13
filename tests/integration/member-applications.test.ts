@@ -26,6 +26,7 @@ const base: ApplicationValues = {
   appliedDate: null,
   applicationDeadline: "2026-09-30",
   company: "Example Plc",
+  companyId: null,
   industry: "consulting",
   location: "London",
   nextStageDeadline: "2026-08-20",
@@ -88,6 +89,7 @@ describe("application lifecycle, ownership, and concurrency", () => {
       asUser(userOne, (database) => findApplication(database, userOne, first.id)),
     ).resolves.toMatchObject({
       company: base.company,
+      companyId: null,
       industry: "consulting",
       notes: base.notes,
       version: 1,
