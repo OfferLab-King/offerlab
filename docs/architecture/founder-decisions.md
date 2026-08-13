@@ -149,14 +149,18 @@ experience and records the rules for the OfferLab job catalogue.
   redirect into the relevant employer-directory section. The Jobs page keeps
   sector filters because those filter job records rather than duplicate the
   directory.
-- **Priority UK employer cohort.** Source onboarding prioritises an editorial
-  cohort of at most 500 UK-relevant employers before the long tail. The number
-  is an operating limit, not a public quality ranking. Selection must record a
-  current evidence basis and favour demonstrated UK hiring relevance: current
-  graduate/employer research, large UK private and listed employers, major
-  public employers, and sector coverage. Directory inclusion does not imply
-  endorsement or claim a current vacancy. A company appears with “No current
-  roles” until a verified official source produces an eligible published job.
+- **Priority UK employer cohort.** Source onboarding prioritises a researched
+  UK-relevant employer universe. As amended on 13 August 2026, the employer
+  directory and research universe may exceed 500 employers; visibility is
+  determined by data quality and product usefulness, not an arbitrary
+  numerical ceiling. The number of researched employers, public profiles,
+  source candidates, verified sources and active sources can all differ.
+  Selection must record a current evidence basis and favour demonstrated UK
+  hiring relevance: current graduate/employer research, large UK private and
+  listed employers, major public employers, and sector coverage. Directory
+  inclusion does not imply endorsement or claim a current vacancy. A company
+  appears with “No current roles” until a verified official source produces an
+  eligible published job.
 - **Eligibility and publication pipeline.** Whole-company feeds must not
   automatically become public. Deterministic rules classify every job as
   eligible, ineligible or needs_review with machine-readable reasons and exact
@@ -179,12 +183,29 @@ experience and records the rules for the OfferLab job catalogue.
   independently scheduled early-career, professional, apprenticeship and general
   sources. Global employers are eligible when they have material UK operations,
   but only UK-confirmed vacancies may publish. Explicit non-UK jobs are suppressed;
-  ambiguous locations remain unpublished for administrator review. The first
-  rollout uses approximately 100 verified priority employers and the same registry
-  scales to 500. Sources run daily through the least-privilege CLI worker; CMS may
+  ambiguous locations remain unpublished for administrator review. The registry
+  scales with the researched employer universe. Sources run daily through the
+  least-privilege CLI worker; CMS may
   request a run but never performs crawler traffic. Optional grounded job
   structuring may use DeepSeek V4 Flash through OpenCode Go behind the existing
   provider-neutral, strict-schema and kill-switch boundaries.
+- **Top 1,000 employer research universe.** Approved on 13 August 2026. The
+  researched Top 1,000 sponsor-aware employer workbook
+  (`data/research/employer-targets/`) becomes an OfferLab employer-intelligence
+  and source-discovery foundation: a versioned research artifact feeding a
+  database research layer (employer aliases, Home Office sponsor legal
+  entities, dated research snapshots, source-discovery candidates) that is
+  separate from the live `app.job_source` registry. Importing a researched
+  employer never activates crawling; a spreadsheet row must not automatically
+  create a guessed active source. Canonical identity matching is
+  confidence-gated and ambiguous identities are retained for administrator
+  review. Internal priority tiers, employer-value and crawler-readiness
+  scores are research signals and must never be exposed publicly as employer
+  rankings. The existing versioned cohort manifest remains a bootstrap/core
+  source manifest, not the master representation of the employer universe.
+  Employer industry and job function are distinct product dimensions to be
+  separated in a later non-destructive taxonomy migration
+  (`docs/product/taxonomy-redesign-plan.md`).
 - **Feature gate.** A master `JOB_CATALOG_ENABLED` gate (default false) keeps
   the catalogue routes, APIs, sitemap entries, crawling and enrichment dormant
   until this feature is explicitly enabled for production. The web runtime

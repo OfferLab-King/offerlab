@@ -77,6 +77,9 @@ Build a `job-catalog` module inside the modular monolith with these properties:
   pause another source's jobs.
 - Member saves (`app.user_saved_job`) are owner-scoped with forced RLS; the
   crawler role cannot touch them.
+- Employer research (Top 1,000 universe, aliases, sponsor entities, snapshots,
+  source candidates; founder decision 2026-08-13) is a separate administrator-only
+  layer that feeds but never auto-activates `app.job_source`.
 - This capability extends the current product contract's job-discovery boundary
   (which currently gates provider search behind JSearch). A founder decision
   entry recording this extension and the responsible-use rules is required
