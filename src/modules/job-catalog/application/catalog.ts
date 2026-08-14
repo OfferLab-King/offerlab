@@ -145,6 +145,11 @@ function readCachedFacetState(filters: JobCatalogFilters): FacetState | null {
 
 function storeFacetState(filters: JobCatalogFilters, state: FacetState): void {
   if (!isUnfilteredFacetRequest(filters)) return;
+  // Never cache an empty facet state: it only exists before the first crawl
+  // (or right after a full deactivation) and caching it would make fresh
+  // catalogues invisible to the facet sidebar for the whole TTL. Recomputing
+  // against an empty catalogue is cheap.
+  if (!hasFacetData(state.facets)) return;
   const current = unfilteredFacetCache;
   if (current && current.expiresAt > Date.now()) return;
   unfilteredFacetCache = {
@@ -152,6 +157,10 @@ function storeFacetState(filters: JobCatalogFilters, state: FacetState): void {
     facets: state.facets,
     hasSalaryData: state.hasSalaryData,
   };
+}
+
+function hasFacetData(facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>): boolean {
+  return Object.values(facets).some((rows) => rows.length > 0);
 }
 
 function isUnfilteredFacetRequest(filters: JobCatalogFilters): boolean {

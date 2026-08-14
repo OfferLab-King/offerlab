@@ -151,8 +151,10 @@ justified.
 - 60-second in-process cache of the **unfiltered** `/jobs` facet state
   (public counts + salary probe) in `job-catalog/application/catalog.ts`.
   Invalidation: fixed TTL; crawls refresh the next request after expiry.
-  Rows, counts and member data are never cached; the cache is a single
-  module-level entry and never keyed by member.
+  Empty facet states (a catalogue with no visible roles yet) are never
+  cached so a fresh catalogue becomes visible to the facet sidebar on the
+  next request. Rows, counts and member data are never cached; the cache is
+  a single module-level entry and never keyed by member.
 
 ## 10. dev vs dev:jobs findings
 
