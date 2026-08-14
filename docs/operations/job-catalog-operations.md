@@ -79,6 +79,40 @@ The import is typed, deterministic, idempotent and provenance-preserving. It:
   `app.job_source`;
 - never touches `app.job_source`; existing live sources are preserved.
 
+### External URL-validation review pass
+
+A third-party review (for example a ChatGPT batch) can triage the 1,000
+careers URLs without touching the workbook, the dataset or the database:
+
+```bash
+pnpm jobs:targets:export-validation-csv   # emits url-validation.csv (7 columns, no internal fields)
+pnpm jobs:targets:merge-validation-reviews --input=<verdicts.json>  # merges verdicts into a review sheet
+```
+
+- The CSV is derived from `top-1000.json` and deliberately excludes every
+  internal research field (scores, confidence, notes, evidence) — those are
+  administrator-only and must never be exported to a third-party model.
+- `careerSearchUrl` is the employer's general UK careers/job-search page and
+  covers the full catalogue scope: the public catalogue is not limited to
+  early-career work (general and experienced-hire roles appear too), and one
+  employer may have separate early-career, professional, apprenticeship and
+  general sources. The review should therefore validate the general board and
+  additionally flag when a distinct early-career page exists.
+- Ask the model for JSON-only verdicts per rank in batches of ~200–250 rows:
+  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "earlyCareerUrl": "...", "reason": "...", "confidence": "high|low"}` —
+  `earlyCareerUrl` is optional and captures a separate graduate/early-career
+  page where one exists.
+- The merge script matches verdicts by rank against the current dataset,
+  reports unknown ranks, and writes
+  `data/generated/employer-targets/url-validation-review.csv` with the
+  current vs suggested URL, an optional early-career URL and a
+  `changed`/`unchanged` state column.
+- Verdicts never edit anything: apply accepted corrections to the XLSX
+  workbook (the source of truth) and regenerate with
+  `pnpm jobs:targets:export`. URL liveness, redirects and robots policy are
+  still verified by the real HTTP discovery pipeline (`--verify`), never by
+  the review model.
+
 ## Taxonomy dimensions (Phase D)
 
 The employer-industry, job-function and career-level dimensions are

@@ -1,0 +1,1001 @@
+rank,canonicalEmployer,primarySponsorLegalEntity,townCity,careerSearchUrl,atsPlatform,researchStatus
+1,Amazon,Amazon UK Services Ltd,London,https://www.amazon.jobs/en-gb/,Custom branded careers,verified_careers_url
+2,Google,Google (UK) Limited,London,https://www.google.com/about/careers/applications/jobs/results/,Custom branded careers,verified_careers_url
+3,Lloyds Banking Group,Lloyds Bank plc,London,https://lbg.wd3.myworkdayjobs.com/,Workday,verified_platform
+4,JPMorganChase,"JPMorgan Chase Bank, National Association",London,,Oracle HCM,needs_re_verification
+5,HSBC,HSBC Holdings plc,London,,Not researched,not_researched
+6,AstraZeneca,AstraZeneca UK Limited,Cambridge,https://astrazeneca.wd3.myworkdayjobs.com/,Workday,verified_platform
+7,Barclays,Barclays Bank PLC,London,https://barclays.wd3.myworkdayjobs.com/,Workday,verified_platform
+8,EY,Ernst & Young,London,https://careers.ey.com/job?locale=en_GB,Branded careers / underlying ATS unverified,verified_careers_url
+9,BAE Systems,BAE Systems Plc,London,,Not researched,not_researched
+10,Bank of America,"Bank of America, N.A.",London,https://ghr.wd1.myworkdayjobs.com/,Workday,verified_platform
+11,Shell,Shell International Ltd,London,https://shell.wd3.myworkdayjobs.com/,Workday,verified_platform
+12,IBM,IBM UK Ltd,Winchester,,Not researched,not_researched
+13,NatWest Group,NatWest Group PLC,Edinburgh,,Not researched,not_researched
+14,PwC,PricewaterhouseCoopers LLP,London,https://jobs.pwc.co.uk/uk/en/,Custom/branded careers,verified_careers_url
+15,Airbus,Airbus Operations Limited,Bristol,,Not researched,not_researched
+16,GSK,GSK Plc,London,,Not researched,not_researched
+17,Microsoft,Microsoft Limited,Reading,,Not researched,not_researched
+18,Apple,Apple Europe Limited,London,https://jobs.apple.com/en-gb/search?location=united-kingdom-GBR,Custom branded careers,verified_careers_url
+19,Rolls-Royce,Rolls-Royce plc,Derby,https://rollsroyce.wd3.myworkdayjobs.com/,Workday,verified_platform
+20,BP,BP plc,London,,Not researched,not_researched
+21,Tesco,Tesco Stores Limited,Welwyn Garden City,,Not researched,not_researched
+22,Capgemini,Capgemini UK PLC,London,,Not researched,not_researched
+23,KPMG,KPMG LLP,London,,Not researched,not_researched
+24,Boston Consulting Group,The Boston Consulting Group UK LLP,London,,Not researched,not_researched
+25,BBC,British Broadcasting Corporation,Birmingham,,Not researched,not_researched
+26,Marks & Spencer,Marks and Spencer Group Plc,London,,Not researched,not_researched
+27,Deloitte,Deloitte LLP,London,,Not researched,not_researched
+28,BlackRock,BLACKROCK INVESTMENT MANAGEMENT (UK) LIMITED,LONDON,,Not researched,not_researched
+29,Clifford Chance,Clifford Chance LLP,London,,Not researched,not_researched
+30,Aon,Aon UK  Limited,London,,Not researched,not_researched
+31,Bloomberg,Bloomberg LP,"London,",,Not researched,not_researched
+32,Pfizer,Pfizer Limited,Tadworth,https://pfizer.wd1.myworkdayjobs.com/,Workday,verified_platform
+33,Arup,Ove Arup and Partners International Ltd,London,,Not researched,not_researched
+34,BT Group,BT Group,London,,Not researched,not_researched
+35,Accenture,Accenture (UK) Limited,London,https://accenture.wd103.myworkdayjobs.com/,Workday,verified_platform
+36,Boeing,Boeing United Kingdom Limited,London,https://boeing.wd1.myworkdayjobs.com/,Workday,verified_platform
+37,Babcock,Babcock International Limited,London,https://jobs.babcockinternational.com/,Custom/branded careers,verified_careers_url
+38,A&O Shearman,Allen Overy Shearman Sterling Service Company Limited,London,,Not researched,not_researched
+39,Linklaters,Linklaters,London,,Not researched,not_researched
+40,Johnson & Johnson,Johnson & Johnson Medical Ltd,West Lothian,https://jj.wd5.myworkdayjobs.com/,Workday,verified_platform
+41,Mastercard,Mastercard UK Management Services LTD,London,https://mastercard.wd1.myworkdayjobs.com/,Workday,verified_platform
+42,Morgan Stanley,Morgan Stanley UK Limited,London,https://ms.wd5.myworkdayjobs.com/,Workday,verified_platform
+43,Citi,Citi Group,London,,Not researched,not_researched
+44,Slaughter and May,Slaughter and May,London,,Not researched,not_researched
+45,L'Oréal,L'Oreal UK Ltd,London,,Not researched,not_researched
+46,Aldi,Aldi Stores Limited,Atherstone,,Not researched,not_researched
+47,White & Case,White & Case LLP,London,,Not researched,not_researched
+48,Balfour Beatty,Balfour Beatty Group Employment Limited,London,,Not researched,not_researched
+49,AtkinsRéalis,AtkinsRealis UK Limited,London,,Not researched,not_researched
+50,Santander,"Banco Santander SA, London Branch",London,,Not researched,not_researched
+51,Oracle,Oracle Corporation UK Limited,Reading,,Not researched,not_researched
+52,Clyde & Co,Clyde & Co LLP,London,,Not researched,not_researched
+53,Grant Thornton,Grant Thornton Services LLP,London,,Not researched,not_researched
+54,British Airways,British Airways PLC,Harmondsworth,,Not researched,not_researched
+55,Salesforce,Salesforce UK Limited,London,https://salesforce.wd12.myworkdayjobs.com/,Workday,verified_platform
+56,Aviva,Aviva plc,London,https://aviva.wd1.myworkdayjobs.com/,Workday,verified_platform
+57,Procter & Gamble,Procter & Gamble Limited,Surrey,,Not researched,not_researched
+58,Standard Chartered,Standard Chartered Bank,London,,Not researched,not_researched
+59,DLA Piper,DLA Piper UK LLP,London,,Not researched,not_researched
+60,National Grid,National Grid plc,Warwick,,Not researched,not_researched
+61,Infosys,Infosys Limited,London,,Not researched,not_researched
+62,Latham & Watkins,LATHAM & WATKINS (LONDON) LLP,LONDON,,Not researched,not_researched
+63,PepsiCo,PepsiCo International Ltd,Reading,,Not researched,not_researched
+64,Adobe,Adobe Systems Europe Limited,Reading,,Not researched,not_researched
+65,Unilever,Unilever UK Limited,Kingston-upon-Thames,,Not researched,not_researched
+66,AECOM,AECOM LIMITED,London,,Not researched,not_researched
+67,Lidl,Lidl Great Britain Limited,London,,Not researched,not_researched
+68,Roche,Roche Diagnostics Limited,Burgess HIll,,Not researched,not_researched
+69,Mott MacDonald,Mott MacDonald Ltd,London,,Not researched,not_researched
+70,Marriott International,Marriott Hotels Ltd,London,https://careers.marriott.com/uk/,Custom/branded careers,verified_careers_url
+71,Lockheed Martin,Lockheed Martin UK Ltd,Whiteley,,Not researched,not_researched
+72,Bayer,Bayer plc,Reading,,Not researched,not_researched
+73,Associated British Foods,Associated British Foods Plc,London,,Not researched,not_researched
+74,WSP,WSP Group Limited,London,,Not researched,not_researched
+75,Savills,Savills plc,London,,Not researched,not_researched
+76,Dyson,Dyson,Malmesbury,,Not researched,not_researched
+77,Goldman Sachs,Goldman Sachs International,London,,Not researched,not_researched
+78,SAP,SAP UK Limited,Feltham,,Not researched,not_researched
+79,Transport for London,Transport for London,London,,Not researched,not_researched
+80,Sainsbury's,J Sainsbury Plc,London,,Not researched,not_researched
+81,Coca-Cola Europacific Partners,COCA-COLA EUROPACIFIC PARTNERS HOLDINGS GREAT BRITIAN LIMITED,Middlesex,,Not researched,not_researched
+82,American Express,American Express Services Europe Limited,London,,Not researched,not_researched
+83,Hogan Lovells,Hogan Lovells International LLP,London,,Not researched,not_researched
+84,Tata Consultancy Services,Tata Consultancy Services,London,,Not researched,not_researched
+85,Kier Group,Kier Group plc,Salford,,Not researched,not_researched
+86,Bupa,Bupa,London,,Not researched,not_researched
+87,Meta,Facebook UK,London,,Not researched,not_researched
+88,London Stock Exchange Group,London Stock Exchange Group plc,London,,Not researched,not_researched
+89,Visa,VISA EUROPE LIMITED,LONDON,,Not researched,not_researched
+90,Next,Next Retail Ltd,Leicester,,Not researched,not_researched
+91,Samsung,Samsung Electronics (UK) Limited,Chertsey,https://sec.wd3.myworkdayjobs.com/,Workday,verified_platform
+92,Nestlé,Nestle UK Limited,Crawley,,Not researched,not_researched
+93,Teach First,Teach First,London,,Not researched,not_researched
+94,Police Now,Police Now,London,,Not researched,not_researched
+95,Admiral Group,Eui Limited,Cardiff,https://www.admiraljobs.co.uk/jobs,Custom/branded careers,verified_careers_url
+96,McKinsey & Company,McKinsey & Company Inc. United Kingdom,London,,Not researched,not_researched
+97,Jaguar Land Rover,Jaguar Land Rover Limited,Coventry,,Not researched,not_researched
+98,Mitie Group,Mitie Group Plc,Glasgow,,Not researched,not_researched
+99,RSM,RSM International Limited,London,,Not researched,not_researched
+100,Cisco,Cisco International Limited,Cardiff,,Not researched,not_researched
+101,Sage,The Sage Group plc,Newcastle upon Tyne,https://www.sage.com/en-gb/company/careers/career-search/,Custom/branded careers,verified_careers_url
+102,Centrica,Centrica plc,Windsor,,Not researched,not_researched
+103,Intel,Intel Corporation (UK) Ltd,Salford,,Not researched,not_researched
+104,Lloyd's,LLOYD'S OF LONDON,London,,Not researched,not_researched
+105,TikTok,TikTok Information Technologies UK Limited,London,,Not researched,not_researched
+106,Deutsche Bank,DB Group Services (UK) Ltd,London,,SuccessFactors,needs_re_verification
+107,UBS,UBS AG,London,,Unknown,blocked_review
+108,Bird & Bird,Bird & Bird LLP,London,,Not researched,not_researched
+109,AMD,Advanced Micro Devices (U.K.) Limited,Milton Keynes,,Not researched,not_researched
+110,Capital One,CAPITAL ONE (EUROPE) PLC,Nottingham,,Not researched,not_researched
+111,Rockstar Games,Rockstar Games UK Limited,Edinburgh,,Not researched,not_researched
+112,Diageo,Diageo plc,London,,Not researched,not_researched
+113,Sodexo,Sodexo UK Limited,Salford,,Not researched,not_researched
+114,Rothschild & Co,N.M.Rothschild & Sons Limited,London,,Not researched,not_researched
+115,McDonald's,McDonald's Restaurants Limited,London,,Not researched,not_researched
+116,British Council,British Council,London,,Not researched,not_researched
+117,Bain & Company,BAIN & COMPANY UNITED KINGDOM LLP,LONDON,,Not researched,not_researched
+118,Ford,Ford Motor Company Limited,Essex,,Not researched,not_researched
+119,Herbert Smith Freehills,Herbert Smith Freehills LLP,London,,Not researched,not_researched
+120,Coca-Cola,COCA-COLA EUROPACIFIC PARTNERS HOLDINGS GREAT BRITIAN LIMITED,Middlesex,,Not researched,not_researched
+121,ASOS,ASOS.com,London,,Not researched,not_researched
+122,Royal Mail,Royal Mail Group Limited,London,,Not researched,not_researched
+123,Addleshaw Goddard,Addleshaw Goddard LLP,London,,Not researched,not_researched
+124,Anglo American,Anglo American Services (UK) Limited,London,,Not researched,not_researched
+125,Vodafone,Vodafone Group Services Limited,Newbury,,Not researched,not_researched
+126,United Utilities,United Utilities PLC,Warrington,,Not researched,not_researched
+127,Siemens,Siemens Holdings plc (including Siemens plc),Camberley,,Not researched,not_researched
+128,Arcadis,Arcadis LLP,London,,Not researched,not_researched
+129,Volkswagen Group,Volkswagen Group United Kingdom Limited,Milton Keynes,,Not researched,not_researched
+130,Ubisoft,Ubisoft Reflections Ltd,Gosforth,,Not researched,not_researched
+131,BNP Paribas,BNP Paribas Asset Management UK Limited,London,,Not researched,not_researched
+132,Computacenter,Computacenter (UK) Ltd,Hatfield,,Not researched,not_researched
+133,FTI Consulting,FTI Consulting LLP,London,,Not researched,not_researched
+134,RELX,RELX (UK) Limited,London,,Not researched,not_researched
+135,Willis Towers Watson,"Willis Limited, trading as Willis Towers Watson plc",London,,Not researched,not_researched
+136,Compass Group,Compass Group Plc,Chertsey,,Not researched,not_researched
+137,Forvis Mazars,Forvis Mazars LLP,London,,Not researched,not_researched
+138,Caterpillar,Caterpillar UK Holdings Limited,Leicester,,Not researched,not_researched
+139,CGI,Logica Ltd t/a CGI,London,,Not researched,not_researched
+140,M&G,M & G PlC,London,,Not researched,not_researched
+141,Mitchells & Butlers,Mitchells & Butlers PLC,Birmingham,,Not researched,not_researched
+142,Kirkland & Ellis,Kirkland & Ellis International LLP,London,,Not researched,not_researched
+143,Rio Tinto,Rio Tinto Plc,London,,Not researched,not_researched
+144,MSD,Merck Sharp & Dohme (UK) Limited,London,,Not researched,not_researched
+145,Leonardo,Leonardo UK Ltd,Basildon,,Not researched,not_researched
+146,Toyota,Toyota,Derby,,Not researched,not_researched
+147,Merlin Entertainments,Merlin Entertainments Group Limited,London,,Not researched,not_researched
+148,Mercedes AMG High Performance Powertrains,Mercedes AMG High Performance Powertrains Ltd,Northampton,,Not researched,not_researched
+149,Network Rail,Network Rail Infrastructure,Manchetser,,Not researched,not_researched
+150,OC&C Strategy Consultants,OC&C Strategy Consultants,London,,Not researched,not_researched
+151,ScottishPower,ScottishPower Limited,Glasgow,,Not researched,not_researched
+152,EDF,EDF Energy Ltd,London,,Not researched,not_researched
+153,Skyscanner,Skyscanner Limited,Edinburgh,,Not researched,not_researched
+154,Capita,Capita Plc,London,,Not researched,not_researched
+155,Intertek,Intertek Group plc,London,,Not researched,not_researched
+156,WPP,WPP Media UK Limited,London,,Not researched,not_researched
+157,The Walt Disney Company,The Walt Disney Company Ltd,London,,Not researched,not_researched
+158,Cancer Research UK,Cancer Research UK,London,,Not researched,not_researched
+159,Uber,Uber Eats UK Limited,London,,Not researched,not_researched
+160,Lazard,"Lazard & Co., Services Limited",London,,Not researched,not_researched
+161,Skadden,"Skadden,Arps,Slate,Meagher & Flom (UK) LLP",London,,Not researched,not_researched
+162,JCB,JCB International (Europe) Ltd,London,,Not researched,not_researched
+163,Ashtead,Ashtead Group Limited,London,,Not researched,not_researched
+164,Bunzl,BUNZL PLC,LONDON,,Not researched,not_researched
+165,Kingfisher,Kingfisher PLC,London,,Not researched,not_researched
+166,Sky,Sky UK Limited,Middlesex,,Not researched,not_researched
+167,Sony,Sony Europe Limited,Weybridge,,Not researched,not_researched
+168,Nissan,Nissan Motor Manufacturing (UK) Ltd,Sunderland,,Not researched,not_researched
+169,Societe Generale,Societe Generale Equipment Finance Ltd,London,,Not researched,not_researched
+170,Boots,Boots Management Services,Nottingham,,Not researched,not_researched
+171,Osborne Clarke,Osborne Clarke Services,Bristol,,Not researched,not_researched
+172,Morrison & Foerster,Morrison & Foerster (UK) LLP,London,,Not researched,not_researched
+173,Paul Hastings,Paul Hastings (Europe) LLP,London,,Not researched,not_researched
+174,Currys,Currys Group Limited,London,,Not researched,not_researched
+175,John Wood Group,Wood Group UK Limited,Aberdeen,,Not researched,not_researched
+176,Rentokil Initial,Rentokil Initial 1927 plc,Crawley,,Not researched,not_researched
+177,Serco Group,Serco Ltd t/a Serco Group,Hook,,Not researched,not_researched
+178,TechnipFMC,TechnipFMC UK Limited,Aberdeen,,Not researched,not_researched
+179,Virgin Media,Virgin Media Limited,Reading,,Not researched,not_researched
+180,Bentley Motors,Bentley Motors Limited,Crewe,,Not researched,not_researched
+181,Morgan Lewis,"MORGAN, LEWIS & BOCKIUS UK LLP",LONDON,,Not researched,not_researched
+182,Asda,Asda Stores Ltd,Leeds,,Not researched,not_researched
+183,RPC,Reynolds Porter Chamberlain LLP,London,,Not researched,not_researched
+184,Eversheds Sutherland,Eversheds Sutherland (International) LLP,Birmingham,,Not researched,not_researched
+185,Fieldfisher,Fieldfisher LLP,London,,Not researched,not_researched
+186,Cooley,Cooley (UK) LLP,London,,Not researched,not_researched
+187,Oliver Wyman,Oliver Wyman Limited,London,,Not researched,not_researched
+188,Three UK,THREE CROWNS (SERVICES) LLP,LONDON,,Not researched,not_researched
+189,Bank of England,BANK OF ENGLAND,LONDON,,Not researched,not_researched
+190,Clarivate,Clarivate Analytics (UK) Limited,London,,Not researched,not_researched
+191,Endava,Endava UK Ltd,London,,Not researched,not_researched
+192,Legal & General,Legal & General Resources Ltd,London,,Not researched,not_researched
+193,Prudential,Prudential PLC,London,,Not researched,not_researched
+194,BDO,BDO LLP,London,,Not researched,not_researched
+195,DWF,DWF Group Limited,London,,Not researched,not_researched
+196,Nomura,Nomura International Plc,London,,Not researched,not_researched
+197,TJX Europe,TJX UK,Watford,,Not researched,not_researched
+198,Reckitt,Reckitt Benckiser Group Plc,Slough,,Not researched,not_researched
+199,Schlumberger,Schlumberger Cambridge Research Limited,Cambridge,,Not researched,not_researched
+200,Howden Joinery,HOWDEN JOINERY LIMITED,LONDON,,Not researched,not_researched
+201,BAM Construct,BAM Construct & Ventures UK Ltd,Hemel Hempstead,,Not researched,not_researched
+202,Lenovo,Lenovo Technology (United Kingdom) Limited,Farnborough,,Not researched,not_researched
+203,Medtronic,Medtronic Limited,Watford,,Not researched,not_researched
+204,McLaren,McLaren Construction Ltd,London,,Not researched,not_researched
+205,LVMH,LVMH FG Services UK Ltd,London,,Not researched,not_researched
+206,Turner & Townsend,Turner & Townsend Ltd,Leeds,,Not researched,not_researched
+207,Coats Group,COATS LIMITED,London,,Not researched,not_researched
+208,Johnson Matthey,Johnson Matthey Plc,London,,Not researched,not_researched
+209,Financial Conduct Authority,Financial Conduct Authority,London,,Not researched,not_researched
+210,MBDA,MBDA UK Limited,Stevenage,,Not researched,not_researched
+211,CNH Industrial,CNH INDUSTRIAL N.V.,Basildon,,Not researched,not_researched
+212,Haleon,HALEON UK SERVICES LIMITED,Weybridge,,Not researched,not_researched
+213,Imperial Brands,Imperial Tobacco Ltd,Bristol,,Not researched,not_researched
+214,JD Sports Fashion,J D Sports Fashion PLC,Bury,,Not researched,not_researched
+215,Mondi,Mondi PLC,Weybridge,,Not researched,not_researched
+216,Sanofi,aventis pharma Ltd  t/a Sanofi,Reading,,Not researched,not_researched
+217,Mondelez International,Mondelez UK Limited,Middlesex,,Not researched,not_researched
+218,Buro Happold,Buro Happold Engineers Limited,Bath,,Not researched,not_researched
+219,Goodwin,GOODWIN PLC,STOKE-ON-TRENT,,Not researched,not_researched
+220,DHL,"Deutsche Post Global Mail (UK) Ltd, t/a DHL Cross-Border Solutions UK",Staines-upon-Thames,,Not researched,not_researched
+221,Mars,Mars Food UK Limited,Melton Mowbray,,Not researched,not_researched
+222,Nationwide Building Society,Nationwide Building Society,Swindon,,Not researched,not_researched
+223,Freshfields,Freshfields Service Company,London,,Not researched,not_researched
+224,Ministry of Defence,Ministry of Defence; Defence Business Services,Bristol,,Not researched,not_researched
+225,Expedia Group,Expedia.com Ltd,London,,Not researched,not_researched
+226,Cummins,Cummins Ltd,Darlington,,Not researched,not_researched
+227,Jane Street,Jane Street Europe Limited,London,,Not researched,not_researched
+228,Agilent Technologies,AGILENT TECHNOLOGIES LDA UK LIMITED,Cheshire,,Not researched,not_researched
+229,The Weir Group,WEIR GROUP PLC,GLASGOW,,Not researched,not_researched
+230,Severn Trent,Severn Trent,Coventry,,Not researched,not_researched
+231,Hewlett Packard Enterprise,Hewlett Packard Limited,Winnersh Triangle,,Not researched,not_researched
+232,Lonza,Lonza Biologics Plc,Slough,,Not researched,not_researched
+233,British American Tobacco,British American Tobacco Plc,London,,Not researched,not_researched
+234,Cognizant,Cognizant Worldwide Limited,London,,Not researched,not_researched
+235,National Audit Office,National Audit Office,London,,Not researched,not_researched
+236,Informa,Informa UK Limited,London,,Not researched,not_researched
+237,Ocado,Ocado Central Services Limited,Hatfield,,Not researched,not_researched
+238,Pearson,Pearson plc,London,,Not researched,not_researched
+239,Smith & Nephew,Smith & Nephew Plc,Watford,,Not researched,not_researched
+240,Whitbread,Whitbread Group Plc,Dunstable,,Not researched,not_researched
+241,Ipsos,Ipsos Mori UK Limited,London,,Not researched,not_researched
+242,National Nuclear Laboratory,United Kingdom National Nuclear Laboratory,Warrington,,Not researched,not_researched
+243,Blackstone,Blackstone Europe LLP,London,,Not researched,not_researched
+244,FirstGroup,First Bus Central Services Limited,London,,Not researched,not_researched
+245,Jet2,Jet2.com,Leeds,,Not researched,not_researched
+246,Mobico Group,Mobico Group PLC,Birmingham,,Not researched,not_researched
+247,SSP Group,Select Service Partner UK Ltd,London,,Not researched,not_researched
+248,Spire Healthcare,Spire Healthcare Ltd,London,,Not researched,not_researched
+249,Irwin Mitchell,Irwin Mitchell LLP,Sheffield,,Not researched,not_researched
+250,Macfarlanes,Macfarlanes LLP,London,,Not researched,not_researched
+251,Newton Europe,Aaron & Newton Co Ltd,London,,Not researched,not_researched
+252,Enterprise Mobility,Enterprise Rent-A-Car UK Limited,Egham,,Not researched,not_researched
+253,Womble Bond Dickinson,Womble Bond Dickinson (UK) LLP,London,,Not researched,not_researched
+254,Farrer & Co,Farrer & Co LLP,London,,Not researched,not_researched
+255,Lloyd's Register,Lloyd's Register Group Limited,London,,Not researched,not_researched
+256,Travers Smith,Travers Smith LLP,London,,Not researched,not_researched
+257,Travis Perkins,Travis Perkins Plc,Northampton,,Not researched,not_researched
+258,Aston Martin,Aston Martin Lagonda Ltd,Gaydon,,Not researched,not_researched
+259,InterContinental Hotels Group,InterContinental Hotels Group PLC,Windsor,,Not researched,not_researched
+260,SSE,SSE Plc,Perth,,Not researched,not_researched
+261,easyJet,EasyJet Airline Company Limited,Luton,,Not researched,not_researched
+262,Honda,HONDA MOTOR EUROPE LTD,Bracknell,,Not researched,not_researched
+263,HM Revenue and Customs,HM Revenue & Customs,London,,Not researched,not_researched
+264,BMW,BMW (UK) Holdings Limited,Farnborough,,Not researched,not_researched
+265,Kainos,Kainos Software Ltd,Belfast,,Not researched,not_researched
+266,Frasers Group,Frasers Group Plc,Shirebrook,,Not researched,not_researched
+267,Phaidon International,Phaidon Press Limited,London,,Not researched,not_researched
+268,ITV,ITV plc,London,,Not researched,not_researched
+269,IRIS Software Group,iRiS Software Systems Ltd,London,,Not researched,not_researched
+270,Burges Salmon,Burges Salmon LLP,Bristol,,Not researched,not_researched
+271,Abbott,Abbott Diabetes Care UK Limited,Witney,,Not researched,not_researched
+272,Volex,Volex,Basingstoke,,Not researched,not_researched
+273,Browne Jacobson,Browne Jacobson LLP,Nottingham,,Not researched,not_researched
+274,Blake Morgan,Blake Morgan LLP,Southampton,,Not researched,not_researched
+275,Kyndryl,Kyndryl UK Limited,London,,Not researched,not_researched
+276,Ashfords,Ashfords Partnership LLP,Illford,,Not researched,not_researched
+277,Jagex,Jagex Limited,Cambridge,,Not researched,not_researched
+278,Brodies,Brodies,Edinburgh,,Not researched,not_researched
+279,Explore Learning,Explore Learning,Fareham,,Not researched,not_researched
+280,Arm,Arm Limited,Cambridge,,Not researched,not_researched
+281,Cranswick,Cranswick PLC,Hessle,,Not researched,not_researched
+282,Dunelm,Dunelm Group PLC,Leicester,,Not researched,not_researched
+283,EPIC Private Equity,EPIC Private Equity LLP,London,,Not researched,not_researched
+284,Lion Finance Group,Lion Finance Group PLC,London,,Not researched,not_researched
+285,Pets at Home,Pets at Home Ltd,Handforth,,Not researched,not_researched
+286,Polen Capital UK,Polen Capital UK LLP,London,,Not researched,not_researched
+287,WH Smith,WH Smith Travel Limited,Swindon,,Not researched,not_researched
+288,Ashurst,Ashurst LLP,London,,Not researched,not_researched
+289,"BDT & MSD Partners International,","BDT & MSD Partners International, LLP",London,,Not researched,not_researched
+290,Bryan Cave Leighton Paisner,Bryan Cave Leighton Paisner LLP,London,,Not researched,not_researched
+291,CHARLES RUSSELL SPEECHLYS,CHARLES RUSSELL SPEECHLYS LLP,LONDON,,Not researched,not_researched
+292,CMS Cameron Mckenna Nabarro Olswang,CMS Cameron Mckenna Nabarro Olswang LLP,London,,Not researched,not_researched
+293,"CUATRECASAS,","CUATRECASAS, LLP",London,,Not researched,not_researched
+294,Cleary Gottlieb Steen & Hamilton,Cleary Gottlieb Steen & Hamilton LLP,London,,Not researched,not_researched
+295,Garrigues UK,Garrigues UK LLP,London,,Not researched,not_researched
+296,Gleeds,Gleeds LLP,London,,Not researched,not_researched
+297,Mayer Brown International,Mayer Brown International LLP,London,,Not researched,not_researched
+298,Norton Rose Fulbright,Norton Rose Fulbright LLP,London,,Not researched,not_researched
+299,PKF Littlejohn,PKF Littlejohn LLP,London,,Not researched,not_researched
+300,Reynolds Porter Chamberlain,Reynolds Porter Chamberlain LLP,London,,Not researched,not_researched
+301,Simmons & Simmons,Simmons & Simmons LLP,London,,Not researched,not_researched
+302,Stikeman Elliott,Stikeman Elliott LLP,London,,Not researched,not_researched
+303,Sullivan & Cromwell,Sullivan & Cromwell LLP,London,,Not researched,not_researched
+304,Withers,Withers LLP,London,,Not researched,not_researched
+305,Amadeus,Amadeus IT Services UK Limited,Hounslow,,Not researched,not_researched
+306,Wellcome,The Wellcome Trust Limited (as Trustee of the Wellcome Trust),London,,Not researched,not_researched
+307,Unisys,Unisys Limited,MILTON KEYNES,,Not researched,not_researched
+308,3i,3i plc,London,,Not researched,not_researched
+309,ABN AMRO,"ABN AMRO Bank N.V., UK Branch",London,,Not researched,not_researched
+310,AVASO Technology Solutions,AVASO Technology Solutions Ltd,London,,Not researched,not_researched
+311,Allianz Global Investors,Allianz Global Investors UK Limited,London,,Not researched,not_researched
+312,Bank of China (UK),Bank of China (UK) Limited,London,,Not researched,not_researched
+313,Banking Circle,Banking Circle,London,,Not researched,not_researched
+314,British International Investment,British International Investment plc,London,,Not researched,not_researched
+315,Capital International,Capital International Limited,London,,Not researched,not_researched
+316,Cerillion Technologies,Cerillion Technologies Limited,London,,Not researched,not_researched
+317,Chatham Financial Europe,Chatham Financial Europe Ltd,London,,Not researched,not_researched
+318,CoinShares Capital Markets (UK),CoinShares Capital Markets (UK) Limited,London,,Not researched,not_researched
+319,Commerzbank AG,Commerzbank AG,London,,Not researched,not_researched
+320,Credit Data Research,Credit Data Research Ltd,London,,Not researched,not_researched
+321,Deutsche Pfandbriefbank AG London Branch,Deutsche Pfandbriefbank AG London Branch,London,,Not researched,not_researched
+322,EEH VENTURES,EEH VENTURES LIMITED,LONDON,,Not researched,not_researched
+323,FUNDING CIRCLE,FUNDING CIRCLE LTD,LONDON,,Not researched,not_researched
+324,FirstRand Bank Ltd (London Branch),FirstRand Bank Ltd (London Branch),London,,Not researched,not_researched
+325,FitzWalter Capital,FitzWalter Capital Limited,London,,Not researched,not_researched
+326,HISCOX UNDERWRITING GROUP SERVICES,HISCOX UNDERWRITING GROUP SERVICES LIMITED,London,,Not researched,not_researched
+327,Hay Technology,Hay Technology Limited,London,,Not researched,not_researched
+328,IMD Technologies,IMD Technologies Ltd,London,,Not researched,not_researched
+329,Investec Bank,Investec Bank PLC,London,,Not researched,not_researched
+330,Japan Bank for International Cooperation,Japan Bank for International Cooperation,London,,Not researched,not_researched
+331,Liberty Specialty Markets,Liberty Specialty Markets Ltd,London,,Not researched,not_researched
+332,"MUFG Bank,","MUFG Bank, Ltd.",London,,Not researched,not_researched
+333,Manulife Investment Management (Europe),Manulife Investment Management (Europe) Ltd,London,,Not researched,not_researched
+334,Marshall Wace Asset Management,Marshall Wace Asset Management Limited,London,,Not researched,not_researched
+335,Mews Systems,Mews Systems Limited,London,,Not researched,not_researched
+336,Moody's Analytics UK,Moody's Analytics UK Ltd,London,,Not researched,not_researched
+337,Nedbank,Nedbank Ltd,London,,Not researched,not_researched
+338,Pictet Asset Management,Pictet Asset Management Ltd,London,,Not researched,not_researched
+339,SIX Financial Information UK,SIX Financial Information UK Ltd,London,,Not researched,not_researched
+340,Say Digital,Say Digital Limited,London,,Not researched,not_researched
+341,Schroder Investment Management,Schroder Investment Management Limited,London,,Not researched,not_researched
+342,State Street Bank and Trust Company,State Street Bank and Trust Company,London,,Not researched,not_researched
+343,Sumitomo Mitsui Trust Bank,Sumitomo Mitsui Trust Bank Limited,London,,Not researched,not_researched
+344,Sutherland Digital UK Private,Sutherland Digital UK Private Limited,London,,Not researched,not_researched
+345,The Bank of Nova Scotia,The Bank of Nova Scotia,London,,Not researched,not_researched
+346,The Toronto Dominion Bank,The Toronto Dominion Bank,London,,Not researched,not_researched
+347,Tikehau Capital Europe,Tikehau Capital Europe Limited,London,,Not researched,not_researched
+348,Tokio Marine Kiln Insurance Services,Tokio Marine Kiln Insurance Services Ltd,London,,Not researched,not_researched
+349,Unicredit Bank GMBH London Branch,Unicredit Bank GMBH London Branch,London,,Not researched,not_researched
+350,"Willis Limited, trading as Willis Towers Watson","Willis Limited, trading as Willis Towers Watson plc",London,,Not researched,not_researched
+351,Zensar Technologies (UK),Zensar Technologies (UK) Ltd,London,,Not researched,not_researched
+352,Met Office,Met Office,Exeter,,Not researched,not_researched
+353,Dentons UK and Middle East Legal Services,Dentons UK and Middle East Legal Services,London,,Not researched,not_researched
+354,InspireXT Consulting,InspireXT Consulting Ltd,London,,Not researched,not_researched
+355,N Consulting,N Consulting Ltd,London,,Not researched,not_researched
+356,Pinsent Masons,Pinsent Masons LLP,Birmingham,,Not researched,not_researched
+357,Aberdeen Group,Aberdeen Group Plc,Edinburgh,,Not researched,not_researched
+358,Aumovio Trading UK,Aumovio Trading UK Ltd,Birmingham,,Not researched,not_researched
+359,Baker Hughes Energy Technology UK,Baker Hughes Energy Technology UK Limited,Bristol,,Not researched,not_researched
+360,Ferrovial Construction UK,Ferrovial Construction UK Ltd,London,,Not researched,not_researched
+361,Halliburton Manufacturing and Services,Halliburton Manufacturing and Services Ltd,London,,Not researched,not_researched
+362,Imperial Chemical Industries Limited (Trading as ICI Paints AkzoNobel),Imperial Chemical Industries Limited (Trading as ICI Paints AkzoNobel),Slough,,Not researched,not_researched
+363,Knorr-Bremse Systems for Commercial Vehicles,Knorr-Bremse Systems for Commercial Vehicles Ltd,Bristol,,Not researched,not_researched
+364,Sojitz Aerospace Corporation,Sojitz Aerospace Corporation,London,,Not researched,not_researched
+365,Chevron Energy,Chevron Energy Limited,London,,Not researched,not_researched
+366,Meltwater (UK),Meltwater (UK) Limited,London,,Not researched,not_researched
+367,Mirai Power Europe,Mirai Power Europe Limited,London,,Not researched,not_researched
+368,Navigator Gas,Navigator Gas,London,,Not researched,not_researched
+369,Orsted Power (UK),Orsted Power (UK) Limited,London,,Not researched,not_researched
+370,SEAB Power,SEAB Power Ltd,London,,Not researched,not_researched
+371,Third Bridge,Third Bridge Group Limited,London,,Not researched,not_researched
+372,Tullow Oil,Tullow Oil Plc,London,,Not researched,not_researched
+373,Vattenfall Wind Power,Vattenfall Wind Power Ltd,London,,Not researched,not_researched
+374,Thales,Thales UK Limited,Reading,,Not researched,not_researched
+375,3T Additive Manufacturing,3T Additive Manufacturing Ltd,Newbury,,Not researched,not_researched
+376,BCEGI Construction (UK),BCEGI Construction (UK) Ltd,Manchester,,Not researched,not_researched
+377,Bilfinger,Bilfinger Piping Technologies UK Ltd,Bristol,,Not researched,not_researched
+378,GKN Aerospace Services,GKN Aerospace Services Limited,Birmingham,,Not researched,not_researched
+379,GKN Aerospace Services - Filton,GKN Aerospace Services - Filton,Bristol,,Not researched,not_researched
+380,Goldbeck Construction,Goldbeck Construction Ltd,Birmingham,,Not researched,not_researched
+381,Herbert Engineering Europe (UK),Herbert Engineering Europe (UK) Ltd.,Glasgow,,Not researched,not_researched
+382,Tony Gee and Partners,Tony Gee and Partners LLP,Esher,,Not researched,not_researched
+383,Go-Ahead Group,The Go Ahead Group Limited,London,,Not researched,not_researched
+384,AASEYA SOFTWARE SERVICES (UK),AASEYA SOFTWARE SERVICES (UK)  LTD,Steyning,,Not researched,not_researched
+385,AB InBev,AB InBev UK Ltd,London,,Not researched,not_researched
+386,Adonis Smart Foods,Adonis Smart Foods Ltd,LONDON,,Not researched,not_researched
+387,Ansimicro Software UK,Ansimicro Software UK Limited,Gloucester,,Not researched,not_researched
+388,Bibby Financial Services,Bibby Financial Services Limited,Adderbury,,Not researched,not_researched
+389,"Centre for Finance, Technology and Entrepreneurship","Centre for Finance, Technology and Entrepreneurship Ltd","London,",,Not researched,not_researched
+390,Cerelia UK Ltd (Trading as BakeAway),Cerelia UK Ltd (Trading as BakeAway),Corby,,Not researched,not_researched
+391,EthosEnergy GBR,EthosEnergy GBR Ltd,Aberdeen,,Not researched,not_researched
+392,FMC Technologies,FMC Technologies Ltd,Dunfermline,,Not researched,not_researched
+393,Folio3 Software UK,Folio3 Software UK,Woking,,Not researched,not_researched
+394,Global Fashion Group UK Services,Global Fashion Group UK Services Limited,London,,Not researched,not_researched
+395,HITACHI ENERGY UK,HITACHI ENERGY UK LIMITED,Birmingham,,Not researched,not_researched
+396,KBC Process Technology,KBC Process Technology Ltd,Walton on Thames,,Not researched,not_researched
+397,Mitsubishi HC Capital UK,Mitsubishi HC Capital UK PLC,Staines upon Thames,,Not researched,not_researched
+398,National Oilwell Varco UK,National Oilwell Varco UK Limited,Aberdeen,,Not researched,not_researched
+399,Nihon Cyber Defence,Nihon Cyber Defence Ltd,Belfast,,Not researched,not_researched
+400,Nova Systems (International )Ltd,Nova Systems (International )Ltd,Bournemouth,,Not researched,not_researched
+401,Oxford Instruments Nanotechnology Tools,Oxford Instruments Nanotechnology Tools Limited,Abingdon,,Not researched,not_researched
+402,Prepay Technologies trading as PPS,Prepay Technologies trading as PPS,Swindon,,Not researched,not_researched
+403,Prysmian Cables & Systems,Prysmian Cables & Systems Limited,Eastleigh,,Not researched,not_researched
+404,RWE Supply & Trading GmbH,RWE Supply & Trading GmbH,Swindon,,Not researched,not_researched
+405,Rave Technologies (UK),Rave Technologies (UK) Limited,Hemel Hempstead,,Not researched,not_researched
+406,Southampton Container Terminals Limited trading as DP World Southampton,Southampton Container Terminals Limited trading as DP World Southampton,Southampton,,Not researched,not_researched
+407,Sumitomo Electric Wiring Systems (Europe),Sumitomo Electric Wiring Systems (Europe) Ltd,Newcastle under Lyme,,Not researched,not_researched
+408,Vestas Technology UK,Vestas Technology UK Limited,Newport,,Not researched,not_researched
+409,Xcelentra Financial Services,Xcelentra Financial Services Ltd,Milton Keynes,,Not researched,not_researched
+410,Global Banking School,Global Banking School Limited,London,,Not researched,not_researched
+411,"AKA, Chartered Accountants","AKA, Chartered Accountants",BIRMINGHAM,,Not researched,not_researched
+412,BBH Partners,BBH Partners LLP,London,,Not researched,not_researched
+413,BNY,Bank of New York Mellon,London,,Not researched,not_researched
+414,Colliers International Property Consultants,Colliers International Property Consultants Limited,London,,Not researched,not_researched
+415,Fragomen,Fragomen LLP,London,,Not researched,not_researched
+416,Lewis Silkin,Lewis Silkin LLP,London,,Not researched,not_researched
+417,Vorys UK,Vorys UK LLP,London,,Not researched,not_researched
+418,Forsters,Forsters LLP,LONDON,,Not researched,not_researched
+419,AFTON CHEMICAL,AFTON CHEMICAL LIMITED,BRACKNELL,,Not researched,not_researched
+420,Arla Foods,Arla Foods Limited,Leeds,,Not researched,not_researched
+421,Bristol-Myers Squibb Pharmaceuticals,Bristol-Myers Squibb Pharmaceuticals Limited,Denham,,Not researched,not_researched
+422,DENSO Automotive UK,DENSO Automotive UK Ltd,COVENTRY,,Not researched,not_researched
+423,FremantleMedia Group,FremantleMedia Group Limited,london,,Not researched,not_researched
+424,GKN Aerospace Service - Cowes,GKN Aerospace Service - Cowes,Cowes,,Not researched,not_researched
+425,H&E Engineering,H&E Engineering Limited,Bridgwater,,Not researched,not_researched
+426,H&MV Engineering Services,H&MV Engineering Services Ltd,Altrincham,,Not researched,not_researched
+427,Hitachi Construction Machinery (UK),Hitachi Construction Machinery (UK) Limited,Hebburn,,Not researched,not_researched
+428,ITW Construction Products - Division of ITW,ITW Construction Products - Division of ITW Limited,Glenrothes,,Not researched,not_researched
+429,Immediate Media Company,Immediate Media Company Limited,London,,Not researched,not_researched
+430,Industrial Design Consultancy,Industrial Design Consultancy Ltd,Datchet,,Not researched,not_researched
+431,JTEKT Automotive England,JTEKT Automotive England Ltd,Barnsley,,Not researched,not_researched
+432,KLM UK Engineering,KLM UK Engineering Limited,Norwich,,Not researched,not_researched
+433,KOREA VENTURE INVESTMENT CORPORATION EUROPE OFFICE,KOREA VENTURE INVESTMENT CORPORATION EUROPE OFFICE,London,,Not researched,not_researched
+434,Merck Life Science UK,Merck Life Science UK Limited,Gillingham,,Not researched,not_researched
+435,Mustang Engineering,Mustang Engineering Limited,Woking,,Not researched,not_researched
+436,Nippon Steel Trading Austria GmbH London Office,Nippon Steel Trading Austria GmbH London Office,London,,Not researched,not_researched
+437,Oneio Cloud UK,Oneio Cloud UK Limited,London,,Not researched,not_researched
+438,Parker Hannifin Manufacturing,Parker Hannifin Manufacturing Limited,Hemel Hempstead,,Not researched,not_researched
+439,Prepaid Financial Services,Prepaid Financial Services Limited,London,,Not researched,not_researched
+440,Sent Entertainment,Sent Entertainment Limited,London,,Not researched,not_researched
+441,Severfield Commercial & Industrial,Severfield Commercial & Industrial Limited,Thirsk,,Not researched,not_researched
+442,Sony Music,Sony Music Entertainment UK Limited,London,,Not researched,not_researched
+443,Sun Chemical,Sun Chemical Ltd,South Normanton,,Not researched,not_researched
+444,Wheely Technologies,Wheely Technologies Ltd,London,,Not researched,not_researched
+445,AQR Capital Management (Europe),AQR Capital Management (Europe) LLP,London,,Not researched,not_researched
+446,Aermont Capital,Aermont Capital LLP,London,,Not researched,not_researched
+447,Air Products,Air Products Plc,Guildford Road,,Not researched,not_researched
+448,AlbaCore Capital,AlbaCore Capital LLP,London,,Not researched,not_researched
+449,Alphadyne Asset Management (UK),Alphadyne Asset Management (UK) LLP,London,,Not researched,not_researched
+450,America's Growth Capital Europe,America's Growth Capital Europe LLP,London,,Not researched,not_researched
+451,Anchorage Capital Advisors Europe,Anchorage Capital Advisors Europe LLP,London,,Not researched,not_researched
+452,Anchorage Capital Europe,Anchorage Capital Europe LLP,London,,Not researched,not_researched
+453,Andurand Capital Management,Andurand Capital Management LLP,London,,Not researched,not_researched
+454,Appian Capital Advisory,Appian Capital Advisory LLP,London,,Not researched,not_researched
+455,Aquatic Capital UK,Aquatic Capital UK LLP,London,,Not researched,not_researched
+456,Asante Capital Group,Asante Capital Group LLP,London,,Not researched,not_researched
+457,Balyasny Asset Management (UK),Balyasny Asset Management (UK) LLP,London,,Not researched,not_researched
+458,BlueCrest Capital Management,BlueCrest Capital Management LLP,London,,Not researched,not_researched
+459,Boerboel Trading,Boerboel Trading LLP,London,,Not researched,not_researched
+460,Braavos Investment Advisers,Braavos Investment Advisers LLP,London,,Not researched,not_researched
+461,Bregal Investments,Bregal Investments LLP,London,,Not researched,not_researched
+462,Brigade Capital UK,Brigade Capital UK LLP,London,,Not researched,not_researched
+463,Capital Markets Trading UK,Capital Markets Trading UK LLP,London,,Not researched,not_researched
+464,Capstone Investment Advisors  (UK),Capstone Investment Advisors  (UK) LLP,London,,Not researched,not_researched
+465,Cerberus European Capital Advisors,Cerberus European Capital Advisors LLP,London,,Not researched,not_researched
+466,Chikara Investments,Chikara Investments LLP,London,,Not researched,not_researched
+467,Cloud Capital,Cloud Capital LLP,London,,Not researched,not_researched
+468,Crescent Credit Europe,Crescent Credit Europe LLP,London,,Not researched,not_researched
+469,Essar Oil (UK) Ltd t/a EET Fuels,Essar Oil (UK) Ltd t/a EET Fuels,Ellesmere Port,,Not researched,not_researched
+470,FAIR CONSULTING GROUP UK,FAIR CONSULTING GROUP UK LIMITED,London,,Not researched,not_researched
+471,RWE Renewables Management UK,RWE Renewables Management UK Limited,Wiltshire,,Not researched,not_researched
+472,TotalEnergies Gas and Power,TotalEnergies Gas and Power Limited,Tadworth,,Not researched,not_researched
+473,E.ON,E.ON UK plc,Nottingham,,Not researched,not_researched
+474,Cloud Imperium Games,Cloud Imperium Games Limited,Manchester,,Not researched,not_researched
+475,Faaborg Pharma UK,Faaborg Pharma UK Limited,LONDON,,Not researched,not_researched
+476,INDUSTRIAL LIGHT & MAGIC UK,INDUSTRIAL LIGHT & MAGIC UK LIMITED,LONDON,,Not researched,not_researched
+477,Jacobs,Jacobs UK Ltd,Wokingham,,Not researched,not_researched
+478,17 Capital Services,17 Capital Services Ltd,London,,Not researched,not_researched
+479,26 DEGREES GLOBAL MARKETS (UK)LIMITED,26 DEGREES GLOBAL MARKETS (UK)LIMITED,London,,Not researched,not_researched
+480,360 Trading Networks UK,360 Trading Networks UK Limited,London,,Not researched,not_researched
+481,3dMD Technologies,3dMD Technologies Limited,London,,Not researched,not_researched
+482,65 Equity Partners Management (UK),65 Equity Partners Management (UK) Limited,London,,Not researched,not_researched
+483,A.P.T. Capital,A.P.T. Capital,London,,Not researched,not_researched
+484,ABC International Bank,ABC International Bank Plc,London,,Not researched,not_researched
+485,AIDEM TECHNOLOGIES,AIDEM TECHNOLOGIES LTD,London,,Not researched,not_researched
+486,AIMPOINT DIGITAL UK,AIMPOINT DIGITAL UK LIMITED,London,,Not researched,not_researched
+487,ALIBABA CLOUD (EUROPE),ALIBABA CLOUD (EUROPE) LIMITED,London,,Not researched,not_researched
+488,ARAMCO VENTURES,ARAMCO VENTURES LIMITED,London,,Not researched,not_researched
+489,ARGA Investment Management UK,ARGA Investment Management UK Limited,London,,Not researched,not_researched
+490,AXA Investment Managers,AXA Investment Managers Ltd,London,,Not researched,not_researched
+491,Abacus Information Technology UK,Abacus Information Technology UK Limited,London,,Not researched,not_researched
+492,Absa Securities United Kingdom,Absa Securities United Kingdom Limited,London,,Not researched,not_researched
+493,Acadian Asset Management (UK),Acadian Asset Management (UK) Limited,London,,Not researched,not_researched
+494,Accentra Technologies,Accentra Technologies Ltd,London,,Not researched,not_researched
+495,Access Capital Partners (UK),Access Capital Partners (UK) Ltd.,London,,Not researched,not_researched
+496,Access Fintech (UK),Access Fintech (UK) Limited,London,,Not researched,not_researched
+497,Acuvate Software,Acuvate Software Ltd,London,,Not researched,not_researched
+498,Ada Digital Health,Ada Digital Health Ltd,London,,Not researched,not_researched
+499,Adaptive Financial Consulting,Adaptive Financial Consulting Ltd,London,,Not researched,not_researched
+500,Advanced Markets (UK),Advanced Markets (UK) Limited,London,,Not researched,not_researched
+501,Affinius Capital UK,Affinius Capital UK Ltd,London,,Not researched,not_researched
+502,Afiniti Europe Technologies,Afiniti Europe Technologies Limited,London,,Not researched,not_researched
+503,Agreena Technology,Agreena Technology Limited,London,,Not researched,not_researched
+504,Agricultural Bank of China Limited London Branch,Agricultural Bank of China Limited London Branch,London,,Not researched,not_researched
+505,Aioi Nissay Dowa Insurance Management,Aioi Nissay Dowa Insurance Management Limited,London,,Not researched,not_researched
+506,Akamai Technologies,Akamai Technologies Limited,London,,Not researched,not_researched
+507,Alantra Corporate Portfolio Advisors International,Alantra Corporate Portfolio Advisors International Limited,London,,Not researched,not_researched
+508,Alberta Investment Management Corporation,Alberta Investment Management Corporation,London,,Not researched,not_researched
+509,Alcohol Monitoring Systems,Alcohol Monitoring Systems Limited,London,,Not researched,not_researched
+510,Algorithms Software UK,Algorithms Software UK Ltd,London,,Not researched,not_researched
+511,Allfunds Bank,Allfunds Bank,London,,Not researched,not_researched
+512,Allied World Assurance Company (Europe),Allied World Assurance Company (Europe) Limited,London,,Not researched,not_researched
+513,Allvue Systems,Allvue Systems Limited,London,,Not researched,not_researched
+514,Alpha Bank London,Alpha Bank London Ltd,London,,Not researched,not_researched
+515,AlphaSense Technology,AlphaSense Technology Limited,London,,Not researched,not_researched
+516,Alpharithm Technologies,Alpharithm Technologies Limited,London,,Not researched,not_researched
+517,Altana Technologies UK,Altana Technologies UK Ltd,London,,Not researched,not_researched
+518,Altum Capital Management (UK),Altum Capital Management (UK) Ltd,London,,Not researched,not_researched
+519,Alula Technologies,Alula Technologies Ltd,London,,Not researched,not_researched
+520,Amber Capital UK Holdings,Amber Capital UK Holdings Ltd,London,,Not researched,not_researched
+521,American Century Investment Management (UK),American Century Investment Management (UK) Limited,London,,Not researched,not_researched
+522,Amova Asset Management UK,Amova Asset Management UK Limited,London,,Not researched,not_researched
+523,Anglo Caribbean Insurance Agents,Anglo Caribbean Insurance Agents Limited,London,,Not researched,not_researched
+524,Apollo,Apollo Enterprise Strategies UK Ltd,London,,Not researched,not_researched
+525,Aptitude Software Group,Aptitude Software Group plc,London,,Not researched,not_researched
+526,Aqua Security Software UK,Aqua Security Software UK LTD,London,,Not researched,not_researched
+527,Aquiline Capital Partners,Aquiline Capital Partners Limited,London,,Not researched,not_researched
+528,Arab National Bank,Arab National Bank,London,,Not researched,not_researched
+529,Arabesque Asset Management,Arabesque Asset Management Ltd,London,,Not researched,not_researched
+530,Aramco Trading,Aramco Trading Limited,London,,Not researched,not_researched
+531,Arch Insurance (UK),Arch Insurance (UK) Limited,London,,Not researched,not_researched
+532,Archer Hotel Capital B.V.,Archer Hotel Capital B.V.,London,,Not researched,not_researched
+533,Ares,Ares Management Limited,London,,Not researched,not_researched
+534,Areteans Technology Solutions UK,Areteans Technology Solutions UK Limited,London,,Not researched,not_researched
+535,Argus Software (UK),Argus Software (UK) Ltd,London,,Not researched,not_researched
+536,Aria Systems UK,Aria Systems UK Limited,London,,Not researched,not_researched
+537,Arkas Investments,Arkas Investments Limited,London,,Not researched,not_researched
+538,Asana Software UK,Asana Software UK Limited,London,,Not researched,not_researched
+539,Ascot Underwriting Holdings,Ascot Underwriting Holdings Limited,London,,Not researched,not_researched
+540,Asia Investments UK Private,Asia Investments UK Private Limited,London,,Not researched,not_researched
+541,Aspect Capital,Aspect Capital Limited,London,,Not researched,not_researched
+542,Aspen Insurance UK,Aspen Insurance UK Limited,London,,Not researched,not_researched
+543,Aspire Systems (India) Private,Aspire Systems (India) Private Limited,London,,Not researched,not_researched
+544,Aspire Systems UK,Aspire Systems UK Ltd,London,,Not researched,not_researched
+545,Assemble Technologies UK Ltd (t/a Atticus),Assemble Technologies UK Ltd (t/a Atticus),London,,Not researched,not_researched
+546,Asset Management One International,Asset Management One International Ltd,London,,Not researched,not_researched
+547,Atlas Merchant Capital Holdings UK,Atlas Merchant Capital Holdings UK Limited,London,,Not researched,not_researched
+548,Atlas Technology Solutions UK,Atlas Technology Solutions UK Limited,London,,Not researched,not_researched
+549,Aurora Future Technologies,Aurora Future Technologies Limited,London,,Not researched,not_researched
+550,Aurous Technology,Aurous Technology Limited,London,,Not researched,not_researched
+551,Australia & New Zealand Banking Group,Australia & New Zealand Banking Group Ltd,London,,Not researched,not_researched
+552,Avior Capital Markets International,Avior Capital Markets International Limited,London,,Not researched,not_researched
+553,BB Securities,BB Securities Ltd,London,,Not researched,not_researched
+554,BBD Software,BBD Software Limited,London,,Not researched,not_researched
+555,BCDH Capital Holding (UK),BCDH Capital Holding (UK) Limited,London,,Not researched,not_researched
+556,BDRC Continental Limited trading as BVA BDRC,BDRC Continental Limited trading as BVA BDRC,London,,Not researched,not_researched
+557,BOS Wealth Management Europe S.A.,BOS Wealth Management Europe S.A.,London,,Not researched,not_researched
+558,BRIDGE REAL ESTATE INVESTMENTS GROUP,BRIDGE REAL ESTATE INVESTMENTS GROUP LTD,London,,Not researched,not_researched
+559,BUX Financial Services,BUX Financial Services Limited,London,,Not researched,not_researched
+560,Bain Capital,Bain Capital,London,,Not researched,not_researched
+561,Balbec Capital,Balbec Capital Limited,London,,Not researched,not_researched
+562,Bandhan Technologies,Bandhan Technologies Limited,London,,Not researched,not_researched
+563,Bangkok Bank Public Company,Bangkok Bank Public Company Ltd,London,,Not researched,not_researched
+564,Bank Indonesia,Bank Indonesia,London,,Not researched,not_researched
+565,Bank Mandiri (Europe),Bank Mandiri (Europe) Limited,London,,Not researched,not_researched
+566,Bank Of Montreal,Bank Of Montreal,London,,Not researched,not_researched
+567,Bank Saderat,Bank Saderat Plc,London,,Not researched,not_researched
+568,Bank Sepah International,Bank Sepah International PLC,London,,Not researched,not_researched
+569,Bank of Africa United Kingdom,Bank of Africa United Kingdom PLC,London,,Not researched,not_researched
+570,Bank of Beirut (UK),Bank of Beirut (UK) Ltd,London,,Not researched,not_researched
+571,"Bank of Communications Co., Limited London Branch","Bank of Communications Co., Limited London Branch",London,,Not researched,not_researched
+572,Bank of East Asia,Bank of East Asia Limited,London,,Not researched,not_researched
+573,"Bank of Singapore Limited, UK Branch","Bank of Singapore Limited, UK Branch",London,,Not researched,not_researched
+574,Bank of the Philippine Islands (Europe),Bank of the Philippine Islands (Europe) Plc,London,,Not researched,not_researched
+575,Bentley Systems (UK),Bentley Systems (UK) Ltd,London,,Not researched,not_researched
+576,Berkeley Financial Holdings,Berkeley Financial Holdings Limited,London,,Not researched,not_researched
+577,Billon Financial,Billon Financial Ltd,London,,Not researched,not_researched
+578,BlackFin Capital Partners UK,BlackFin Capital Partners UK Ltd,London,,Not researched,not_researched
+579,Blackbrook Capital (Europe),Blackbrook Capital (Europe) Limited,London,,Not researched,not_researched
+580,Blackline Systems,Blackline Systems Ltd,London,,Not researched,not_researched
+581,Blue Cloud Global UK,Blue Cloud Global UK Limited,London,,Not researched,not_researched
+582,Blue Owl Capital UK,Blue Owl Capital UK Limited,London,,Not researched,not_researched
+583,Brady Technologies,Brady Technologies Limited,London,,Not researched,not_researched
+584,Brain Labs Digital,Brain Labs Digital Ltd,London,,Not researched,not_researched
+585,Brave Software Europe,Brave Software Europe Ltd,London,,Not researched,not_researched
+586,Bridges Fund Management,Bridges Fund Management Limited,London,,Not researched,not_researched
+587,Brightedge Technologies,Brightedge Technologies Limited,London,,Not researched,not_researched
+588,Brighton Park Capital UK,Brighton Park Capital UK Limited,London,,Not researched,not_researched
+589,Brillio Technologies Private,Brillio Technologies Private Limited,London,,Not researched,not_researched
+590,Britannia Financial Group,Britannia Financial Group Limited,London,,Not researched,not_researched
+591,Britannia Global Investments,Britannia Global Investments Limited,London,,Not researched,not_researched
+592,British Arab Commercial Bank,British Arab Commercial Bank Limited,London,,Not researched,not_researched
+593,Broadridge Financial Solutions,Broadridge Financial Solutions Ltd,London,,Not researched,not_researched
+594,Brookfield Global Asset Management,Brookfield Global Asset Management Limited,London,,Not researched,not_researched
+595,Burda Principal Investments,Burda Principal Investments Limited,London,,Not researched,not_researched
+596,CACEIS Bank UK Branch,CACEIS Bank UK Branch,London,,Not researched,not_researched
+597,CARMENTA TECHNOLOGIES,CARMENTA TECHNOLOGIES LTD,London,,Not researched,not_researched
+598,CB Payments,CB Payments Ltd,London,,Not researched,not_researched
+599,CCBI Global Markets (UK),CCBI Global Markets (UK) Limited,London,,Not researched,not_researched
+600,CF Private Equity U.K.,CF Private Equity U.K. Limited,London,,Not researched,not_researched
+601,CIFC Asset Management Europe,CIFC Asset Management Europe Ltd,London,,Not researched,not_researched
+602,CIMB Bank Berhad,CIMB Bank Berhad,London,,Not researched,not_researched
+603,CMC Markets UK,CMC Markets UK Plc,London,,Not researched,not_researched
+604,CNA Insurance Company,CNA Insurance Company Limited,London,,Not researched,not_researched
+605,COLESCO CAPITAL,COLESCO CAPITAL LTD,London,,Not researched,not_researched
+606,CREDIT INDUSTRIEL ET COMMERCIAL,CREDIT INDUSTRIEL ET COMMERCIAL,London,,Not researched,not_researched
+607,CT Group (UK) Trading,CT Group (UK) Trading Limited,London,,Not researched,not_researched
+608,CYBAGE SOFTWARE UK,CYBAGE SOFTWARE UK LIMITED,London,,Not researched,not_researched
+609,CaixaBank SA UK Branch,CaixaBank SA UK Branch,London,,Not researched,not_researched
+610,Canada Pension Plan Investment Board,Canada Pension Plan Investment Board,London,,Not researched,not_researched
+611,Canadian Imperial Bank of Commerce,Canadian Imperial Bank of Commerce,London,,Not researched,not_researched
+612,Cantillon Capital,Cantillon Capital Ltd,London,,Not researched,not_researched
+613,Canuck Capital,Canuck Capital Limited,London,,Not researched,not_researched
+614,Canyon Capital Advisors (Europe),Canyon Capital Advisors (Europe) Ltd,London,,Not researched,not_researched
+615,Capital Com (UK) Limited T/A Capital.Com,Capital Com (UK) Limited T/A Capital.Com,London,,Not researched,not_researched
+616,Capital Dynamics,Capital Dynamics Ltd.,London,,Not researched,not_researched
+617,Capital Economics,Capital Economics Ltd,London,,Not researched,not_researched
+618,Capital Markets Elite Group (UK),Capital Markets Elite Group (UK) Limited,London,,Not researched,not_researched
+619,Capitalise.com Platform,Capitalise.com Platform Limited,London,,Not researched,not_researched
+620,Capricorn Wealth Management,Capricorn Wealth Management Limited,London,,Not researched,not_researched
+621,Capula Investment Services,Capula Investment Services Limited,London,,Not researched,not_researched
+622,Catalonia Trade & Investment London,Catalonia Trade & Investment London Limited,London,,Not researched,not_researched
+623,Caygan Capital,Caygan Capital Ltd,London,,Not researched,not_researched
+624,Cederberg Capital,Cederberg Capital Ltd,London,,Not researched,not_researched
+625,Centiva Capital UK,Centiva Capital UK Ltd,London,,Not researched,not_researched
+626,Centro Asset Management,Centro Asset Management Limited,London,,Not researched,not_researched
+627,Centrus Financial Advisors,Centrus Financial Advisors Limited,London,,Not researched,not_researched
+628,Changhwa Commercial Bank,Changhwa Commercial Bank Ltd,London,,Not researched,not_researched
+629,Chenavari Financial Group,Chenavari Financial Group Ltd,London,,Not researched,not_researched
+630,Chilton Investment Company,Chilton Investment Company Limited,London,,Not researched,not_researched
+631,China CITIC Bank Corporation,China CITIC Bank Corporation Limited,London,,Not researched,not_researched
+632,China Construction Bank Corporation London Branch,China Construction Bank Corporation London Branch,London,,Not researched,not_researched
+633,China Development Bank London Representative Office,China Development Bank London Representative Office,London,,Not researched,not_researched
+634,China International Capital Corporation (UK),China International Capital Corporation (UK) Limited,London,,Not researched,not_researched
+635,"China Merchants Bank Co.,","China Merchants Bank Co., Ltd.",London,,Not researched,not_researched
+636,China Merchants Securities (UK),China Merchants Securities (UK) Limited,London,,Not researched,not_researched
+637,China Re Underwriting Agency,China Re Underwriting Agency Limited,London,,Not researched,not_researched
+638,China Telecom (Europe),China Telecom (Europe) Ltd.,London,,Not researched,not_researched
+639,Cigniti Technologies (UK),Cigniti Technologies (UK) Limited,London,,Not researched,not_researched
+640,Circle UK Trading,Circle UK Trading Ltd,London,,Not researched,not_researched
+641,Clear Sky Capital UK,Clear Sky Capital UK Limited,London,,Not researched,not_researched
+642,ClearBank,ClearBank Limited,London,,Not researched,not_researched
+643,Clearsense Ventures,Clearsense Ventures Limited,London,,Not researched,not_researched
+644,Clivedale Ventures,Clivedale Ventures Limited,London,,Not researched,not_researched
+645,Cloud Lending UK,Cloud Lending UK Ltd,London,,Not researched,not_researched
+646,Cloud SG UK,Cloud SG UK Ltd,London,,Not researched,not_researched
+647,CloudBees UK,CloudBees UK Limited,London,,Not researched,not_researched
+648,CloudHQ UK,CloudHQ UK Limited,London,,Not researched,not_researched
+649,Cloudera (UK),Cloudera (UK) Limited,London,,Not researched,not_researched
+650,Cloudflare,Cloudflare Limited,London,,Not researched,not_researched
+651,Cloudinary UK,Cloudinary UK Limited,London,,Not researched,not_researched
+652,Cloudreach Europe,Cloudreach Europe Limited,London,,Not researched,not_researched
+653,Cognia Cloud Limited t/a Smarsh,Cognia Cloud Limited t/a Smarsh,London,,Not researched,not_researched
+654,Coller Capital,Coller Capital Ltd,London,,Not researched,not_researched
+655,Colt Technology Services Group,Colt Technology Services Group Limited,London,,Not researched,not_researched
+656,Commerce Software UK,Commerce Software UK LTD,London,,Not researched,not_researched
+657,Commonwealth Bank of Australia,Commonwealth Bank of Australia,London,,Not researched,not_researched
+658,CompatibL Technologies,CompatibL Technologies Ltd,London,,Not researched,not_researched
+659,Comviva Technologies,Comviva Technologies Limited,London,,Not researched,not_researched
+660,Conning Asset Management,Conning Asset Management Ltd,London,,Not researched,not_researched
+661,Cooper Square Technologies UK,Cooper Square Technologies UK Ltd,London,,Not researched,not_researched
+662,CoreData Research,CoreData Research Ltd,London,,Not researched,not_researched
+663,Corebridge Institutional Investments (Europe),Corebridge Institutional Investments (Europe) Limited,London,,Not researched,not_researched
+664,Coupa Software UK,Coupa Software UK Ltd,London,,Not researched,not_researched
+665,Covasant Technologies (UK) Private,Covasant Technologies (UK) Private Limited,London,,Not researched,not_researched
+666,Cowbell Cyber,Cowbell Cyber Ltd,London,,Not researched,not_researched
+667,Creative Foods Europe,Creative Foods Europe Limited,Burton-on-Trent,,Not researched,not_researched
+668,Credendo - Trade Credit Insurance,Credendo - Trade Credit Insurance,London,,Not researched,not_researched
+669,Credit Agricole Corporate & Investment Bank London Branch,Credit Agricole Corporate & Investment Bank London Branch,London,,Not researched,not_researched
+670,Credit Agricole S.A. London Branch,Credit Agricole S.A. London Branch,London,,Not researched,not_researched
+671,Credit Karma UK,Credit Karma UK Ltd,London,,Not researched,not_researched
+672,Crossover Markets UK,Crossover Markets UK Limited,London,,Not researched,not_researched
+673,Cubico Sustainable Investments,Cubico Sustainable Investments Limited,London,,Not researched,not_researched
+674,Cyber-Ark Software (UK),Cyber-Ark Software (UK) Limited,London,,Not researched,not_researched
+675,CyberCube Analytics Europe,CyberCube Analytics Europe Limited,London,,Not researched,not_researched
+676,Cytel Statistical Services and Software UK,Cytel Statistical Services and Software UK Limited,London,,Not researched,not_researched
+677,D2 Legal Technology,D2 Legal Technology Ltd,London,,Not researched,not_researched
+678,DATACO INTERNATIONAL UK,DATACO INTERNATIONAL UK LIMITED,London,,Not researched,not_researched
+679,Daiwa Asset Management (Europe),Daiwa Asset Management (Europe) Ltd,London,,Not researched,not_researched
+680,Daiwa Capital Markets Europe,Daiwa Capital Markets Europe Limited,London,,Not researched,not_researched
+681,"Danske Bank A/S, London Branch","Danske Bank A/S, London Branch",London,,Not researched,not_researched
+682,Data Science Central UK,Data Science Central UK Ltd.,London,,Not researched,not_researched
+683,Data Theorem,Data Theorem Limited,London,,Not researched,not_researched
+684,Databricks UK,Databricks UK Limited,London,,Not researched,not_researched
+685,Datadog Ireland,Datadog Ireland Limited,London,,Not researched,not_researched
+686,Dataiku,Dataiku Ltd,London,,Not researched,not_researched
+687,Dataminr UK,Dataminr UK Ltd,London,,Not researched,not_researched
+688,Datasite UK,Datasite UK Ltd.,London,,Not researched,not_researched
+689,Datassential UK,Datassential UK Limited,London,,Not researched,not_researched
+690,ELARA CAPITAL,ELARA CAPITAL PLC,LONDON,,Not researched,not_researched
+691,EUROPE ARAB BANK,EUROPE ARAB BANK PLC,London,,Not researched,not_researched
+692,Gatehouse Bank,Gatehouse Bank plc,London,,Not researched,not_researched
+693,Ghana International Bank,Ghana International Bank PLC,London,,Not researched,not_researched
+694,ICBC Standard Bank,ICBC Standard Bank PLC,London,,Not researched,not_researched
+695,ICICI Bank UK,ICICI Bank UK PLC,London,,Not researched,not_researched
+696,Impax Asset Management Group,Impax Asset Management Group plc,London,,Not researched,not_researched
+697,Institutional Venture Partners UK,Institutional Venture Partners UK LLP,Fitzorvia London,,Not researched,not_researched
+698,JOGMEC(Japan Organization for Metals and Energy Security),JOGMEC(Japan Organization for Metals and Energy Security),London,,Not researched,not_researched
+699,Java Investments Management,Java Investments Management PLC,London,,Not researched,not_researched
+700,Liontrust Asset Management,Liontrust Asset Management PLC,London,,Not researched,not_researched
+701,McCain Foods (GB),McCain Foods (GB) Ltd,Scarborough,,Not researched,not_researched
+702,Mission Foods Europe,Mission Foods Europe,Middlesex,,Not researched,not_researched
+703,Nagashima Ohno & Tsunematsu UK,Nagashima Ohno & Tsunematsu UK Limited,London,,Not researched,not_researched
+704,National Bank of Kuwait International,National Bank of Kuwait International PLC,London,,Not researched,not_researched
+705,ORIFLAME INVESTMENT HOLDING,ORIFLAME INVESTMENT HOLDING PLC,London,,Not researched,not_researched
+706,OakNorth Bank,OakNorth Bank Plc,London,,Not researched,not_researched
+707,Octopus Energy,Octopus Energy Limited,London,,Not researched,not_researched
+708,PHILIPPINE NATIONAL BANK (EUROPE),PHILIPPINE NATIONAL BANK (EUROPE) PLC,London,,Not researched,not_researched
+709,SMBC Bank International,SMBC Bank International plc,London,,Not researched,not_researched
+710,TBC Bank Group,TBC Bank Group PLC,London,,Not researched,not_researched
+711,W.A.G. Payment Solutions,W.A.G. Payment Solutions Plc,London,,Not researched,not_researched
+712,CMA CGM (UK) Shipping,CMA CGM (UK) Shipping Limited,Liverpool,,Not researched,not_researched
+713,Cathay Pacific Airways,Cathay Pacific Airways Ltd,Hammersmith,,Not researched,not_researched
+714,NNR GLOBAL LOGISTICS UK,NNR GLOBAL LOGISTICS UK LIMITED,FELTHAM,,Not researched,not_researched
+715,Rhenus Logistics,Rhenus Logistics Limited,manchester,,Not researched,not_researched
+716,Select Property Group,Select Property Group Limited,Alderley Edge,,Not researched,not_researched
+717,TUI Travel,TUI Travel Limited,Luton,,Not researched,not_researched
+718,The Risk Advisory Group,The Risk Advisory Group Plc,London,,Not researched,not_researched
+719,Vertical Aerospace Group,Vertical Aerospace Group Ltd,Bristol,,Not researched,not_researched
+720,Sellafield,Sellafield Ltd,Seascale,,Not researched,not_researched
+721,AMWINS GLOBAL RISKS GROUP,AMWINS GLOBAL RISKS GROUP LIMITED,London,,Not researched,not_researched
+722,AS London Shoreditch Operations B.V.,AS London Shoreditch Operations B.V.,London,,Not researched,not_researched
+723,Acrisure International Holdings,Acrisure International Holdings,London,,Not researched,not_researched
+724,Akelius Residential,Akelius Residential Limited,London,,Not researched,not_researched
+725,Al Rayan Bank,Al Rayan Bank PLC,Birmingham,,Not researched,not_researched
+726,Alcatel Submarine Networks UK,Alcatel Submarine Networks UK Ltd,London,,Not researched,not_researched
+727,Aros Kapital,Aros Kapital Ltd,London,,Not researched,not_researched
+728,Artelia Projects UK,Artelia Projects UK Limited,London,,Not researched,not_researched
+729,Associated Newspapers,Associated Newspapers Ltd,London,,Not researched,not_researched
+730,Atos IT Services UK,Atos IT Services UK Ltd,London,,Not researched,not_researched
+731,BPD Global Group,BPD Global Group Limited,London,,Not researched,not_researched
+732,Barjane International Group,Barjane International Group Limited,London,,Not researched,not_researched
+733,CDL CHOCOLATE LTD CDY,CDL CHOCOLATE LTD CDY,London,,Not researched,not_researched
+734,CORNELIUS UK,CORNELIUS UK LTD,LONDON,,Not researched,not_researched
+735,Campbell Johnston Clark,Campbell Johnston Clark Limited,London,,Not researched,not_researched
+736,Cargill,Cargill PLC,London,,Not researched,not_researched
+737,Carlsquare,Carlsquare Ltd,London,,Not researched,not_researched
+738,Chivas Brothers International,Chivas Brothers International Limited,London,,Not researched,not_researched
+739,Civica UK,Civica UK Ltd,London,,Not researched,not_researched
+740,Clarksons,Clarksons PLC,London,,Not researched,not_researched
+741,Cutfield Freeman & Company,Cutfield Freeman & Company Limited,London,,Not researched,not_researched
+742,Dar Al-Handasah Consultants (Shair & Partners) (UK),Dar Al-Handasah Consultants (Shair & Partners) (UK) Ltd.,London,,Not researched,not_researched
+743,Deluxe 142,Deluxe 142 Limited,London,,Not researched,not_researched
+744,Dragados SA UK Branch,Dragados SA UK Branch,London,,Not researched,not_researched
+745,EATRON TECHNOLOGIES,EATRON TECHNOLOGIES LIMITED,Warwick,,Not researched,not_researched
+746,ENBW GENERATION UK,ENBW GENERATION UK LIMITED,London,,Not researched,not_researched
+747,Elixirr International,Elixirr International Plc,London,,Not researched,not_researched
+748,Equinor UK,Equinor UK Limited,London,,Not researched,not_researched
+749,Essendi UK Hotels 1,Essendi UK Hotels 1 Limited,London,,Not researched,not_researched
+750,FCC Construccion SA UK Branch,FCC Construccion SA UK Branch,London,,Not researched,not_researched
+751,Fayat Lifting,Fayat Lifting Ltd,London,,Not researched,not_researched
+752,Forage UK Operations,Forage UK Operations Limited,London,,Not researched,not_researched
+753,Fuelcomm UK,Fuelcomm UK Limited,London,,Not researched,not_researched
+754,GIG Facades,GIG Facades Ltd,London,,Not researched,not_researched
+755,Grocery Delivery E-services UK,Grocery Delivery E-services UK Ltd,London,,Not researched,not_researched
+756,H & M Hennes & Mauritz UK,H & M Hennes & Mauritz UK Ltd,London,,Not researched,not_researched
+757,H J Heinz Co,H J Heinz Co Ltd,London,,Not researched,not_researched
+758,HCC Service Company Inc,HCC Service Company Inc,London,,Not researched,not_researched
+759,Hare & Humphreys,Hare & Humphreys Ltd,LONDON,,Not researched,not_researched
+760,Hengeler Mueller Partnerschaft von Rechtsanwaelten mbB,Hengeler Mueller Partnerschaft von Rechtsanwaelten mbB,London,,Not researched,not_researched
+761,Hikma Pharmaceuticals,Hikma Pharmaceuticals PLC,London,,Not researched,not_researched
+762,Hispania Global UW,Hispania Global UW Ltd,London,,Not researched,not_researched
+763,Hitachi Solutions Europe,Hitachi Solutions Europe Ltd,London,,Not researched,not_researched
+764,Houthoff London BV,Houthoff London BV,London,,Not researched,not_researched
+765,IDOM (UK),IDOM (UK) LTD,London,,Not researched,not_researched
+766,ING Services,ING Services Limited,London,,Not researched,not_researched
+767,IP Global Properties,IP Global Properties Limited,London,,Not researched,not_researched
+768,Incopro,Incopro Limited,London,,Not researched,not_researched
+769,Invenics Services,Invenics Services Ltd,London,,Not researched,not_researched
+770,JDR Cable Systems,JDR Cable Systems Ltd,Littleport,,Not researched,not_researched
+771,JTB Europe,JTB Europe Ltd,London,,Not researched,not_researched
+772,Joe and the Juice UK,Joe and the Juice UK Ltd,London,,Not researched,not_researched
+773,Julius Baer International,Julius Baer International Limited,London,,Not researched,not_researched
+774,K3 Business Technology Group,K3 Business Technology Group plc,Manchester,,Not researched,not_researched
+775,Kepler Cheuvreux,Kepler Cheuvreux,London,,Not researched,not_researched
+776,LOYENS & LOEFF,LOYENS & LOEFF,LONDON,,Not researched,not_researched
+777,Legendre UK,Legendre UK Limited,London,,Not researched,not_researched
+778,MAXMARA,MAXMARA LTD,LONDON,,Not researched,not_researched
+779,MSI Computer (UK),MSI Computer (UK) Ltd,London,,Not researched,not_researched
+780,Mace,Mace Ltd,London,,Not researched,not_researched
+781,Mandarin Oriental Hyde Park,Mandarin Oriental Hyde Park Ltd,London,,Not researched,not_researched
+782,Mannaz A/S,Mannaz A/S,London,,Not researched,not_researched
+783,Mapfre Re Compania De Reaseguros SA,Mapfre Re Compania De Reaseguros SA,London,,Not researched,not_researched
+784,Marubeni Europe,Marubeni Europe plc,London,,Not researched,not_researched
+785,McCann Erickson Advertising,McCann Erickson Advertising Ltd,London,,Not researched,not_researched
+786,Mercer,Mercer Ltd,London,,Not researched,not_researched
+787,Minamoto Kitchoan Europe,Minamoto Kitchoan Europe Ltd,London,,Not researched,not_researched
+788,Mitsubishi Corporation International (Europe),Mitsubishi Corporation International (Europe) Plc,London,,Not researched,not_researched
+789,Mourant Services (UK),Mourant Services (UK) Limited,London,,Not researched,not_researched
+790,Mphasis UK,Mphasis UK Limited,London,,Not researched,not_researched
+791,Munich Re UK Services,Munich Re UK Services Limited,London,,Not researched,not_researched
+792,NFL International,NFL International Limited,London,,Not researched,not_researched
+793,NTT,NTT Limited,London,,Not researched,not_researched
+794,Nakano Asset Global,Nakano Asset Global Ltd,London,,Not researched,not_researched
+795,NautaDutilh,NautaDutilh,London,,Not researched,not_researched
+796,OPERIS GROUP,OPERIS GROUP PLC,LONDON,,Not researched,not_researched
+797,Obaseki & Co,Obaseki & Co LTD,London,,Not researched,not_researched
+798,Octus Intelligence,Octus Intelligence Limited,London,,Not researched,not_researched
+799,Palladium International,Palladium International Limited,London,,Not researched,not_researched
+800,Pan Pacific London Hotel,Pan Pacific London Hotel Ltd,London,,Not researched,not_researched
+801,Partners Group (UK),Partners Group (UK) Ltd.,London,,Not researched,not_researched
+802,Projective Group UK,Projective Group UK Limited,London,,Not researched,not_researched
+803,REMY COINTREAU UK DISTRIBUTION,REMY COINTREAU UK DISTRIBUTION LIMITED,London,,Not researched,not_researched
+804,Random House Group,Random House Group Ltd,London,,Not researched,not_researched
+805,STICKS 'N' SUSHI UK,STICKS 'N' SUSHI UK LIMITED,London,,Not researched,not_researched
+806,STRABAG AG UK Branch,STRABAG AG UK Branch,London,,Not researched,not_researched
+807,Sacyr UK,Sacyr UK Limited,London,,Not researched,not_researched
+808,Safran Landing Systems UK,Safran Landing Systems UK Limited,Gloucester,,Not researched,not_researched
+809,Sasol UK,Sasol UK Limited,London,,Not researched,not_researched
+810,Second Front Systems,Second Front Systems Limited,Maidenhead,,Not researched,not_researched
+811,Sedex Information Exchange,Sedex Information Exchange Limited,London,,Not researched,not_researched
+812,Sinolingua London,Sinolingua London Limited,London,,Not researched,not_researched
+813,Sojitz Global Finance,Sojitz Global Finance plc,London,,Not researched,not_researched
+814,Sportradar UK,Sportradar UK Limited,London,,Not researched,not_researched
+815,Sprinklr UK,Sprinklr UK Ltd,London,,Not researched,not_researched
+816,Statkraft UK,Statkraft UK Ltd.,London,,Not researched,not_researched
+817,Stephenson Harwood,Stephenson Harwood,London,,Not researched,not_researched
+818,Strabag UK,Strabag UK Limited,London,,Not researched,not_researched
+819,Structuretone,Structuretone Ltd,London,,Not researched,not_researched
+820,Swiss Re Services,Swiss Re Services Ltd,London,,Not researched,not_researched
+821,Tabacalera SLU,Tabacalera SLU,London,,Not researched,not_researched
+822,The Felixstowe Dock & Railway Company trading as Port of Felixstowe,The Felixstowe Dock & Railway Company trading as Port of Felixstowe,Felixstowe,,Not researched,not_researched
+823,Theodo,Theodo Ltd,London,,Not researched,not_researched
+824,UNLIMINT EU,UNLIMINT EU LTD,London,,Not researched,not_researched
+825,Vectone Mobile Holding,Vectone Mobile Holding Limited,LONDON,,Not researched,not_researched
+826,Westfield Europe,Westfield Europe Limited,London,,Not researched,not_researched
+827,Whitecliff Management Corporation,Whitecliff Management Corporation Limited,London,,Not researched,not_researched
+828,Wipro,Wipro Limited,London,,Not researched,not_researched
+829,Worley Europe,Worley Europe Limited,London,,Not researched,not_researched
+830,YKK Europe,YKK Europe Limited,London,,Not researched,not_researched
+831,Zeepay JV UK,Zeepay JV UK,London,,Not researched,not_researched
+832,Zvilo,Zvilo Limited,London,,Not researched,not_researched
+833,d-fine,d-fine Ltd,London,,Not researched,not_researched
+834,Harbour Energy,Harbour Energy Plc,London,,Not researched,not_researched
+835,Savannah Energy,Savannah Energy PLC,London,,Not researched,not_researched
+836,Waterman Group,Waterman Group plc,London,,Not researched,not_researched
+837,ACNielsen Company,ACNielsen Company Limited,Oxford,,Not researched,not_researched
+838,ALS Customs Services,ALS Customs Services Limited,Manchester,,Not researched,not_researched
+839,Aker Solutions,Aker Solutions Ltd,Aberdeen,,Not researched,not_researched
+840,Amcor Europe Group Management,Amcor Europe Group Management,Bristol,,Not researched,not_researched
+841,Ardmac Performance Contracting,Ardmac Performance Contracting Limited,Manchester,,Not researched,not_researched
+842,Ashtad,Ashtad Limited,Glasgow,,Not researched,not_researched
+843,Baufritz (UK),Baufritz (UK) Ltd,Cambridge,,Not researched,not_researched
+844,CIGNA EUROPEAN SERVICES (UK),CIGNA EUROPEAN SERVICES (UK) LIMITED,Glasgow,,Not researched,not_researched
+845,Cinegy,Cinegy Ltd,Bristol,,Not researched,not_researched
+846,Circet UK,Circet UK limited,Slough,,Not researched,not_researched
+847,Clemessy UK,Clemessy UK Ltd,Bristol,,Not researched,not_researched
+848,Colas,Colas Limited,Birmingham,,Not researched,not_researched
+849,Cookpad,Cookpad Limited,Bristol,,Not researched,not_researched
+850,"Copenhagen Offshore Partners A/S, UK Branch","Copenhagen Offshore Partners A/S, UK Branch",Edinburgh,,Not researched,not_researched
+851,Dalata Cardiff,Dalata Cardiff Limited,Cardiff,,Not researched,not_researched
+852,Dalata UK,Dalata UK Limited,Cardiff,,Not researched,not_researched
+853,Doncasters,Doncasters Limited,Leeds,,Not researched,not_researched
+854,Eaton,Eaton Ltd,Slough,,Not researched,not_researched
+855,Expro North Sea,Expro North Sea Ltd,Aberdeen,,Not researched,not_researched
+856,F-M Motorparts,F-M Motorparts Limited,Manchester,,Not researched,not_researched
+857,Federal-Mogul,Federal-Mogul Ltd,Manchester,,Not researched,not_researched
+858,Groupe SEB UK,Groupe SEB UK Ltd,Slough,,Not researched,not_researched
+859,Heineken UK,Heineken UK Limited,Edinburgh,,Not researched,not_researched
+860,Hilti (Gt. Britain),Hilti (Gt. Britain) Limited,Manchester,,Not researched,not_researched
+861,"Hytera Communications (UK) Co.,","Hytera Communications (UK) Co., Ltd",Slough,,Not researched,not_researched
+862,IMI,IMI Plc,Birmingham,,Not researched,not_researched
+863,John Crane UK,John Crane UK Limited,Slough,,Not researched,not_researched
+864,KENVUE EMEA SERVICES,KENVUE EMEA SERVICES LIMITED,Reading,,Not researched,not_researched
+865,Kerry Ingredients UK,Kerry Ingredients UK Ltd,Bristol,,Not researched,not_researched
+866,Mastek (UK),Mastek (UK) Limited,Reading,,Not researched,not_researched
+867,Ocean Winds UK,Ocean Winds UK Ltd,Edinburgh,,Not researched,not_researched
+868,Orica UK,Orica UK Ltd,Warrington,,Not researched,not_researched
+869,PIERRE FABRE,PIERRE FABRE LIMITED,Reading,,Not researched,not_researched
+870,Randox Laboratories,Randox Laboratories Ltd.,Crumlin,,Not researched,not_researched
+871,Reckitt Benckiser Group,Reckitt Benckiser Group Plc,Slough,,Not researched,not_researched
+872,Rhenus Home Delivery,Rhenus Home Delivery Limited,Manchester,,Not researched,not_researched
+873,SMARTER GRID SOLUTIONS,SMARTER GRID SOLUTIONS LTD,Glasgow,,Not researched,not_researched
+874,Sociedad Iberica de Construcciones Electricas S.A.,Sociedad Iberica de Construcciones Electricas S.A.,Reading,,Not researched,not_researched
+875,Stagecoach Holdings,Stagecoach Holdings Limited,Perth,,Not researched,not_researched
+876,The Edrington Group,The Edrington Group,Glasgow,,Not researched,not_researched
+877,Vauxhall Motors,Vauxhall Motors Limited,Coventry,,Not researched,not_researched
+878,Weatherford UK,Weatherford UK Limited,Aberdeen,,Not researched,not_researched
+879,Wieland Metals Birmingham,Wieland Metals Birmingham,Birmingham,,Not researched,not_researched
+880,Wood Group UK,Wood Group UK Limited,Aberdeen,,Not researched,not_researched
+881,Department for Education,Department for Education,London,,Not researched,not_researched
+882,Allianz Insurance,Allianz Insurance plc,Guildford,,Not researched,not_researched
+883,CML Microsystems,CML Microsystems Plc,Maldon,,Not researched,not_researched
+884,Capricorn Energy,Capricorn Energy PLC,Edinburgh,,Not researched,not_researched
+885,Concurrent Technologies,Concurrent Technologies Plc,Colchester,,Not researched,not_researched
+886,FD Technologies,FD Technologies Plc,Newry,,Not researched,not_researched
+887,Muller UK & Ireland Group LLP T/A Muller Milk & Ingredients,Muller UK & Ireland Group LLP T/A Muller Milk & Ingredients,Market Drayton,,Not researched,not_researched
+888,Value Retail,Value Retail Plc,London,,Not researched,not_researched
+889,Van Lanschot Kempen Investment Management (UK),Van Lanschot Kempen Investment Management (UK) Limited,London,,Not researched,not_researched
+890,Busy Bees,Busy Bees Care Limited,Polmont,,Not researched,not_researched
+891,CBRE,CBRE Limited,London,,Not researched,not_researched
+892,ABB,ABB Limited,Daresbury,,Not researched,not_researched
+893,AM FRESH UK,AM FRESH UK Ltd,Peterborough,,Not researched,not_researched
+894,AP Racing,AP Racing Limited,Coventry,,Not researched,not_researched
+895,APERTA,APERTA LTD,Cumbernauld,,Not researched,not_researched
+896,ASMPT SMT UK,ASMPT SMT UK Limited,Weymouth,,Not researched,not_researched
+897,ASSA ABLOY,ASSA ABLOY Ltd,West Midlands,,Not researched,not_researched
+898,Aliaxis Holding UK,Aliaxis Holding UK Limited,Lenham,,Not researched,not_researched
+899,Amada United Kingdom,Amada United Kingdom Limited,Kidderminster,,Not researched,not_researched
+900,Andros UK,Andros UK Limited,Frome,,Not researched,not_researched
+901,Archer Daniels Midland (UK),Archer Daniels Midland (UK) Limited,Erith,,Not researched,not_researched
+902,Asahi UK,Asahi UK Ltd,Woking,,Not researched,not_researched
+903,BAM Nuttall,BAM Nuttall Limited,Farnborough,,Not researched,not_researched
+904,BASF,BASF Plc,Stockport,,Not researched,not_researched
+905,BOC,BOC Limited,Woking,,Not researched,not_researched
+906,Bauer Radio,Bauer Radio Limited,Peterborough,,Not researched,not_researched
+907,Black & Decker,Black & Decker,Maidenhead,,Not researched,not_researched
+908,BorgWarner,BorgWarner Ltd,Bradford,,Not researched,not_researched
+909,Boskalis Subsea,Boskalis Subsea Limited,Billingham,,Not researched,not_researched
+910,Boskalis Westminster,Boskalis Westminster Ltd,Fareham,,Not researched,not_researched
+911,Brioche Pasquier UK,Brioche Pasquier UK,Milton Keynes,,Not researched,not_researched
+912,CTG Metropark,CTG Metropark Limited,Richmond,,Not researched,not_researched
+913,Catalent UK Swindon Zydis,Catalent UK Swindon Zydis LTD,Swindon,,Not researched,not_researched
+914,CeramTec UK,CeramTec UK Limited,Southampton,,Not researched,not_researched
+915,Chromalloy United Kingdom,Chromalloy United Kingdom Ltd,"Alfreton,",,Not researched,not_researched
+916,DFDS Seaways,DFDS Seaways PLC,North East Lincolnshire,,Not researched,not_researched
+917,Dachser,Dachser Ltd,Northampton,,Not researched,not_researched
+918,Daikin Airconditioning UK,Daikin Airconditioning UK Limited,Weybridge,,Not researched,not_researched
+919,Danfoss,Danfoss Limited,Uxbridge,,Not researched,not_researched
+920,Danwood (UK Branch),Danwood (UK Branch) Plc,Galashiels,,Not researched,not_researched
+921,Deutsche Windtechnik,Deutsche Windtechnik Ltd,Livingston,,Not researched,not_researched
+922,Direct Online Services,Direct Online Services Ltd,"Quedgeley, Gloucester",,Not researched,not_researched
+923,ESSO Petroleum Company,ESSO Petroleum Company Ltd,Leatherhead,,Not researched,not_researched
+924,EXPERIAN,EXPERIAN LIMITED,Nottingham,,Not researched,not_researched
+925,EYOS UK,EYOS UK Limited,Alton,,Not researched,not_researched
+926,Edwards,Edwards Limited,Burgess Hill,,Not researched,not_researched
+927,Eiffage Genie Civil UK,Eiffage Genie Civil UK,Milton Keynes,,Not researched,not_researched
+928,Elliott Scott HR Recruitment,Elliott Scott HR Recruitment Limited,Lambeth,,Not researched,not_researched
+929,Emmi UK,Emmi UK Ltd,"Putney, London",,Not researched,not_researched
+930,EnSilica,EnSilica,Abingdon,,Not researched,not_researched
+931,Enzen Global,Enzen Global Limited,Solihull,,Not researched,not_researched
+932,Essentra,Essentra plc,Milton Keynes,,Not researched,not_researched
+933,Eurac Poole,Eurac Poole Ltd,Poole,,Not researched,not_researched
+934,Farrel,Farrel Limited,Rochdale,,Not researched,not_researched
+935,Faurecia,Faurecia,Lichfield,,Not researched,not_researched
+936,Firmenich UK,Firmenich UK Ltd,Southall,,Not researched,not_researched
+937,Fluor,Fluor Limited,Farnborough,,Not researched,not_researched
+938,GEA Refrigeration UK,GEA Refrigeration UK Ltd,Sittingbourne,,Not researched,not_researched
+939,GIVAUDAN UK,GIVAUDAN UK LTD,ASHFORD,,Not researched,not_researched
+940,GMV NSL,GMV NSL Limited,Nottingham,,Not researched,not_researched
+941,GN AUDIO UK,GN AUDIO UK Limited,Langley,,Not researched,not_researched
+942,GN Hearing UK,GN Hearing UK LTD,Bicester,,Not researched,not_researched
+943,Gardline Marine Sciences,Gardline Marine Sciences Limited,Great Yarmouth,,Not researched,not_researched
+944,General HVAC Solutions UK,General HVAC Solutions UK Ltd,Elstree,,Not researched,not_researched
+945,Gurit UK,Gurit UK Ltd,Newport,,Not researched,not_researched
+946,HCD Economics,HCD Economics limited,Knutsford,,Not researched,not_researched
+947,HORIBA UK,HORIBA UK Limited,Northampton,,Not researched,not_researched
+948,HOTPOINT UK APPLIANCES,HOTPOINT UK APPLIANCES LIMITED,Peterborough,,Not researched,not_researched
+949,Halma,Halma Plc,Amersham,,Not researched,not_researched
+950,Handmade Cake Co,Handmade Cake Co Ltd,Maidenhead,,Not researched,not_researched
+951,Haskoning UK,Haskoning UK Ltd,Peterborough,,Not researched,not_researched
+952,Herrenknecht International,Herrenknecht International Ltd,Sunderland,,Not researched,not_researched
+953,Highly Marelli UK,Highly Marelli UK Limited,Sunderland,,Not researched,not_researched
+954,Hilton UK Hotels,Hilton UK Hotels Limited,Watford,,Not researched,not_researched
+955,Idverde,Idverde Limited,Coventry,,Not researched,not_researched
+956,International Paint,International Paint Limited,Gateshead,,Not researched,not_researched
+957,Jerich UK,Jerich UK Ltd,Skelmersdale,,Not researched,not_researched
+958,John Sisk & Son,John Sisk & Son Ltd,St. Albans,,Not researched,not_researched
+959,KNAUF INSULATION,KNAUF INSULATION LIMITED,ST HELENS,,Not researched,not_researched
+960,KWS UK,KWS UK Limited,Royston,,Not researched,not_researched
+961,Kannegiesser UK,Kannegiesser UK Limited,Banbury,,Not researched,not_researched
+962,Kellogg Brown & Root (UK),Kellogg Brown & Root (UK) Ltd,Surrey,,Not researched,not_researched
+963,Kellogg Brown and Root Solutions,Kellogg Brown and Root Solutions Limited,Leatherhead,,Not researched,not_researched
+964,Kent Energies UK,Kent Energies UK Ltd,Woking,,Not researched,not_researched
+965,Kenwood,Kenwood Limited,Havant,,Not researched,not_researched
+966,Knauf (UK) GmbH,Knauf (UK) GmbH,Sittingbourne,,Not researched,not_researched
+967,Kohler Mira,Kohler Mira Limited,Cheltenham,,Not researched,not_researched
+968,Konica Minolta Business Solutions (UK),Konica Minolta Business Solutions (UK) Ltd,Basildon,,Not researched,not_researched
+969,Kuehne + Nagel,Kuehne + Nagel Ltd,Feltham,,Not researched,not_researched
+970,Lindt & Sprungli (UK),Lindt & Sprungli (UK) Ltd,Richmond,,Not researched,not_researched
+971,Linnaeus Group Bidco,Linnaeus Group Bidco Limited,Shirley,,Not researched,not_researched
+972,MANN+HUMMEL (UK),MANN+HUMMEL (UK) Ltd,Wolverhampton,,Not researched,not_researched
+973,MEXICHEM UK LIMITED (t/a Koura),MEXICHEM UK LIMITED (t/a Koura),Cheshire,,Not researched,not_researched
+974,MITUTOYO (UK),MITUTOYO (UK) LTD,Andover,,Not researched,not_researched
+975,MM Packaging Deeside,MM Packaging Deeside Ltd,Deeside,,Not researched,not_researched
+976,Mettler Toledo Safeline X-ray,Mettler Toledo Safeline X-ray Limited,Royston,,Not researched,not_researched
+977,Michelin Tyre,Michelin Tyre plc,Stoke-on-Trent,,Not researched,not_researched
+978,Morgan Technical Ceramics,Morgan Technical Ceramics Limited,Stourport-on-Severn,,Not researched,not_researched
+979,NETS International,NETS International Limited,Redhill,,Not researched,not_researched
+980,NUCSOFT,NUCSOFT LTD,Wembley,,Not researched,not_researched
+981,Nexperia UK,Nexperia UK Ltd,Stockport,,Not researched,not_researched
+982,Nifco UK,Nifco UK Limited,Stockton-on-Tees,,Not researched,not_researched
+983,Novo Nordisk,Novo Nordisk Ltd,Gatwick,,Not researched,not_researched
+984,ORMAZABAL UK,ORMAZABAL UK LIMITED,St. Helens,,Not researched,not_researched
+985,Orona,Orona Ltd,Sunbury-on-Thames,,Not researched,not_researched
+986,PBP SERVICES,PBP SERVICES,Fraserburgh,,Not researched,not_researched
+987,PRODAPT (UK),PRODAPT (UK) LIMITED,READING,,Not researched,not_researched
+988,Pall Europe,Pall Europe Ltd,Portsmouth,,Not researched,not_researched
+989,Palram Europe,Palram Europe Limited,Doncaster,,Not researched,not_researched
+990,Perceptual Robotics,Perceptual Robotics Limited,BRISTOL,,Not researched,not_researched
+991,Princes,Princes Limited,Liverpool,,Not researched,not_researched
+992,QX,QX Limited,North Yorkshire,,Not researched,not_researched
+993,QinetiQ Group,QinetiQ Group Plc,Farnborough,,Not researched,not_researched
+994,R Twining & Co,R Twining & Co Ltd,Andover,,Not researched,not_researched
+995,REHAU,REHAU Ltd,Ross-on-Wye,,Not researched,not_researched
+996,RWE Generation UK,RWE Generation UK Plc,Swindon,,Not researched,not_researched
+997,Rhomberg Sersa UK,Rhomberg Sersa UK Limited,Sheffield,,Not researched,not_researched
+998,Ricardo,Ricardo plc,Shoreham by Sea,,Not researched,not_researched
+999,Rohlig UK,Rohlig UK Ltd,Middx,,Not researched,not_researched
+1000,SAFE-door Industries,SAFE-door Industries Limited,Brampton,,Not researched,not_researched

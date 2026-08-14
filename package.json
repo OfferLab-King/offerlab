@@ -49,6 +49,8 @@
     "jobs:targets:validate": "tsx scripts/jobs/targets/validate.ts",
     "jobs:targets:export": "tsx scripts/jobs/targets/export.ts",
     "jobs:targets:import": "tsx scripts/jobs/targets/import.ts",
+    "jobs:targets:export-validation-csv": "tsx scripts/jobs/targets/export-validation-csv.ts",
+    "jobs:targets:merge-validation-reviews": "tsx scripts/jobs/targets/merge-validation-reviews.ts",
     "jobs:discover-source": "tsx scripts/jobs/discover-source.ts",
     "jobs:taxonomy:backfill": "tsx scripts/jobs/taxonomy-backfill.ts",
     "jobs:reclassify": "tsx scripts/jobs/reclassify.ts",
