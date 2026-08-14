@@ -1,4 +1,3 @@
-rank,canonicalEmployer,currentCareerUrl,verdict,suggestedUrl,state,reason,confidence
-1,Amazon,https://www.amazon.jobs/en-gb/,ok,https://www.amazon.jobs/en-gb/,unchanged,Official careers portal,high
-2,Google,https://www.google.com/about/careers/applications/jobs/results/,better_url,https://careers.google.com/jobs/results/,changed,Careers site canonical domain,high
-999,Rohlig UK,,suspect,,unchanged,Company renamed,low
+rank,canonicalEmployer,currentCareerUrl,verdict,suggestedUrl,earlyCareerUrl,state,reason,confidence
+1,Amazon,https://www.amazon.jobs/en-gb/,ok,https://www.amazon.jobs/en-gb/,https://www.amazon.jobs/en-gb/students,unchanged,Official careers portal with separate student page,high
+2,Google,https://www.google.com/about/careers/applications/jobs/results/,better_url,https://careers.google.com/jobs/results/,,changed,Careers site canonical domain,high

@@ -92,12 +92,21 @@ pnpm jobs:targets:merge-validation-reviews --input=<verdicts.json>  # merges ver
 - The CSV is derived from `top-1000.json` and deliberately excludes every
   internal research field (scores, confidence, notes, evidence) — those are
   administrator-only and must never be exported to a third-party model.
+- `careerSearchUrl` is the employer's general UK careers/job-search page and
+  covers the full catalogue scope: the public catalogue is not limited to
+  early-career work (general and experienced-hire roles appear too), and one
+  employer may have separate early-career, professional, apprenticeship and
+  general sources. The review should therefore validate the general board and
+  additionally flag when a distinct early-career page exists.
 - Ask the model for JSON-only verdicts per rank in batches of ~200–250 rows:
-  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "reason": "...", "confidence": "high|low"}`
+  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "earlyCareerUrl": "...", "reason": "...", "confidence": "high|low"}` —
+  `earlyCareerUrl` is optional and captures a separate graduate/early-career
+  page where one exists.
 - The merge script matches verdicts by rank against the current dataset,
   reports unknown ranks, and writes
   `data/generated/employer-targets/url-validation-review.csv` with the
-  current vs suggested URL and a `changed`/`unchanged` state column.
+  current vs suggested URL, an optional early-career URL and a
+  `changed`/`unchanged` state column.
 - Verdicts never edit anything: apply accepted corrections to the XLSX
   workbook (the source of truth) and regenerate with
   `pnpm jobs:targets:export`. URL liveness, redirects and robots policy are

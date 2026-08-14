@@ -8,7 +8,9 @@ import { GENERATED_TARGETS_JSON } from "./workbook";
  *
  * Expected input (JSON array, one object per ranked employer):
  *   [{ "rank": 1, "verdict": "ok|suspect|better_url|needs_review",
- *      "suggestedUrl": "https://...", "reason": "...", "confidence": "high|low" }]
+ *      "suggestedUrl": "https://...",
+ *      "earlyCareerUrl": "https://..." (optional: separate early-career page),
+ *      "reason": "...", "confidence": "high|low" }]
  *
  * Outputs data/generated/employer-targets/url-validation-review.csv, one row
  * per verdict matched to the current dataset by rank. It never edits the
@@ -22,6 +24,7 @@ type ValidationReview = Readonly<{
   rank: number;
   verdict: string;
   suggestedUrl: string | null;
+  earlyCareerUrl: string | null;
   reason: string | null;
   confidence: string | null;
 }>;
@@ -54,11 +57,17 @@ function normalizeReviews(input: unknown): ValidationReview[] {
       (record.suggested_url as string | undefined) ??
       (record.url as string | undefined) ??
       null;
+    const earlyCareer =
+      (record.earlyCareerUrl as string | undefined) ??
+      (record.early_career_url as string | undefined) ??
+      null;
     const verdict = String(record.verdict ?? record["verdict"] ?? "needs_review").toLowerCase();
     return {
       rank,
       verdict,
       suggestedUrl: typeof suggested === "string" && suggested.trim() ? suggested.trim() : null,
+      earlyCareerUrl:
+        typeof earlyCareer === "string" && earlyCareer.trim() ? earlyCareer.trim() : null,
       reason:
         typeof record.reason === "string" && record.reason.trim() ? record.reason.trim() : null,
       confidence:
@@ -93,6 +102,7 @@ const header = [
   "currentCareerUrl",
   "verdict",
   "suggestedUrl",
+  "earlyCareerUrl",
   "state",
   "reason",
   "confidence",
@@ -109,6 +119,7 @@ const lines = reviews.map((review) => {
     current,
     review.verdict,
     suggested,
+    review.earlyCareerUrl ?? "",
     state,
     review.reason,
     review.confidence,
@@ -127,7 +138,7 @@ const verdictCounts = new Map<string, number>();
 for (const review of reviews) {
   verdictCounts.set(review.verdict, (verdictCounts.get(review.verdict) ?? 0) + 1);
 }
-const changedCount = matched.filter((line) => line[5] === "changed").length;
+const changedCount = matched.filter((line) => line[6] === "changed").length;
 
 process.stdout.write(`Merged ${matched.length} reviews into ${REVIEW_CSV_PATH}\n`);
 for (const [verdict, count] of [...verdictCounts.entries()].sort()) {

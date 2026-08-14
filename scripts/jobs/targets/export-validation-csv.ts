@@ -57,7 +57,7 @@ process.stdout.write(
   `Give ChatGPT the CSV in batches of ~200-250 rows and ask for JSON-only verdicts:\n`,
 );
 process.stdout.write(
-  `  [{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "reason": "...", "confidence": "high|low"}]\n`,
+  `  [{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "earlyCareerUrl": "...", "reason": "...", "confidence": "high|low"}]\n`,
 );
 process.stdout.write(
   `Then run: pnpm jobs:targets:merge-validation-reviews --input=<chatgpt-verdicts.json>\n`,
