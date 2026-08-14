@@ -517,6 +517,7 @@ export function JobCatalogueView({
         aria-hidden={!drawerOpen}
         aria-label="Filters"
         className={`catalogue-drawer ${drawerOpen ? "is-open" : ""}`}
+        inert={!drawerOpen}
         role="dialog"
         aria-modal={drawerOpen ? "true" : "false"}
       >

@@ -6652,10 +6652,17 @@ progress {
 .cms-run-list li,
 .cms-event-list li {
   align-items: baseline;
+  border-top: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
+}
+
+.cms-run-list li:first-child,
+.cms-event-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
 }
 
 .cms-run-error {
@@ -7477,13 +7484,24 @@ progress {
   right: 0;
   top: 0;
   transform: translateX(105%);
-  transition: transform 180ms ease;
+  transition:
+    transform 180ms ease,
+    visibility 0s linear 180ms;
+  visibility: hidden;
   width: 88%;
   z-index: 60;
 }
 
 .catalogue-drawer.is-open {
   transform: translateX(0);
+  transition: transform 180ms ease;
+  visibility: visible;
+}
+
+@media (min-width: 56.0625rem) {
+  .catalogue-drawer {
+    display: none;
+  }
 }
 
 .catalogue-drawer-backdrop {
@@ -7957,7 +7975,7 @@ progress {
   border-radius: var(--radius-card);
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: minmax(14rem, 2fr) repeat(6, minmax(7rem, 1fr)) repeat(5, auto);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
   margin-bottom: 1rem;
   padding: 1rem;
 }
@@ -7975,12 +7993,25 @@ progress {
   width: 100%;
 }
 
+.cms-filter-row > button[type="submit"] {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: 44px;
+}
+
+.cms-filter-checks {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.4rem;
+  grid-column: 1 / -1;
+}
+
 .cms-check-filter {
   align-items: center;
   display: flex;
   flex-direction: row;
   gap: 0.4rem;
-  justify-content: end;
   min-height: 44px;
 }
 
@@ -8018,10 +8049,23 @@ progress {
   font-size: 0.8rem;
 }
 
-@media (max-width: 60rem) {
-  .cms-filter-row {
-    grid-template-columns: 1fr 1fr;
-  }
+/* Status badge tints (text plus restrained tint; never colour alone) */
+.status-badge--positive {
+  background: #e7f3e9;
+  border-color: #8fbf9b;
+  color: #1f5b2e;
+}
+
+.status-badge--warn {
+  background: #fbf3e3;
+  border-color: #d9b36a;
+  color: #7a5416;
+}
+
+.status-badge--negative {
+  background: #f9e9e8;
+  border-color: #d9a0a0;
+  color: #8b2f2f;
 }
 
 /* Phase H: admin detail grids and lists */
