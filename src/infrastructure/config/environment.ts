@@ -40,6 +40,7 @@ export const environmentKeys = [
   "JOB_ENRICHMENT_PROVIDER",
   "JOB_ENRICHMENT_BASE_URL",
   "JOB_ENRICHMENT_MODEL",
+  "JOB_FACET_CACHE_TTL_MS",
   "JOB_LLM_ENABLED",
   "JOB_LLM_MAX_CONCURRENCY",
   "JOB_LOCAL_WORKER_BATCH_LIMIT",
@@ -64,6 +65,16 @@ const optionalPositiveInteger = z.preprocess(
   z
     .string()
     .regex(/^(?:[1-9]\d{0,4}|100000)$/u)
+    .optional(),
+);
+
+// A TTL of 0 disables the cache (used by the E2E suite, where spec files
+// reseed the catalogue while the web server keeps running).
+const optionalCacheTtlMilliseconds = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z
+    .string()
+    .regex(/^(?:0|[1-9]\d{0,4}|100000)$/u)
     .optional(),
 );
 
@@ -103,6 +114,7 @@ const serverEnvironmentSchema = z
     JOB_ENRICHMENT_PROVIDER: z.enum(["deepseek", "opencode_go"]).optional(),
     JOB_ENRICHMENT_BASE_URL: optionalUrl,
     JOB_ENRICHMENT_MODEL: optionalString,
+    JOB_FACET_CACHE_TTL_MS: optionalCacheTtlMilliseconds,
     JOB_LLM_ENABLED: z.enum(["true", "false"]).optional(),
     JOB_LLM_MAX_CONCURRENCY: optionalPositiveInteger,
     JOB_LOCAL_WORKER_BATCH_LIMIT: optionalPositiveInteger,

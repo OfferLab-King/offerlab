@@ -126,8 +126,14 @@ type FacetState = Readonly<{
  * crawler publishes or retires roles. A short TTL bounds staleness; results,
  * counts and saved state always come from the database. Only PUBLIC facet
  * counts are cached — never member-specific data.
+ *
+ * `JOB_FACET_CACHE_TTL_MS=0` disables the cache (used by the E2E suite, where
+ * the database is reseeded between spec files while the server keeps running,
+ * so a cached facet state could describe a catalogue that no longer exists).
  */
-const FACET_CACHE_TTL_MS = 60_000;
+const FACET_CACHE_TTL_MS = Number.isFinite(Number(process.env.JOB_FACET_CACHE_TTL_MS))
+  ? Number(process.env.JOB_FACET_CACHE_TTL_MS)
+  : 60_000;
 let unfilteredFacetCache: Readonly<{
   expiresAt: number;
   facets: Record<CatalogFacetGroup, readonly FacetCountRow[]>;
@@ -145,6 +151,7 @@ function readCachedFacetState(filters: JobCatalogFilters): FacetState | null {
 
 function storeFacetState(filters: JobCatalogFilters, state: FacetState): void {
   if (!isUnfilteredFacetRequest(filters)) return;
+  if (FACET_CACHE_TTL_MS === 0) return;
   // Never cache an empty facet state: it only exists before the first crawl
   // (or right after a full deactivation) and caching it would make fresh
   // catalogues invisible to the facet sidebar for the whole TTL. Recomputing

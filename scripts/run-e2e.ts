@@ -110,6 +110,10 @@ const environment = {
   LOCAL_AUTH_BYPASS_ENABLED: "false",
   JSEARCH_ENABLED: "false",
   JOB_CATALOG_ENABLED: process.env.JOB_CATALOG_ENABLED ?? "false",
+  // The facet cache (60s TTL in production) must not leak a facet state across
+  // spec files when a later file reseeds the catalogue, so E2E servers run
+  // with the cache disabled and always compute facets fresh.
+  JOB_FACET_CACHE_TTL_MS: "0",
   NEXT_DIST_DIR: e2eDistDirectory,
   NEXT_PUBLIC_APP_URL: `http://127.0.0.1:${e2ePort}`,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
