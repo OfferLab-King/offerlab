@@ -2,16 +2,18 @@ import type { TransactionSql } from "postgres";
 import type { JobCatalogFilters } from "../domain/catalog";
 import {
   buildJobFilterClauses,
+  splitLocationSelections,
   type CatalogFacetGroup,
   JOB_CATALOG_PAGE_SIZE,
 } from "../domain/catalog";
+import { EMPLOYER_DIRECTORY_PAGE_SIZE } from "../domain/employer-directory";
 
 export const PUBLIC_JOB_VISIBILITY = `j.publication_status = 'published'
   and j.eligibility_status = 'eligible'
   and j.active`;
 
 export type JobCardRow = Readonly<{
-  application_deadline: Date | null;
+  application_deadline: Date | string | null;
   application_url: string;
   career_level_key: string | null;
   company_has_sponsor: boolean;
@@ -21,14 +23,14 @@ export type JobCardRow = Readonly<{
   description_summary: string | null;
   employer_industry_key: string | null;
   employment_type: string | null;
-  first_seen_at: Date;
+  first_seen_at: Date | string;
   id: string;
   job_function_key: string | null;
-  last_successful_check_at: Date | null;
+  last_successful_check_at: Date | string | null;
   location_text: string | null;
   normalized_title: string | null;
   opportunity_type: string;
-  posted_at: Date | null;
+  posted_at: Date | string | null;
   remote_type: string | null;
   salary_currency: string | null;
   salary_max: number | null;
@@ -139,10 +141,10 @@ const jobDetailColumns = `
   c.id as company_id, c.name as company_name, c.slug as company_slug,
   c.careers_url as company_careers_url, c.website_url as company_website_url,
   c.logo_url as company_logo_url, c.employer_industry_key, c.last_successful_check_at,
-  coalesce(p.has_sponsor, false) as company_has_sponsor,
-  p.employee_band as company_employee_band,
-  p.ownership_type as company_ownership_type,
-  p.sponsor_snapshot_date as company_sponsor_snapshot_date,
+  coalesce(sp.has_sponsor, false) as company_has_sponsor,
+  snap.employee_band as company_employee_band,
+  snap.ownership_type as company_ownership_type,
+  sp.sponsor_snapshot_date as company_sponsor_snapshot_date,
   coalesce(
     (select jsonb_agg(
        jsonb_build_object(
@@ -156,6 +158,19 @@ const jobDetailColumns = `
     '[]'::jsonb
   ) as locations`;
 
+/** Latest research snapshot facts for one company (matches the view's
+ *  `distinct on (company_id) order by research_date desc, dataset_version desc`). */
+const latestSnapshotJoin = `left join lateral (
+  select s.employee_band, s.ownership_type
+  from app.employer_research_snapshot s
+  where s.company_id = c.id
+  order by s.research_date desc, s.dataset_version desc
+  limit 1
+) snap on true`;
+
+/** Sponsor register facts for one company (matches the view's aggregation). */
+const sponsorFactsJoin = `left join app.employer_public_sponsor sp on sp.company_id = c.id`;
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 export async function findJobDetail(
@@ -167,7 +182,8 @@ export async function findJobDetail(
     select ${database.unsafe(jobDetailColumns)}
     from app.job j
     join app.company c on c.id = j.company_id
-    left join app.employer_public_profile p on p.id = c.id
+    ${database.unsafe(latestSnapshotJoin)}
+    ${database.unsafe(sponsorFactsJoin)}
     where j.slug = ${slugOrId}
       ${isUuid ? database`or j.id = ${slugOrId}::uuid` : database``}
     limit 1
@@ -184,7 +200,8 @@ export async function findJobsByIds(
     select ${database.unsafe(jobDetailColumns)}
     from app.job j
     join app.company c on c.id = j.company_id
-    left join app.employer_public_profile p on p.id = c.id
+    ${database.unsafe(latestSnapshotJoin)}
+    ${database.unsafe(sponsorFactsJoin)}
     where j.id = any(${ids}::uuid[])
   `;
 }
@@ -250,6 +267,300 @@ export type FacetCountRow = Readonly<{
   count: number;
 }>;
 
+type FacetedSearchRow = Readonly<{
+  has_salary: boolean;
+  items: unknown[] | null;
+  total: number;
+  sectors: readonly FacetCountRow[] | null;
+  subsectors: readonly FacetCountRow[] | null;
+  industries: readonly FacetCountRow[] | null;
+  functions: readonly FacetCountRow[] | null;
+  levels: readonly FacetCountRow[] | null;
+  employers: readonly FacetCountRow[] | null;
+  locations: readonly FacetCountRow[] | null;
+  work_modes: readonly FacetCountRow[] | null;
+  job_types: readonly FacetCountRow[] | null;
+  sponsorship: readonly FacetCountRow[] | null;
+  sponsor_licence: readonly FacetCountRow[] | null;
+}>;
+
+type FacetedPageRow = Readonly<{
+  has_salary: boolean;
+  items: unknown[] | null;
+  total: number;
+}>;
+
+/**
+ * Builds the single-statement faceted catalogue search. One round trip: a
+ * shared `base` CTE is materialised once and the results, count, salary probe
+ * and every disjunctive facet read it. Local `$n` placeholders are renumbered
+ * to global statement positions in the order fragments are laid out.
+ * `includeFacets: false` produces the lighter page-only statement used when
+ * the facet state is served from the short-TTL facet cache.
+ */
+function buildFacetedSearchStatement(
+  filters: JobCatalogFilters,
+  now: Date,
+  includeFacets: boolean,
+): Readonly<{ sql: string; values: unknown[] }> {
+  const pageSize = JOB_CATALOG_PAGE_SIZE;
+  const offset = (filters.page - 1) * pageSize;
+
+  type Fragment = Readonly<{ sql: string; values: readonly unknown[] }>;
+  const buildFragment = (options: {
+    excludeFacet?: CatalogFacetGroup;
+    excludeAllFacets?: boolean;
+    onlyFacets?: boolean;
+  }): Fragment => {
+    const { conditions, values } = buildJobFilterClauses(filters, now, {
+      ...options,
+      locationConditionRef: "b.loc_cond",
+      sponsorConditionRef: "b.company_has_sponsor",
+    });
+    return { sql: conditions.join(" and "), values };
+  };
+
+  let orderingFragment: Fragment = {
+    sql: "b.posted_at desc nulls last, b.first_seen_at desc, b.id",
+    values: [],
+  };
+  if (filters.sort === "closing") {
+    orderingFragment = {
+      sql: "b.application_deadline asc nulls last, b.posted_at desc nulls last, b.id",
+      values: [],
+    };
+  } else if (filters.sort === "salary") {
+    orderingFragment = {
+      sql: "b.salary_max desc nulls last, b.posted_at desc nulls last, b.id",
+      values: [],
+    };
+  } else if (filters.sort === "relevance" && filters.query) {
+    orderingFragment = {
+      sql: "ts_rank(b.search_vector, websearch_to_tsquery('english', $1)) desc, b.posted_at desc nulls last, b.id",
+      values: [filters.query],
+    };
+  }
+
+  const statementValues: unknown[] = [];
+  let paramOffset = 0;
+  const collect = (fragment: Fragment): string => {
+    const sql = fragment.sql.replace(
+      /\$\d+/gu,
+      (placeholder) => `$${Number(placeholder.slice(1)) + paramOffset}`,
+    );
+    paramOffset += fragment.values.length;
+    statementValues.push(...fragment.values);
+    return sql;
+  };
+
+  // When location labels are selected, the per-row EXISTS is evaluated once in
+  // the base CTE (`loc_cond`) and every facet condition references that flag.
+  const locationLabels = splitLocationSelections(filters.locations).labels;
+  let locationCond = "";
+  if (locationLabels.length > 0) {
+    locationCond = collect({
+      sql: `exists (
+        select 1 from app.job_location jl
+        where jl.job_id = j.id
+          and lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) = any($1)
+      )`,
+      values: [locationLabels],
+    });
+  }
+
+  const baseWhere = collect(buildFragment({ excludeAllFacets: true }));
+  const filteredWhere = collect(buildFragment({}));
+  // Base CTE is referenced inside a join with `b`; the WHERE fragments are
+  // written in terms of `j`/`c`, so rewrite to the materialized base alias.
+  const toBase = (sql: string): string =>
+    sql
+      .replace(/\bj\./gu, "b.")
+      .replace(/\bc\.(id|slug|name|logo_url)\b/gu, (_, column: string) => `b.company_${column}`)
+      .replace(/\bc\.(employer_industry_key|last_successful_check_at)\b/gu, "b.$1");
+  const visibility = `${PUBLIC_JOB_VISIBILITY} and ${DEADLINE_NOT_PASSED}`;
+  const baseVisibilityWhere = `${visibility}${baseWhere.length > 0 ? ` and ${baseWhere}` : ""}`;
+  const baseFilteredWhere = filteredWhere.length > 0 ? toBase(filteredWhere) : "";
+
+  // Disjunctive facet conditions (all other facets apply, the counted group is
+  // excluded) evaluated against the materialized base CTE.
+  let facetWhere: Record<CatalogFacetGroup, string> | undefined;
+  if (includeFacets) {
+    facetWhere = {
+      sectors: toBase(collect(buildFragment({ excludeFacet: "sectors", onlyFacets: true }))),
+      subsectors: toBase(collect(buildFragment({ excludeFacet: "subsectors", onlyFacets: true }))),
+      industries: toBase(collect(buildFragment({ excludeFacet: "industries", onlyFacets: true }))),
+      functions: toBase(collect(buildFragment({ excludeFacet: "functions", onlyFacets: true }))),
+      levels: toBase(collect(buildFragment({ excludeFacet: "levels", onlyFacets: true }))),
+      employers: toBase(collect(buildFragment({ excludeFacet: "employers", onlyFacets: true }))),
+      locations: toBase(collect(buildFragment({ excludeFacet: "locations", onlyFacets: true }))),
+      workModes: toBase(collect(buildFragment({ excludeFacet: "workModes", onlyFacets: true }))),
+      jobTypes: toBase(collect(buildFragment({ excludeFacet: "jobTypes", onlyFacets: true }))),
+      sponsorship: toBase(
+        collect(buildFragment({ excludeFacet: "sponsorship", onlyFacets: true })),
+      ),
+      sponsorLicence: toBase(
+        collect(buildFragment({ excludeFacet: "sponsorLicence", onlyFacets: true })),
+      ),
+    };
+  }
+  const orderingSql = collect(orderingFragment);
+  statementValues.push(pageSize, offset);
+
+  const facetClause = (facetWhere: string, extra: string): string => {
+    const parts = [facetWhere, extra].filter((part) => part.length > 0);
+    return parts.length > 0 ? `where ${parts.join(" and ")}` : "";
+  };
+
+  const cardColumns = `j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
+       j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
+       j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
+       j.job_function_key, j.career_level_key,
+       j.description_summary, j.skills, j.application_url,
+       j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
+       c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
+       c.employer_industry_key, c.last_successful_check_at,
+       b.company_has_sponsor`;
+
+  const facetSections = facetWhere
+    ? `,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.sector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.sectors, "b.sector_key is not null")}
+          group by b.sector_key
+          order by count(*) desc, b.sector_key asc
+        ) f) as sectors,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.subsector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.subsectors, "b.subsector_key is not null")}
+          group by b.subsector_key
+          order by count(*) desc, b.subsector_key asc
+        ) f) as subsectors,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.employer_industry_key as value, i.display_name as label, null::text as logo_url, count(*)::int as count
+          from base b
+          join app.employer_industry i on i.industry_key = b.employer_industry_key
+          ${facetClause(facetWhere.industries, "b.employer_industry_key is not null")}
+          group by b.employer_industry_key, i.display_name
+          order by count(*) desc, b.employer_industry_key asc
+        ) f) as industries,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.job_function_key as value, fn.display_name as label, null::text as logo_url, count(*)::int as count
+          from base b
+          join app.job_function fn on fn.function_key = b.job_function_key
+          ${facetClause(facetWhere.functions, "b.job_function_key is not null")}
+          group by b.job_function_key, fn.display_name
+          order by count(*) desc, b.job_function_key asc
+        ) f) as functions,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.career_level_key as value, l.display_name as label, null::text as logo_url, count(*)::int as count
+          from base b
+          join app.job_career_level l on l.level_key = b.career_level_key
+          ${facetClause(facetWhere.levels, "b.career_level_key is not null")}
+          group by b.career_level_key, l.display_name
+          order by count(*) desc, b.career_level_key asc
+        ) f) as levels,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select e.company_slug as value, c.name as label, c.logo_url as logo_url, e.count
+          from (
+            select b.company_slug, count(*)::int as count
+            from base b
+            ${facetClause(facetWhere.employers, "")}
+            group by b.company_slug
+            order by count(*) desc, b.company_slug asc
+            limit 100
+          ) e
+          join app.company c on c.slug = e.company_slug
+          order by e.count desc, c.name asc
+        ) f) as employers,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) as value,
+            null::text as label, null::text as logo_url, count(distinct b.id)::int as count
+          from base b
+          join app.job_location jl on jl.job_id = b.id
+          ${facetClause(facetWhere.locations, "jl.city is not null or jl.region is not null or jl.source_text <> ''")}
+          group by value
+          order by count desc, value asc
+          limit 100
+        ) f) as locations,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.remote_type as value, null::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.workModes, "b.remote_type in ('remote','hybrid','on_site')")}
+          group by b.remote_type
+          order by count desc, b.remote_type asc
+        ) f) as work_modes,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.opportunity_type as value, null::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.jobTypes, "b.opportunity_type <> 'unknown'")}
+          group by b.opportunity_type
+          order by count(*) desc, b.opportunity_type asc
+        ) f) as job_types,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select b.visa_sponsorship_status as value, null::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.sponsorship, "b.visa_sponsorship_status in ('confirmed','likely')")}
+          group by b.visa_sponsorship_status
+          order by count(*) desc, b.visa_sponsorship_status asc
+        ) f) as sponsorship,
+       (select coalesce(jsonb_agg(jsonb_build_object('value', f.value, 'label', f.label, 'logo_url', f.logo_url, 'count', f.count)), '[]'::jsonb)
+        from (
+          select '1'::text as value, 'Employer is a UK licensed sponsor'::text as label, null::text as logo_url, count(*)::int as count
+          from base b
+          ${facetClause(facetWhere.sponsorLicence, "b.company_has_sponsor")}
+        ) f) as sponsor_licence`
+    : "";
+
+  return {
+    sql: `with base as (
+       select j.id, j.posted_at, j.first_seen_at, j.application_deadline,
+         j.salary_min, j.salary_max,
+         ${filters.query ? "j.search_vector," : ""} j.sector_key, j.subsector_key, j.opportunity_type,
+         j.visa_sponsorship_status, j.remote_type, j.job_function_key, j.career_level_key,
+         c.id as company_id, c.slug as company_slug,
+         c.employer_industry_key, c.last_successful_check_at,
+         exists (
+           select 1 from app.employer_public_sponsor s
+           where s.company_id = c.id and s.has_sponsor
+         ) as company_has_sponsor${locationCond.length > 0 ? `,\n         ${locationCond} as loc_cond` : ""}
+       from app.job j
+       join app.company c on c.id = j.company_id
+       where ${baseVisibilityWhere}
+     ),
+     filtered as (
+       select b.* from base b ${baseFilteredWhere.length > 0 ? `where ${baseFilteredWhere}` : ""}
+     )
+     select
+       (select coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb)
+        from (
+          select ${cardColumns}
+          from (
+            select b.* from filtered b
+            order by ${orderingSql}
+            limit $${statementValues.length - 1}
+            offset $${statementValues.length}
+          ) b
+          join app.job j on j.id = b.id
+          join app.company c on c.id = j.company_id
+        ) r) as items,
+       (select count(*)::int from filtered) as total,
+       (select bool_or(b.salary_min is not null or b.salary_max is not null) from filtered b) as has_salary${facetSections}`,
+    values: statementValues,
+  };
+}
+
 export async function searchJobsFaceted(
   database: TransactionSql,
   filters: JobCatalogFilters,
@@ -261,228 +572,61 @@ export async function searchJobsFaceted(
   }>
 > {
   const pageSize = JOB_CATALOG_PAGE_SIZE;
-  const offset = (filters.page - 1) * pageSize;
-  const now = new Date();
-  const build = (excludeFacet?: CatalogFacetGroup) => {
-    const { conditions, values } = buildJobFilterClauses(filters, now, {
-      ...(excludeFacet ? { excludeFacet } : {}),
-    });
-    return {
-      values,
-      where:
-        conditions.length > 0
-          ? `${PUBLIC_JOB_VISIBILITY} and ${DEADLINE_NOT_PASSED} and ${conditions.join(" and ")}`
-          : `${PUBLIC_JOB_VISIBILITY} and ${DEADLINE_NOT_PASSED}`,
-    };
-  };
-
-  const base = build();
-  let rankingParam = "";
-  const orderingValues: unknown[] = [];
-  if (filters.sort === "relevance" && filters.query) {
-    rankingParam = `$${base.values.length + 1}`;
-    orderingValues.push(filters.query);
-  }
-  const ordering =
-    filters.sort === "closing"
-      ? "j.application_deadline asc nulls last, j.posted_at desc nulls last, j.id"
-      : filters.sort === "salary"
-        ? "j.salary_max desc nulls last, j.posted_at desc nulls last, j.id"
-        : filters.sort === "relevance" && filters.query
-          ? `ts_rank(j.search_vector, websearch_to_tsquery('english', ${rankingParam})) desc, j.posted_at desc nulls last, j.id`
-          : "j.posted_at desc nulls last, j.first_seen_at desc, j.id";
-
-  const pageValues = [...base.values, ...orderingValues, pageSize, offset];
-  const rows = await database.unsafe<JobCardRow[]>(
-    `select j.id, j.slug, j.title, j.normalized_title, j.location_text, j.posted_at,
-       j.first_seen_at, j.application_deadline, j.employment_type, j.remote_type,
-       j.opportunity_type, j.sector_key, j.subsector_key, j.visa_sponsorship_status,
-       j.job_function_key, j.career_level_key,
-       j.description_summary, j.skills, j.application_url,
-       j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
-       c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
-       c.employer_industry_key, c.last_successful_check_at,
-       coalesce(p.has_sponsor, false) as company_has_sponsor
-     from app.job j
-     join app.company c on c.id = j.company_id
-     left join app.employer_public_profile p on p.id = c.id
-     where ${base.where}
-     order by ${ordering}
-     limit $${pageValues.length - 1}
-     offset $${pageValues.length}`,
-    pageValues as never[],
-  );
-
-  const countRows = await database.unsafe<{ total: number }[]>(
-    `select count(*)::int as total
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${base.where}`,
-    base.values as never[],
-  );
-  const total = countRows[0]?.total ?? 0;
-
+  const { sql, values } = buildFacetedSearchStatement(filters, new Date(), true);
+  const rows = await database.unsafe<FacetedSearchRow[]>(sql, values as never[]);
+  const row = rows[0];
+  const total = row?.total ?? 0;
   const facets: Record<CatalogFacetGroup, readonly FacetCountRow[]> = {
-    sectors: [],
-    subsectors: [],
-    industries: [],
-    functions: [],
-    levels: [],
-    employers: [],
-    locations: [],
-    workModes: [],
-    jobTypes: [],
-    sponsorship: [],
-    sponsorLicence: [],
+    sectors: row?.sectors ?? [],
+    subsectors: row?.subsectors ?? [],
+    industries: row?.industries ?? [],
+    functions: row?.functions ?? [],
+    levels: row?.levels ?? [],
+    employers: row?.employers ?? [],
+    locations: row?.locations ?? [],
+    workModes: row?.work_modes ?? [],
+    jobTypes: row?.job_types ?? [],
+    sponsorship: row?.sponsorship ?? [],
+    sponsorLicence: row?.sponsor_licence ?? [],
   };
-
-  const sectorBase = build("sectors");
-  facets.sectors = await database.unsafe<FacetCountRow[]>(
-    `select j.sector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${sectorBase.where} and j.sector_key is not null
-     group by j.sector_key
-     order by count(*) desc, j.sector_key asc`,
-    sectorBase.values as never[],
-  );
-
-  const subsectorBase = build("subsectors");
-  facets.subsectors = await database.unsafe<FacetCountRow[]>(
-    `select j.subsector_key as value, null::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${subsectorBase.where} and j.subsector_key is not null
-     group by j.subsector_key
-     order by count(*) desc, j.subsector_key asc`,
-    subsectorBase.values as never[],
-  );
-
-  const employerBase = build("employers");
-  facets.employers = await database.unsafe<FacetCountRow[]>(
-    `select c.slug as value, c.name as label, c.logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${employerBase.where}
-     group by c.slug, c.name, c.logo_url
-     order by count(*) desc, c.name asc
-     limit 100`,
-    employerBase.values as never[],
-  );
-
-  const jobTypeBase = build("jobTypes");
-  facets.jobTypes = await database.unsafe<FacetCountRow[]>(
-    `select j.opportunity_type as value, null::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${jobTypeBase.where} and j.opportunity_type <> 'unknown'
-     group by j.opportunity_type
-     order by count(*) desc, j.opportunity_type asc`,
-    jobTypeBase.values as never[],
-  );
-
-  const sponsorshipBase = build("sponsorship");
-  facets.sponsorship = await database.unsafe<FacetCountRow[]>(
-    `select j.visa_sponsorship_status as value, null::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${sponsorshipBase.where} and j.visa_sponsorship_status in ('confirmed','likely')
-     group by j.visa_sponsorship_status
-     order by count(*) desc, j.visa_sponsorship_status asc`,
-    sponsorshipBase.values as never[],
-  );
-
-  const industryBase = build("industries");
-  facets.industries = await database.unsafe<FacetCountRow[]>(
-    `select c.employer_industry_key as value, i.display_name as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     join app.employer_industry i on i.industry_key = c.employer_industry_key
-     where ${industryBase.where} and c.employer_industry_key is not null
-     group by c.employer_industry_key, i.display_name
-     order by count(*) desc, c.employer_industry_key asc`,
-    industryBase.values as never[],
-  );
-
-  const functionBase = build("functions");
-  facets.functions = await database.unsafe<FacetCountRow[]>(
-    `select j.job_function_key as value, f.display_name as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     join app.job_function f on f.function_key = j.job_function_key
-     where ${functionBase.where} and j.job_function_key is not null
-     group by j.job_function_key, f.display_name
-     order by count(*) desc, j.job_function_key asc`,
-    functionBase.values as never[],
-  );
-
-  const levelBase = build("levels");
-  facets.levels = await database.unsafe<FacetCountRow[]>(
-    `select j.career_level_key as value, l.display_name as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     join app.job_career_level l on l.level_key = j.career_level_key
-     where ${levelBase.where} and j.career_level_key is not null
-     group by j.career_level_key, l.display_name
-     order by count(*) desc, j.career_level_key asc`,
-    levelBase.values as never[],
-  );
-
-  const workModeBase = build("workModes");
-  facets.workModes = await database.unsafe<FacetCountRow[]>(
-    `select j.remote_type as value, null::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${workModeBase.where} and j.remote_type in ('remote','hybrid','on_site')
-     group by j.remote_type
-     order by count desc, j.remote_type asc`,
-    workModeBase.values as never[],
-  );
-
-  const sponsorLicenceBase = build("sponsorLicence");
-  facets.sponsorLicence = await database.unsafe<FacetCountRow[]>(
-    `select '1'::text as value, 'Employer is a UK licensed sponsor'::text as label, null::text as logo_url, count(*)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${sponsorLicenceBase.where}
-       and exists (
-         select 1 from app.employer_public_profile p
-         where p.id = c.id and p.has_sponsor
-       )`,
-    sponsorLicenceBase.values as never[],
-  );
-
-  const locationBase = build("locations");
-  const cityRows = await database.unsafe<FacetCountRow[]>(
-    `select lower(coalesce(nullif(btrim(jl.city), ''), nullif(btrim(jl.region), ''), nullif(btrim(jl.source_text), ''))) as value,
-            null::text as label, null::text as logo_url,
-            count(distinct j.id)::int as count
-     from app.job j
-     join app.company c on c.id = j.company_id
-     join app.job_location jl on jl.job_id = j.id
-     where ${locationBase.where}
-       and (jl.city is not null or jl.region is not null or jl.source_text <> '')
-     group by value
-     order by count desc, value asc
-     limit 100`,
-    locationBase.values as never[],
-  );
-  facets.locations = cityRows;
-
-  const salaryRows = await database.unsafe<{ has: boolean }[]>(
-    `select count(*) filter (where j.salary_min is not null or j.salary_max is not null) > 0 as has
-     from app.job j
-     join app.company c on c.id = j.company_id
-     where ${base.where}`,
-    base.values as never[],
-  );
-  const hasSalaryData = salaryRows[0]?.has ?? false;
 
   return {
     facets,
-    hasSalaryData,
+    hasSalaryData: row?.has_salary ?? false,
     result: {
-      items: rows,
+      items: (row?.items ?? []) as JobCardRow[],
+      page: filters.page,
+      pageCount: Math.max(1, Math.ceil(total / pageSize)),
+      pageSize,
+      total,
+    },
+  };
+}
+
+/**
+ * Page-only variant (results, count, salary probe; no facet aggregation) for
+ * the cached-facet fast path. The facet state is request-independent when no
+ * keyword or facet filters are active, so it is served from the short-TTL
+ * cache while the page rows themselves always come from the database.
+ */
+export async function searchJobsPage(
+  database: TransactionSql,
+  filters: JobCatalogFilters,
+): Promise<
+  Readonly<{
+    result: JobSearchResult;
+    hasSalaryData: boolean;
+  }>
+> {
+  const pageSize = JOB_CATALOG_PAGE_SIZE;
+  const { sql, values } = buildFacetedSearchStatement(filters, new Date(), false);
+  const rows = await database.unsafe<FacetedPageRow[]>(sql, values as never[]);
+  const row = rows[0];
+  const total = row?.total ?? 0;
+  return {
+    hasSalaryData: row?.has_salary ?? false,
+    result: {
+      items: (row?.items ?? []) as JobCardRow[],
       page: filters.page,
       pageCount: Math.max(1, Math.ceil(total / pageSize)),
       pageSize,
@@ -565,29 +709,156 @@ export type EmployerPublicProfileRow = Readonly<{
   live_sources: number;
 }>;
 
+export type EmployerDirectoryQuery = Readonly<{
+  query: string | null;
+  industry: string | null;
+  sponsor: boolean;
+  hiring: boolean;
+  sizeBand: string | null;
+  ownership: string | null;
+  sort: "hiring" | "roles" | "az";
+  page: number;
+}>;
+
+export type EmployerDirectoryPageResult = Readonly<{
+  hiringTotal: number;
+  rows: readonly EmployerPublicProfileRow[];
+  total: number;
+}>;
+
+/**
+ * SQL mirror of `employerDirectoryFilterAndSort` in the employer-directory
+ * domain: filters and sorts inside the database and returns one bounded page
+ * instead of materialising the whole directory in application code. The
+ * window counts keep the "N employers · M hiring now" summary truthful for the
+ * whole filtered set, not just the returned page.
+ */
 export async function listEmployerPublicDirectory(
   database: TransactionSql,
-): Promise<EmployerPublicProfileRow[]> {
-  return database<EmployerPublicProfileRow[]>`
-    select id, slug, name, logo_url, description, directory_visible,
-      website_url, careers_url, employer_industry_key, employer_subindustry_key,
-      employee_band, employee_scope, ownership_type, ticker, exchange,
-      facts_as_of, has_sponsor, sponsor_snapshot_date, current_jobs, live_sources
-    from app.employer_public_profile
-  `;
+  query: EmployerDirectoryQuery,
+): Promise<EmployerDirectoryPageResult> {
+  const pageSize = EMPLOYER_DIRECTORY_PAGE_SIZE;
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  const parameter = (value: unknown): string => {
+    values.push(value);
+    return `$${values.length}`;
+  };
+  if (query.query) {
+    conditions.push(
+      `(p.name ilike ${parameter(`%${query.query}%`)} or p.slug ilike ${parameter(`%${query.query}%`)})`,
+    );
+  }
+  if (query.industry) conditions.push(`p.employer_industry_key = ${parameter(query.industry)}`);
+  if (query.sponsor) conditions.push("p.has_sponsor");
+  if (query.hiring) conditions.push("p.current_jobs > 0");
+  if (query.sizeBand) conditions.push(`p.employee_band = ${parameter(query.sizeBand)}`);
+  if (query.ownership) conditions.push(`p.ownership_type = ${parameter(query.ownership)}`);
+  const where = conditions.length > 0 ? `where ${conditions.join(" and ")}` : "";
+  const ordering =
+    query.sort === "az"
+      ? "name asc"
+      : query.sort === "roles"
+        ? "current_jobs desc, name asc"
+        : "(current_jobs > 0) desc, current_jobs desc, name asc";
+  values.push(pageSize, (query.page - 1) * pageSize);
+
+  const rows = await database.unsafe<
+    (EmployerPublicProfileRow & { hiring_total: number; total: number })[]
+  >(
+    `with directory as (
+       select p.*,
+         count(*) filter (where p.current_jobs > 0) over () as hiring_total,
+         count(*) over () as total
+       from app.employer_public_profile p
+       ${where}
+     )
+     select id, slug, name, logo_url, description, directory_visible,
+       website_url, careers_url, employer_industry_key, employer_subindustry_key,
+       employee_band, employee_scope, ownership_type, ticker, exchange,
+       facts_as_of, has_sponsor, sponsor_snapshot_date, current_jobs, live_sources,
+       hiring_total, total
+     from directory
+     order by ${ordering}
+     limit $${values.length - 1}
+     offset $${values.length}`,
+    values as never[],
+  );
+  const first = rows[0];
+  return {
+    hiringTotal: first?.hiring_total ?? 0,
+    rows,
+    total: first?.total ?? 0,
+  };
 }
 
+/**
+ * Distinct size-band and ownership options for the directory filter form.
+ * Derived from the narrow public search projection (latest research snapshot
+ * facts per employer, matching what the directory view displays), so the
+ * option lists are cheap instead of materialising the catalogue-wide profile
+ * view twice per request.
+ */
+export async function listEmployerDirectoryOptions(
+  database: TransactionSql,
+): Promise<Readonly<{ employeeBands: readonly string[]; ownerships: readonly string[] }>> {
+  const rows = await database<{ bands: string[] | null; ownerships: string[] | null }[]>`
+    select
+      (select coalesce(jsonb_agg(band order by band), '[]'::jsonb)
+       from (select distinct employee_band as band from app.employer_public_search where employee_band is not null) b) as bands,
+      (select coalesce(jsonb_agg(ownership order by ownership), '[]'::jsonb)
+       from (select distinct ownership_type as ownership from app.employer_public_search where ownership_type is not null) o) as ownerships
+  `;
+  return {
+    employeeBands: rows[0]?.bands ?? [],
+    ownerships: rows[0]?.ownerships ?? [],
+  };
+}
+
+/**
+ * Single-employer public profile. The full `employer_public_profile` view
+ * materialises catalogue-wide aggregates (`current_jobs`, `live_sources`,
+ * aliases) for every company, so a one-employer lookup would scan the whole
+ * job catalogue. This direct query derives the same facts from the indexed
+ * company, snapshot, sponsor and source rows instead.
+ */
 export async function findEmployerPublicProfile(
   database: TransactionSql,
   slug: string,
 ): Promise<EmployerPublicProfileRow | null> {
   const rows = await database<EmployerPublicProfileRow[]>`
-    select id, slug, name, logo_url, description, directory_visible,
-      website_url, careers_url, employer_industry_key, employer_subindustry_key,
-      employee_band, employee_scope, ownership_type, ticker, exchange,
-      facts_as_of, has_sponsor, sponsor_snapshot_date, current_jobs, live_sources
-    from app.employer_public_profile
-    where slug = ${slug}
+    select c.id, c.slug, c.name, c.logo_url, c.description, c.directory_visible,
+      nullif(c.website_url, '') as website_url,
+      nullif(c.careers_url, '') as careers_url,
+      c.employer_industry_key, c.employer_subindustry_key,
+      snap.employee_band, snap.employee_scope, snap.ownership_type, snap.ticker,
+      snap.exchange, snap.research_date as facts_as_of,
+      coalesce(sp.has_sponsor, false) as has_sponsor,
+      sp.sponsor_snapshot_date,
+      (
+        select count(*)::int
+        from app.job j
+        where j.company_id = c.id
+          and j.active and j.publication_status = 'published'
+          and j.eligibility_status = 'eligible'
+          and (j.application_deadline is null or j.application_deadline >= now())
+      ) as current_jobs,
+      (
+        select count(*)::int
+        from app.job_source s
+        where s.company_id = c.id and s.status = 'active'
+      ) as live_sources
+    from app.company c
+    left join lateral (
+      select s.employee_band, s.employee_scope, s.ownership_type, s.ticker, s.exchange,
+        s.research_date
+      from app.employer_research_snapshot s
+      where s.company_id = c.id
+      order by s.research_date desc, s.dataset_version desc
+      limit 1
+    ) snap on true
+    left join app.employer_public_sponsor sp on sp.company_id = c.id
+    where c.slug = ${slug}
     limit 1
   `;
   return rows[0] ?? null;
@@ -684,7 +955,6 @@ export async function listCompanyActiveJobs(
     select ${database.unsafe(jobCardColumns)}
     from app.job j
     join app.company c on c.id = j.company_id
-    left join app.employer_public_profile p on p.id = c.id
     where j.company_id = ${companyId}::uuid
       and j.active and j.publication_status = 'published'
       and j.eligibility_status = 'eligible'
@@ -704,7 +974,10 @@ const jobCardColumns = `j.id, j.slug, j.title, j.normalized_title, j.location_te
   j.salary_min, j.salary_max, j.salary_currency, j.salary_period,
   c.name as company_name, c.slug as company_slug, c.logo_url as company_logo_url,
   c.employer_industry_key, c.last_successful_check_at,
-  coalesce(p.has_sponsor, false) as company_has_sponsor`;
+  exists (
+    select 1 from app.employer_public_sponsor s
+    where s.company_id = c.id and s.has_sponsor
+  ) as company_has_sponsor`;
 
 /** Deterministic ordering shared by every related-role query. */
 const relatedRoleOrder = `j.posted_at desc nulls last, j.first_seen_at desc, j.id`;
@@ -720,7 +993,6 @@ export async function listRelatedEmployerJobs(
     select ${database.unsafe(jobCardColumns)}
     from app.job j
     join app.company c on c.id = j.company_id
-    left join app.employer_public_profile p on p.id = c.id
     where j.company_id = ${companyId}::uuid
       and j.id <> ${excludeJobId}::uuid
       and j.active and j.publication_status = 'published'
@@ -793,7 +1065,6 @@ export async function listSimilarJobs(
     `select ${jobCardColumns}
      from app.job j
      join app.company c on c.id = j.company_id
-     left join app.employer_public_profile p on p.id = c.id
      where ${conditions.join(" and ")}
      order by ${relatedRoleOrder}
      limit $${values.length}`,

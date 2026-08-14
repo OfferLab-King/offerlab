@@ -187,10 +187,42 @@ contract between the researched universe and the public routes.
   evidence and an official URL). Placeholder `employer.invalid` URLs are
   treated as absent, so nothing public links to them.
 - Search and filters (industry, size, ownership, sponsor, hiring) are
-  URL-backed; hiring-first, most-roles and A–Z sorts are supported.
+  URL-backed; hiring-first, most-roles and A–Z sorts are supported; the
+  directory is paginated (48 per page) and filtering/sorting happen in SQL.
 - SEO: `isEmployerIndexable` now also qualifies credible researched profiles
   (no filler required), and the sitemap includes them; filtered directory
   URLs stay noindex.
+
+### Hot-path public projections
+
+The job search hot path never materialises the full `employer_public_profile`
+view (its `current_jobs` aggregate scans the whole catalogue). Two narrow
+security-barrier projections serve the hot paths instead:
+
+- `app.employer_public_sponsor` — `(company_id, has_sponsor,
+sponsor_snapshot_date)` derived from the administrator-only sponsor entity
+  register; used by job search results, sponsor-licence filters and facets.
+- `app.employer_public_search` — canonical name/aliases plus latest-snapshot
+  employee band and ownership, for employer autocomplete and directory filter
+  options.
+
+Both are owned by the migration role, granted to `offerlab_app` (and
+`offerlab_crawler` for read parity) and revoked from `public`/`anon`/
+`authenticated`. Their facts mirror the corresponding columns of
+`employer_public_profile`; the full view remains the single-profile and
+directory contract.
+
+### Deterministic performance fixtures
+
+`scripts/jobs/perf-fixtures.ts` generates a deterministic synthetic employer
+universe and job catalogue (reserved `.example.com` URLs, `perf-` prefixed
+rows, idempotent cleanup on re-run) for web-request latency measurement:
+
+```bash
+PERF_COMPANIES=1000 PERF_JOBS=5000 pnpm tsx scripts/jobs/perf-fixtures.ts
+```
+
+It is a dev/benchmark tool only and never touches production data or sources.
 
 ## Public jobs facets (Phase F)
 

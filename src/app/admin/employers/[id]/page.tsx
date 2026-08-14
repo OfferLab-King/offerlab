@@ -34,15 +34,40 @@ const candidateStatusLabel: Readonly<Record<string, string>> = {
   promoted: "Promoted",
 };
 
+const candidateStatusTint: Readonly<Record<string, string>> = {
+  verified: "status-badge--positive",
+  promoted: "status-badge--positive",
+  failed: "status-badge--negative",
+  blocked: "status-badge--negative",
+  unsupported: "status-badge--warn",
+  not_researched: "",
+  researching: "",
+  candidate_found: "",
+  platform_identified: "",
+  endpoint_identified: "",
+};
+
 const sourceStatusLabel: Readonly<Record<string, string>> = {
   active: "Active",
   paused: "Paused",
   archived: "Archived",
 };
 
+const sourceStatusTint: Readonly<Record<string, string>> = {
+  active: "status-badge--positive",
+  paused: "status-badge--warn",
+  archived: "",
+};
+
 function dateOnly(value: Date | null | undefined): string {
   if (!value) return "–";
   return value.toISOString().slice(0, 10);
+}
+
+function tintForHealth(health: string | null): string {
+  if (health === "healthy") return "status-badge--positive";
+  if (health === "unhealthy") return "status-badge--negative";
+  return "status-badge--warn";
 }
 
 export default async function EmployerDetailPage({
@@ -312,7 +337,13 @@ export default async function EmployerDetailPage({
                       )}
                     </td>
                     <td>{candidate.platformHint ?? "–"}</td>
-                    <td>{candidateStatusLabel[candidate.status] ?? candidate.status}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${candidateStatusTint[candidate.status] ?? ""}`}
+                      >
+                        {candidateStatusLabel[candidate.status] ?? candidate.status}
+                      </span>
+                    </td>
                     <td>{candidate.confidence ?? "–"}</td>
                     <td>{candidate.discoveryMethod ?? "–"}</td>
                     <td>
@@ -363,12 +394,24 @@ export default async function EmployerDetailPage({
                       <strong>{source.name}</strong>
                       <span className="cms-employer-aliases"> {source.slug}</span>
                     </td>
-                    <td>{sourceStatusLabel[source.status] ?? source.status}</td>
+                    <td>
+                      <span className={`status-badge ${sourceStatusTint[source.status] ?? ""}`}>
+                        {sourceStatusLabel[source.status] ?? source.status}
+                      </span>
+                    </td>
                     <td>{source.sourceType}</td>
                     <td>{source.channel}</td>
                     <td>{source.needsBrowser ? "Browser" : "HTTP"}</td>
                     <td>
-                      {source.landingHealthStatus} / {source.endpointHealthStatus}
+                      <span className={`status-badge ${tintForHealth(source.landingHealthStatus)}`}>
+                        {source.landingHealthStatus}
+                      </span>
+                      <span className="hint"> / </span>
+                      <span
+                        className={`status-badge ${tintForHealth(source.endpointHealthStatus)}`}
+                      >
+                        {source.endpointHealthStatus}
+                      </span>
                     </td>
                     <td>{source.consecutiveFailures}</td>
                     <td>{dateOnly(source.nextCheckAt)}</td>

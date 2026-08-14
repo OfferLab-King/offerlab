@@ -106,8 +106,19 @@ describe("employer public profile view", () => {
         ${`https://paused-public-${uniqueSlug("u")}.example.com`}, 'custom', 'paused'
       )
     `;
-    const rows = await migrationDatabase.begin((t) => listEmployerPublicDirectory(t));
-    const row = rows.find((entry) => entry.name === "Public Facts Co")!;
+    const rows = await migrationDatabase.begin((t) =>
+      listEmployerPublicDirectory(t, {
+        query: "public facts",
+        industry: null,
+        sponsor: false,
+        hiring: false,
+        sizeBand: null,
+        ownership: null,
+        sort: "az",
+        page: 1,
+      }),
+    );
+    const row = rows.rows.find((entry) => entry.name === "Public Facts Co")!;
     expect(row.employer_industry_key).toBe("financial_services");
     expect(row.employee_band).toBe("10,000–49,999");
     expect(row.has_sponsor).toBe(true);
@@ -164,13 +175,24 @@ describe("employer public profile view", () => {
       name: "Thin Employer Co",
       careersUrl: `https://employer.invalid/thin-${uniqueSlug("t")}`,
     });
-    const rows = await migrationDatabase.begin((t) => listEmployerPublicDirectory(t));
-    const hiring = rows.find((entry) => entry.name === "Hiring Co")!;
+    const rows = await migrationDatabase.begin((t) =>
+      listEmployerPublicDirectory(t, {
+        query: null,
+        industry: null,
+        sponsor: false,
+        hiring: false,
+        sizeBand: null,
+        ownership: null,
+        sort: "az",
+        page: 1,
+      }),
+    );
+    const hiring = rows.rows.find((entry) => entry.name === "Hiring Co")!;
     expect(hiring.current_jobs).toBe(1);
-    const credible = rows.find((entry) => entry.name === "Credible Zero-Role Co")!;
+    const credible = rows.rows.find((entry) => entry.name === "Credible Zero-Role Co")!;
     expect(credible.current_jobs).toBe(0);
     expect(credible.employer_industry_key).toBe("financial_services");
-    expect(rows.some((entry) => entry.name === "Thin Employer Co")).toBe(false);
+    expect(rows.rows.some((entry) => entry.name === "Thin Employer Co")).toBe(false);
   });
 
   it("returns a single-employer profile by slug and includes sponsor evidence", async () => {
@@ -200,8 +222,19 @@ describe("employer public profile view", () => {
     });
     const rows = await migrationDatabase.begin((t) => listIndexableEmployersForSitemap(t, 10_000));
     const slugs = new Set(rows.map((row) => row.slug));
-    const all = await migrationDatabase.begin((t) => listEmployerPublicDirectory(t));
-    const credible = all.find((entry) => entry.name === "Sitemap Credible Co")!;
+    const all = await migrationDatabase.begin((t) =>
+      listEmployerPublicDirectory(t, {
+        query: "sitemap credible",
+        industry: null,
+        sponsor: false,
+        hiring: false,
+        sizeBand: null,
+        ownership: null,
+        sort: "az",
+        page: 1,
+      }),
+    );
+    const credible = all.rows.find((entry) => entry.name === "Sitemap Credible Co")!;
     expect(slugs.has(credible.slug)).toBe(true);
   });
 

@@ -40,16 +40,17 @@ export async function generateMetadata({ params }: { params: JobDetailParams }):
 
 export default async function JobDetailPage({ params }: { params: JobDetailParams }) {
   const { slug } = await params;
-  const job = await readJobDetail(slug);
+  const [job, access] = await Promise.all([readJobDetail(slug), currentMemberAccess()]);
   const now = new Date();
   if (!job || !isPubliclyVisible(job, now)) notFound();
   const indexable = isJobIndexable(job, now);
 
-  const access = await currentMemberAccess();
-  const memberSaved =
+  const [memberSaved, related] = await Promise.all([
     access.status === "eligible"
-      ? await isJobSavedForMember(access.authorization.userId, job.id)
-      : false;
+      ? isJobSavedForMember(access.authorization.userId, job.id)
+      : Promise.resolve(false),
+    readRelatedJobs(job),
+  ]);
   const deadlinePassed = isDeadlinePassed(job.application_deadline, now);
   const salary = formatSalary(
     job.salary_min === null ? null : Number(job.salary_min),
@@ -71,7 +72,6 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
     : null;
   const levelLabel = careerLevelLabel(job.career_level_key as CareerLevelKey | null);
   const industryLabel = employerIndustryLabel(job.employer_industry_key);
-  const related = await readRelatedJobs(job);
 
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
   const structuredData = indexable ? buildJobStructuredData(job, now, base) : null;

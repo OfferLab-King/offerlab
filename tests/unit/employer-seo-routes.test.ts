@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("../../src/modules/job-catalog/application/catalog", () => ({
   readEmployerActiveJobs: vi.fn(async () => []),
   readEmployerDirectoryEntries: vi.fn(async () => []),
+  readEmployerDirectoryOptions: vi.fn(async () => ({ employeeBands: [], ownerships: [] })),
   readEmployerProfile: vi.fn(async () => null),
   readSectorJobCounts: vi.fn(async () => []),
 }));

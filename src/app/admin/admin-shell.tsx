@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 
-const primaryLinks = [
+type AdminNavLink = Readonly<{ href: Route; label: string; section: string }>;
+
+const primaryLinks: readonly AdminNavLink[] = [
   { href: "/admin/content", label: "Content", section: "content" },
   {
     href: "/admin/content?type=coaching_case",
@@ -19,7 +22,7 @@ const primaryLinks = [
   { href: "/admin/job-sources", label: "Job sources", section: "job-sources" },
   { href: "/admin/source-discovery", label: "Discovery", section: "discovery" },
   { href: "/admin/employers", label: "Employers", section: "employers" },
-] as const;
+];
 
 function getActiveSection(pathname: string, type: string | null) {
   if (pathname.startsWith("/admin/content/paths")) return "paths";
@@ -52,7 +55,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           {primaryLinks.map(({ href, label, section }) => (
             <Link
               aria-current={activeSection === section ? "page" : undefined}
-              href={href as never}
+              href={href}
               key={label}
             >
               {label}
