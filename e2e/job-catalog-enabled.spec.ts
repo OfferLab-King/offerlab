@@ -374,6 +374,14 @@ test("filter reset controls do not shift the sidebar when a sector is selected",
   const desktopSidebar = page.locator(".catalogue-sidebar-column .catalogue-sidebar");
   const sectorHeading = desktopSidebar.locator("#facet-sectors");
   const clearAll = desktopSidebar.locator(".catalogue-sidebar-header .catalogue-facet-clear");
+  const sectorRow = desktopSidebar
+    .getByRole("button", { name: /Technology & IT Infrastructure/i })
+    .first();
+  // The sidebar and its sector list arrive with the first search payload. Wait
+  // for them explicitly so the geometry measurement and selection stay stable
+  // even on slow CI runners; match either the expanded or collapsed state.
+  await expect(sectorHeading).toBeVisible({ timeout: 15_000 });
+  await expect(sectorRow).toBeVisible({ timeout: 15_000 });
   const rect = (locator: typeof desktopSidebar) =>
     locator.evaluate((element) => {
       const box = element.getBoundingClientRect();
@@ -382,11 +390,12 @@ test("filter reset controls do not shift the sidebar when a sector is selected",
   const beforeSector = await rect(sectorHeading);
   const beforeClear = await rect(clearAll);
 
-  await desktopSidebar
-    .getByRole("button", { name: /Technology & IT Infrastructure.*expand/i })
-    .first()
-    .click();
-  await desktopSidebar.getByRole("button", { name: /^All Technology & IT Infrastructure/ }).click();
+  await sectorRow.click();
+  const allSector = desktopSidebar.getByRole("button", {
+    name: /^All Technology & IT Infrastructure/,
+  });
+  await expect(allSector).toBeVisible();
+  await allSector.click();
   await expect(page).toHaveURL(/technology-it/);
 
   const afterSector = await rect(sectorHeading);
