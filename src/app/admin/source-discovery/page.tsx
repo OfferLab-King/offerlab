@@ -9,9 +9,17 @@ import {
 } from "../../../modules/employer-research/application/source-discovery-view";
 import { readSourceDiscovery } from "../../../modules/employer-research/application/employer-research";
 import { promoteVerifiedCandidate } from "./actions";
+import { formatAdminDate } from "../format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function statusTint(status: string): string {
+  if (status === "verified" || status === "promoted") return "status-badge--positive";
+  if (status === "failed" || status === "blocked") return "status-badge--negative";
+  if (status === "unsupported") return "status-badge--warn";
+  return "";
+}
 
 export default async function SourceDiscoveryPage({
   searchParams,
@@ -254,26 +262,37 @@ export default async function SourceDiscoveryPage({
                   <td>{candidate.tier ?? "–"}</td>
                   <td>{candidate.crawlerPriorityScore ?? "–"}</td>
                   <td>
-                    <a href={candidate.candidateUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={candidate.candidateUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={candidate.candidateUrl}
+                    >
                       {candidate.candidateUrl.slice(0, 60)}
                     </a>
                   </td>
                   <td>{candidate.platformHint ?? "–"}</td>
-                  <td>{discoveryStatusLabels[candidate.status] ?? candidate.status}</td>
+                  <td>
+                    <span className={`status-badge ${statusTint(candidate.status)}`}>
+                      {discoveryStatusLabels[candidate.status] ?? candidate.status}
+                    </span>
+                  </td>
                   <td>{candidate.confidence ?? "–"}</td>
                   <td>{candidate.discoveryMethod ?? "–"}</td>
                   <td>
                     {candidate.atsVerificationStatus ?? "–"}
-                    {candidate.verifiedAt
-                      ? ` · ${candidate.verifiedAt.toISOString().slice(0, 10)}`
-                      : ""}
+                    {candidate.verifiedAt ? ` · ${formatAdminDate(candidate.verifiedAt)}` : ""}
                   </td>
                   <td>{candidate.liveSources > 0 ? candidate.liveSources : "–"}</td>
                   <td>
                     {candidate.status === "verified" || candidate.verifiedAt !== null ? (
                       <form action={promoteVerifiedCandidate}>
                         <input type="hidden" name="candidateId" value={candidate.candidateId} />
-                        <button type="submit" className="button-link">
+                        <button
+                          type="submit"
+                          className="button-link"
+                          title="Creates a paused source in Job sources; never activates crawling automatically."
+                        >
                           Promote (paused)
                         </button>
                       </form>

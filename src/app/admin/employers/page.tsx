@@ -8,6 +8,7 @@ import {
   parseEmployerResearchFilters,
 } from "../../../modules/employer-research/application/employer-research-view";
 import { readEmployerResearch } from "../../../modules/employer-research/application/employer-research";
+import { formatAdminDate } from "../format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,15 @@ const researchStatusLabel: Readonly<Record<string, string>> = {
   needs_re_verification: "Needs re-verification",
   blocked_review: "Blocked / review",
   verified_source: "Source verified",
+};
+
+const researchStatusTint: Readonly<Record<string, string>> = {
+  verified_platform: "status-badge--positive",
+  verified_careers_url: "status-badge--positive",
+  verified_source: "status-badge--positive",
+  needs_re_verification: "status-badge--warn",
+  blocked_review: "status-badge--negative",
+  not_researched: "",
 };
 
 export default async function EmployersResearchPage({
@@ -53,14 +63,46 @@ export default async function EmployersResearchPage({
         <div className="cms-section-heading">
           <div>
             <h2 id="employer-summary">Universe summary</h2>
-            <p>
-              {summary.total} researched employers · P0 {summary.p0} · P1 {summary.p1} · P2{" "}
-              {summary.p2} · P3 {summary.p3} · unresolved {summary.unresolved} · live sources{" "}
-              {summary.withLiveSource} · with jobs {summary.withJobs} · sponsor entities{" "}
-              {summary.sponsors}
-            </p>
           </div>
         </div>
+        <dl className="cms-summary-grid">
+          <div>
+            <strong>{summary.total}</strong>
+            <span>Researched</span>
+          </div>
+          <div>
+            <strong>{summary.p0}</strong>
+            <span>P0</span>
+          </div>
+          <div>
+            <strong>{summary.p1}</strong>
+            <span>P1</span>
+          </div>
+          <div>
+            <strong>{summary.p2}</strong>
+            <span>P2</span>
+          </div>
+          <div>
+            <strong>{summary.p3}</strong>
+            <span>P3</span>
+          </div>
+          <div>
+            <strong>{summary.unresolved}</strong>
+            <span>Unresolved</span>
+          </div>
+          <div>
+            <strong>{summary.withLiveSource}</strong>
+            <span>Live sources</span>
+          </div>
+          <div>
+            <strong>{summary.withJobs}</strong>
+            <span>With jobs</span>
+          </div>
+          <div>
+            <strong>{summary.sponsors}</strong>
+            <span>Sponsor entities</span>
+          </div>
+        </dl>
         <form className="cms-filter-row" method="get" action="/admin/employers">
           <label>
             Search
@@ -136,41 +178,43 @@ export default async function EmployersResearchPage({
               ))}
             </select>
           </label>
-          <label className="cms-check-filter">
-            <input name="live" type="checkbox" value="1" defaultChecked={filters.hasLiveSource} />
-            Has live source
-          </label>
-          <label className="cms-check-filter">
-            <input name="jobs" type="checkbox" value="1" defaultChecked={filters.hasJobs} />
-            Has jobs
-          </label>
-          <label className="cms-check-filter">
-            <input
-              name="candidate"
-              type="checkbox"
-              value="1"
-              defaultChecked={filters.hasSourceCandidate}
-            />
-            Has source candidate
-          </label>
-          <label className="cms-check-filter">
-            <input
-              name="sponsor"
-              type="checkbox"
-              value="1"
-              defaultChecked={filters.hasSponsorEntity}
-            />
-            Has sponsor entity
-          </label>
-          <label className="cms-check-filter">
-            <input
-              name="unresolved"
-              type="checkbox"
-              value="1"
-              defaultChecked={filters.unresolved}
-            />
-            Unresolved identity
-          </label>
+          <div className="cms-filter-checks">
+            <label className="cms-check-filter">
+              <input name="live" type="checkbox" value="1" defaultChecked={filters.hasLiveSource} />
+              Has live source
+            </label>
+            <label className="cms-check-filter">
+              <input name="jobs" type="checkbox" value="1" defaultChecked={filters.hasJobs} />
+              Has jobs
+            </label>
+            <label className="cms-check-filter">
+              <input
+                name="candidate"
+                type="checkbox"
+                value="1"
+                defaultChecked={filters.hasSourceCandidate}
+              />
+              Has source candidate
+            </label>
+            <label className="cms-check-filter">
+              <input
+                name="sponsor"
+                type="checkbox"
+                value="1"
+                defaultChecked={filters.hasSponsorEntity}
+              />
+              Has sponsor entity
+            </label>
+            <label className="cms-check-filter">
+              <input
+                name="unresolved"
+                type="checkbox"
+                value="1"
+                defaultChecked={filters.unresolved}
+              />
+              Unresolved identity
+            </label>
+          </div>
           <button type="submit">Apply filters</button>
         </form>
       </section>
@@ -216,7 +260,9 @@ export default async function EmployersResearchPage({
                         {row.aliases.slice(0, 3).join(" · ")}
                       </span>
                     )}
-                    {row.companyId === null && <span className="status-badge">Unresolved</span>}
+                    {row.companyId === null && (
+                      <span className="status-badge status-badge--warn">Unresolved</span>
+                    )}
                   </td>
                   <td>
                     {row.tier ? (tierLabel[row.tier as keyof typeof tierLabel] ?? row.tier) : "–"}
@@ -240,10 +286,16 @@ export default async function EmployersResearchPage({
                   <td>{row.atsProviders ?? "–"}</td>
                   <td>{row.currentJobs > 0 ? row.currentJobs : "–"}</td>
                   <td>
-                    {row.researchStatus
-                      ? (researchStatusLabel[row.researchStatus] ?? row.researchStatus)
-                      : "–"}
-                    {row.researchDate ? ` · ${row.researchDate.toISOString().slice(0, 10)}` : ""}
+                    {row.researchStatus ? (
+                      <span
+                        className={`status-badge ${researchStatusTint[row.researchStatus] ?? ""}`}
+                      >
+                        {researchStatusLabel[row.researchStatus] ?? row.researchStatus}
+                      </span>
+                    ) : (
+                      "–"
+                    )}
+                    {row.researchDate ? ` · ${formatAdminDate(row.researchDate)}` : ""}
                   </td>
                 </tr>
               ))}

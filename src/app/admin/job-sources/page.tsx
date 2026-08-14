@@ -22,6 +22,7 @@ import {
   updateSourcePause,
   updateSourceUrls,
 } from "./actions";
+import { formatAdminDateTime } from "../format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,19 +33,31 @@ const statusLabels = {
   paused: "Paused",
 } as const;
 
+const statusTint = {
+  active: "status-badge--positive",
+  archived: "",
+  paused: "status-badge--warn",
+} as const;
+
+function tintForHealth(health: string | null): string {
+  if (health === "healthy") return "status-badge--positive";
+  if (health === "unhealthy") return "status-badge--negative";
+  return "status-badge--warn";
+}
+
 function LatestResult({ latest }: { latest: LatestSourceRunResult }) {
   if (latest.kind === "succeeded") {
     return (
       <p>
         Last run succeeded · discovered {latest.jobsDiscovered} · new {latest.jobsNew} · updated{" "}
         {latest.jobsUpdated} · deactivated {latest.jobsDeactivated} ·{" "}
-        {latest.finishedAt.toISOString()}
+        {formatAdminDateTime(latest.finishedAt)}
       </p>
     );
   }
   return (
     <p className="cms-run-error">
-      Last run failed · {latest.errorCode ?? "unknown"} · {latest.finishedAt.toISOString()}
+      Last run failed · {latest.errorCode ?? "unknown"} · {formatAdminDateTime(latest.finishedAt)}
     </p>
   );
 }
@@ -62,7 +75,7 @@ function SourceState({ state, sourceId }: { state: SourceOperationalState; sourc
       return (
         <>
           <span className="status-badge">Running</span>
-          <p className="hint">Crawl started at {state.startedAt.toISOString()}.</p>
+          <p className="hint">Crawl started at {formatAdminDateTime(state.startedAt)}.</p>
         </>
       );
     case "paused":
@@ -123,7 +136,11 @@ export default async function JobSourcesPage() {
                 <h3>
                   {company.company_name} · {company.source_name}
                 </h3>
-                <span className="status-badge">
+                <span
+                  className={`status-badge ${
+                    statusTint[company.status as keyof typeof statusTint] ?? ""
+                  }`}
+                >
                   {statusLabels[company.status as keyof typeof statusLabels] ?? company.status}
                 </span>
               </div>
@@ -134,21 +151,17 @@ export default async function JobSourcesPage() {
               <dl className="cms-job-source-facts">
                 <div>
                   <dt>Last checked</dt>
-                  <dd>
-                    {company.last_checked_at ? company.last_checked_at.toISOString() : "never"}
-                  </dd>
+                  <dd>{formatAdminDateTime(company.last_checked_at)}</dd>
                 </div>
                 <div>
                   <dt>Last success</dt>
-                  <dd>
-                    {company.last_successful_check_at
-                      ? company.last_successful_check_at.toISOString()
-                      : "never"}
-                  </dd>
+                  <dd>{formatAdminDateTime(company.last_successful_check_at)}</dd>
                 </div>
                 <div>
                   <dt>Next check</dt>
-                  <dd>{company.next_check_at ? company.next_check_at.toISOString() : "due"}</dd>
+                  <dd>
+                    {company.next_check_at ? formatAdminDateTime(company.next_check_at) : "due"}
+                  </dd>
                 </div>
                 <div>
                   <dt>Consecutive failures</dt>
@@ -157,7 +170,11 @@ export default async function JobSourcesPage() {
                 <div>
                   <dt>Landing page</dt>
                   <dd>
-                    {company.landing_health_status}
+                    <span
+                      className={`status-badge ${tintForHealth(company.landing_health_status)}`}
+                    >
+                      {company.landing_health_status}
+                    </span>
                     {company.landing_last_status_code
                       ? ` · ${company.landing_last_status_code}`
                       : ""}
@@ -166,7 +183,11 @@ export default async function JobSourcesPage() {
                 <div>
                   <dt>Crawl endpoint</dt>
                   <dd>
-                    {company.endpoint_health_status}
+                    <span
+                      className={`status-badge ${tintForHealth(company.endpoint_health_status)}`}
+                    >
+                      {company.endpoint_health_status}
+                    </span>
                     {company.endpoint_last_status_code
                       ? ` · ${company.endpoint_last_status_code}`
                       : ""}
@@ -381,16 +402,26 @@ export default async function JobSourcesPage() {
         <ul className="cms-run-list">
           {view.recentRuns.map((run) => (
             <li key={run.started_at.toISOString() + run.company_id}>
-              <span className="status-badge">{run.status}</span>
+              <span
+                className={`status-badge ${
+                  run.status === "succeeded"
+                    ? "status-badge--positive"
+                    : run.status === "failed"
+                      ? "status-badge--negative"
+                      : ""
+                }`}
+              >
+                {run.status}
+              </span>
               <span>{run.company_name}</span>
               <span>
                 discovered {run.jobs_discovered} · new {run.jobs_new} · updated {run.jobs_updated} ·
                 unchanged {run.jobs_unchanged} · deactivated {run.jobs_deactivated}
               </span>
               <span>
-                {run.started_at.toISOString()} · {run.duration_ms ?? "-"}ms · errors{" "}
+                {formatAdminDateTime(run.started_at)} · {run.duration_ms ?? "-"}ms · errors{" "}
                 {run.error_count}
-              </span>
+              </span>{" "}
               {run.error_summary && <span className="cms-run-error">{run.error_summary}</span>}
             </li>
           ))}
@@ -409,7 +440,7 @@ export default async function JobSourcesPage() {
             <li key={event.occurred_at.toISOString() + event.company_id + event.kind}>
               <span className="status-badge">{event.kind}</span>
               <span>{event.company_name}</span>
-              <span>{event.occurred_at.toISOString()}</span>
+              <span>{formatAdminDateTime(event.occurred_at)}</span>
               {event.message && <span className="cms-run-error">{event.message}</span>}
             </li>
           ))}
