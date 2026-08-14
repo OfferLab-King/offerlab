@@ -99,14 +99,23 @@ pnpm jobs:targets:merge-validation-reviews --input=<verdicts.json>  # merges ver
   general sources. The review should therefore validate the general board and
   additionally flag when a distinct early-career page exists.
 - Ask the model for JSON-only verdicts per rank in batches of ~200–250 rows:
-  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "earlyCareerUrl": "...", "reason": "...", "confidence": "high|low"}` —
-  `earlyCareerUrl` is optional and captures a separate graduate/early-career
-  page where one exists.
+  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "earlyCareerUrls": ["..."], "reason": "...", "confidence": "high|low"}` —
+  `earlyCareerUrls` is optional and captures separate graduate/early-career
+  pages (an employer may have several program-specific subpages).
 - The merge script matches verdicts by rank against the current dataset,
   reports unknown ranks, and writes
   `data/generated/employer-targets/url-validation-review.csv` with the
-  current vs suggested URL, an optional early-career URL and a
-  `changed`/`unchanged` state column.
+  current vs suggested URL, the early-career URLs and a `changed`/`unchanged`
+  state column.
+- `--import-candidates` additionally inserts accepted URLs into
+  `app.job_source_candidate` as **unverified** candidates (`channel`
+  general/early_careers, `discovery_method` external_url_review,
+  `status` candidate_found). It never verifies URLs, never activates
+  sources and never touches `app.job_source`; the rank→company mapping comes
+  from the latest research snapshot, and ranks without a researched company
+  are reported and skipped. Verify the candidates with
+  `pnpm jobs:discover-source --verify` and promote them from
+  `/admin/source-discovery`.
 - Verdicts never edit anything: apply accepted corrections to the XLSX
   workbook (the source of truth) and regenerate with
   `pnpm jobs:targets:export`. URL liveness, redirects and robots policy are

@@ -1,10 +1,12 @@
 import postgres, { type TransactionSql } from "postgres";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { runEmployerTargetsImport } from "../../src/modules/employer-research/application/import-targets";
+import {
+  importReviewCandidates,
+  runEmployerTargetsImport,
+} from "../../src/modules/employer-research/application/import-targets";
 import type { EmployerResearchRow } from "../../src/modules/employer-research/domain/research-row";
 import { upsertCompany } from "../../src/modules/job-catalog/infrastructure/company-repository";
-
 const databaseUrl =
   process.env.TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:55322/postgres";
 const migrationDatabase = postgres(databaseUrl, { max: 2, prepare: false });
@@ -384,5 +386,54 @@ describe("employer research import pipeline", () => {
     } finally {
       await migrationDatabase`update app."user" set role = 'member' where id = ${administrator}::uuid`;
     }
+  });
+});
+
+describe("importReviewCandidates", () => {
+  it("inserts unverified candidates idempotently with general and early-career channels", async () => {
+    const companyId = await migrationDatabase.begin((transaction) =>
+      upsertCompany(transaction, {
+        name: `Review Candidate Co ${uniqueSlug("review")}`,
+        slug: uniqueSlug("review-candidate"),
+        careersUrl: "https://review-candidate.example.com/careers",
+        sourceType: "greenhouse",
+        crawlAllowed: "unknown",
+      }),
+    );
+    const inputs = [
+      {
+        companyId,
+        channel: "general" as const,
+        url: "https://review-candidate.example.com/careers",
+        confidence: "high",
+        notes: "Suggested by external review",
+      },
+      {
+        companyId,
+        channel: "early_careers" as const,
+        url: "https://review-candidate.example.com/careers/students",
+        confidence: "medium",
+        notes: "Separate early-career page",
+      },
+    ];
+    const first = await migrationDatabase.begin((transaction) =>
+      importReviewCandidates(transaction, inputs),
+    );
+    expect(first).toEqual({ inserted: 2, skippedExisting: 0 });
+
+    const second = await migrationDatabase.begin((transaction) =>
+      importReviewCandidates(transaction, inputs),
+    );
+    expect(second).toEqual({ inserted: 0, skippedExisting: 2 });
+
+    const rows = await migrationDatabase<{ channel: string; status: string }[]>`
+      select channel, status from app.job_source_candidate
+      where company_id = ${companyId}::uuid order by candidate_url
+    `;
+    expect(rows.map((row) => row.channel).sort()).toEqual(["early_careers", "general"]);
+    expect(rows.every((row) => row.status === "candidate_found")).toBe(true);
+
+    await migrationDatabase`delete from app.job_source_candidate where company_id = ${companyId}::uuid`;
+    await migrationDatabase`delete from app.company where id = ${companyId}::uuid`;
   });
 });
