@@ -79,6 +79,31 @@ The import is typed, deterministic, idempotent and provenance-preserving. It:
   `app.job_source`;
 - never touches `app.job_source`; existing live sources are preserved.
 
+### External URL-validation review pass
+
+A third-party review (for example a ChatGPT batch) can triage the 1,000
+careers URLs without touching the workbook, the dataset or the database:
+
+```bash
+pnpm jobs:targets:export-validation-csv   # emits url-validation.csv (7 columns, no internal fields)
+pnpm jobs:targets:merge-validation-reviews --input=<verdicts.json>  # merges verdicts into a review sheet
+```
+
+- The CSV is derived from `top-1000.json` and deliberately excludes every
+  internal research field (scores, confidence, notes, evidence) — those are
+  administrator-only and must never be exported to a third-party model.
+- Ask the model for JSON-only verdicts per rank in batches of ~200–250 rows:
+  `{"rank": 1, "verdict": "ok|suspect|better_url|needs_review", "suggestedUrl": "...", "reason": "...", "confidence": "high|low"}`
+- The merge script matches verdicts by rank against the current dataset,
+  reports unknown ranks, and writes
+  `data/generated/employer-targets/url-validation-review.csv` with the
+  current vs suggested URL and a `changed`/`unchanged` state column.
+- Verdicts never edit anything: apply accepted corrections to the XLSX
+  workbook (the source of truth) and regenerate with
+  `pnpm jobs:targets:export`. URL liveness, redirects and robots policy are
+  still verified by the real HTTP discovery pipeline (`--verify`), never by
+  the review model.
+
 ## Taxonomy dimensions (Phase D)
 
 The employer-industry, job-function and career-level dimensions are
