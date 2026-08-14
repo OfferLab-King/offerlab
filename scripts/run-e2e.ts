@@ -107,7 +107,6 @@ const environment = {
   IDENTITY_SYNC_DATABASE_URL:
     process.env.IDENTITY_SYNC_DATABASE_URL ?? roleDatabaseUrl("offerlab_identity_sync_login"),
   LOG_LEVEL: process.env.LOG_LEVEL ?? "info",
-  LOCAL_AUTH_BYPASS_ENABLED: "false",
   JSEARCH_ENABLED: "false",
   JOB_CATALOG_ENABLED: process.env.JOB_CATALOG_ENABLED ?? "false",
   NEXT_DIST_DIR: e2eDistDirectory,

@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { currentMemberAccess } from "../../modules/identity-access/application/authorization";
-import { isLocalAuthBypassEnabled } from "../../infrastructure/config/local-development";
 import { memberNavLinks, publicNavLinks } from "./site-navigation";
 import { SiteNav } from "./site-nav";
 import { SignOutButton } from "./sign-out-button";
@@ -17,7 +16,6 @@ export async function SiteHeader({ className, variant = "public" }: SiteHeaderPr
     const access = await currentMemberAccess();
     memberVariant = access.status === "eligible";
   }
-  const localBypass = isLocalAuthBypassEnabled();
   const classNames = ["site-header", className].filter(Boolean).join(" ");
 
   return (
@@ -31,11 +29,7 @@ export async function SiteHeader({ className, variant = "public" }: SiteHeaderPr
         <SiteNav label="Public navigation" links={publicNavLinks} />
       )}
       {memberVariant ? (
-        localBypass ? (
-          <span className="status">Local test access</span>
-        ) : (
-          <SignOutButton />
-        )
+        <SignOutButton />
       ) : (
         <div className="site-header-actions">
           <Link href="/sign-in">Sign in</Link>

@@ -4,15 +4,6 @@ import { redirect } from "next/navigation";
 
 import { getIdentitySyncDatabase } from "../../../infrastructure/database/runtime-connections";
 import { captureAnalyticsEvent } from "../../../infrastructure/analytics/capture";
-import {
-  isLocalAuthBypassEnabled,
-  isLoopbackClientAddress,
-  isLoopbackRequestHost,
-  localAuthBypassClientAddressHeader,
-  localAuthBypassCookieName,
-  localAuthBypassRole,
-  localAuthBypassUserId,
-} from "../../../infrastructure/config/local-development";
 import { headers } from "next/headers";
 import { requestClientAddress } from "./request-security";
 import { checkAuthRateLimit } from "../infrastructure/rate-limits";
@@ -25,8 +16,6 @@ import {
 } from "../infrastructure/identity-linking";
 
 export async function currentAuthorization(): Promise<AuthorizationState | null> {
-  const localAuthorization = await localDevelopmentAuthorization();
-  if (localAuthorization) return localAuthorization;
   const authUserId = await authenticatedUserId();
   if (!authUserId) return null;
   try {
@@ -47,8 +36,6 @@ export type MemberAccessDecision =
   | Readonly<{ status: "denied" | "unauthenticated" | "unverified" }>;
 
 export async function currentMemberAccess(): Promise<MemberAccessDecision> {
-  const localAuthorization = await localDevelopmentAuthorization();
-  if (localAuthorization) return { authorization: localAuthorization, status: "eligible" };
   const authUserId = await authenticatedUserId();
   if (!authUserId) return { status: "unauthenticated" };
   try {
@@ -100,39 +87,6 @@ export async function requireMember(): Promise<AuthorizationState> {
 
 async function authenticatedUserId(): Promise<string | null> {
   return getAuthenticatedSupabaseUserId();
-}
-
-async function localDevelopmentAuthorization(): Promise<AuthorizationState | null> {
-  if (!isLocalAuthBypassEnabled()) return null;
-  const requestHeaders = await headers();
-  if (!isLoopbackRequestHost(requestHeaders.get("host"))) return null;
-  const requestSecret = process.env.LOCAL_AUTH_BYPASS_REQUEST_SECRET;
-  if (
-    !requestSecret ||
-    requestCookie(requestHeaders, localAuthBypassCookieName) !== requestSecret
-  ) {
-    return null;
-  }
-  const clientAddress = requestHeaders.get(localAuthBypassClientAddressHeader);
-  if (!clientAddress || !isLoopbackClientAddress(clientAddress)) return null;
-  return {
-    entitlementStatus: "active",
-    role: localAuthBypassRole(),
-    userId: localAuthBypassUserId(),
-  };
-}
-
-function requestCookie(requestHeaders: Headers, name: string): string | undefined {
-  for (const segment of requestHeaders.get("cookie")?.split(";") ?? []) {
-    const separator = segment.indexOf("=");
-    if (separator < 0 || segment.slice(0, separator).trim() !== name) continue;
-    try {
-      return decodeURIComponent(segment.slice(separator + 1).trim());
-    } catch {
-      return undefined;
-    }
-  }
-  return undefined;
 }
 
 export async function requireAdministrator(): Promise<AuthorizationState> {

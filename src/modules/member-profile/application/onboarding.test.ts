@@ -18,12 +18,8 @@ vi.mock("../infrastructure/onboarding-repository", () => ({
 
 import { readOnboardingProfile } from "./onboarding";
 
-describe("local development onboarding profile", () => {
+describe("onboarding profile reads", () => {
   beforeEach(() => {
-    vi.stubEnv("APP_ENV", "local");
-    vi.stubEnv("LOCAL_AUTH_BYPASS_ENABLED", "true");
-    vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://127.0.0.1:3000");
-    vi.stubEnv("NODE_ENV", "development");
     mocks.withApplicationUser.mockImplementation(
       async (_owner: string, operation: (database: unknown) => Promise<unknown>) => operation({}),
     );
@@ -32,25 +28,16 @@ describe("local development onboarding profile", () => {
 
   afterEach(() => vi.unstubAllEnvs());
 
-  it("supplies a completed synthetic profile only for the bypass member", async () => {
-    await expect(
-      readOnboardingProfile("20000000-0000-4000-8000-000000000003"),
-    ).resolves.toMatchObject({
-      answers: {
-        educationStage: "recent_graduate",
-        preparationPriorities: ["application_cv"],
-      },
-      completedAt: new Date("2026-01-01T00:00:00.000Z"),
-    });
-    await expect(readOnboardingProfile("20000000-0000-4000-8000-000000000002")).resolves.toBeNull();
-  });
-
-  it("prefers a stored owner-scoped profile when one exists", async () => {
+  it("returns the stored owner-scoped profile when one exists", async () => {
     const stored = { completedAt: new Date("2026-08-09T00:00:00.000Z") };
     mocks.findOnboardingProfile.mockResolvedValue(stored);
 
     await expect(readOnboardingProfile("20000000-0000-4000-8000-000000000003")).resolves.toBe(
       stored,
     );
+  });
+
+  it("returns null when no profile is stored", async () => {
+    await expect(readOnboardingProfile("20000000-0000-4000-8000-000000000002")).resolves.toBeNull();
   });
 });

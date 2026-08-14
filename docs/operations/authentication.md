@@ -1,25 +1,17 @@
 # Authentication operations
 
-## Local test-access bypass
+## Local access
 
-`pnpm dev:bypass` is an explicit developer convenience for local UI testing. It starts the Next.js
-development server on `127.0.0.1`, supplies a dedicated deterministic seed member as the current
-member, and supplies a synthetic completed onboarding profile when that member has no stored profile.
-It does not mint a Supabase session, add a login-capable seed identity, or store a default password.
+Local access uses the normal registration flow: register through the
+application, confirm the verification email in the local Mailpit inbox
+(`http://127.0.0.1:55324`), and sign in. Promote a verified local account to
+administrator with:
 
-The bypass fails closed unless all of these conditions hold:
+```bash
+pnpm admin:promote -- <verified-email> --confirm
+```
 
-- `LOCAL_AUTH_BYPASS_ENABLED=true`;
-- `APP_ENV=local`;
-- `NODE_ENV=development`;
-- `NEXT_PUBLIC_APP_URL` is loopback; and
-- the request `Host` is loopback.
-
-The environment schema rejects the flag in test, staging and production. Standard `pnpm dev` does
-not enable it. The bypass identity is separate from integration-test identities so test cleanup
-cannot remove local workspace records. Run `pnpm db:reset` before first use so the deterministic
-member exists. Never expose
-the local Supabase stack or bypass development server to an untrusted network.
+Never expose the local Supabase stack to an untrusted network.
 
 ## Credential and role boundaries
 
