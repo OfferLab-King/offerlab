@@ -1,7 +1,7 @@
 import type { TransactionSql } from "postgres";
 import { jsonParameter } from "./crawler-database";
 
-export type IngestionRunStatus = "running" | "succeeded" | "failed" | "skipped";
+export type IngestionRunStatus = "running" | "succeeded" | "partial" | "failed" | "skipped";
 
 export type IngestionRunSummary = Readonly<{
   durationMs: number;
@@ -80,7 +80,8 @@ export type SourceEventKind =
   | "job_reactivated"
   | "source_disabled"
   | "enrichment_failed"
-  | "listing_empty";
+  | "listing_empty"
+  | "listing_empty_anomaly";
 
 export async function recordSourceEvent(
   database: TransactionSql,

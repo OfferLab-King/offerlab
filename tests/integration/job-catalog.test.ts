@@ -465,6 +465,63 @@ describe("job catalog", () => {
     );
     const afterDeactivate = await asCrawler((database) => listJobsForCompany(database, companyId));
     expect(afterDeactivate.find((row) => row.external_job_id === "100")!.active).toBe(false);
+
+    const events = await asCrawler(
+      (database) =>
+        database<
+          {
+            event_type: string;
+            changed_fields: string[];
+          }[]
+        >`
+          select event_type, changed_fields from app.job_event
+          where company_id = ${companyId}::uuid
+          order by event_at, job_id
+        `,
+    );
+    const types = events.map((event) => event.event_type);
+    expect(types.filter((type) => type === "discovered")).toHaveLength(2);
+    expect(types).toContain("updated");
+    expect(types).toContain("possibly_closed");
+    expect(types).toContain("closed");
+    const updateEvent = events.find((event) => event.event_type === "updated")!;
+    expect(updateEvent.changed_fields).toContain("title");
+
+    const reappear = discoveredJob("100", "Graduate Role Back");
+    const reopenPlan = planCrawlChanges(
+      afterDeactivate.map((row) => ({
+        active: row.active,
+        applicationUrl: row.application_url,
+        contentHash: row.content_hash,
+        externalJobId: row.external_job_id,
+        id: row.id,
+        lastSeenAt: row.last_seen_at,
+        locationText: row.location_text,
+        missedCrawls: row.missed_crawls,
+        sourceUrl: row.source_url,
+        title: row.title,
+      })),
+      [reappear, second],
+    );
+    expect(reopenPlan.reactivate).toHaveLength(1);
+    await asCrawler((database) =>
+      applyCrawlPlan(database, companyId, reopenPlan, {
+        missingCrawlThreshold: 2,
+        now: new Date("2026-08-06T00:00:00.000Z"),
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        classifyFor: () => testClassificationWrite(),
+      }),
+    );
+    const afterReopen = await asCrawler((database) => listJobsForCompany(database, companyId));
+    expect(afterReopen.find((row) => row.external_job_id === "100")!.active).toBe(true);
+    const reopenedEvents = await asCrawler(
+      (database) =>
+        database<{ event_type: string }[]>`
+          select event_type from app.job_event
+          where company_id = ${companyId}::uuid and event_type = 'reopened'
+        `,
+    );
+    expect(reopenedEvents).toHaveLength(1);
   });
 
   it("never deactivates jobs owned by another source for the same employer", async () => {

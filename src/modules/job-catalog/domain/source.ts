@@ -61,6 +61,8 @@ export type JobSource = Readonly<{
   status: SourceStatus;
   crawlFrequencyMinutes: number;
   consecutiveFailures: number;
+  consecutiveZeroResults: number;
+  lastNonZeroResultAt: Date | null;
   needsBrowser: boolean;
   lastCheckedAt: Date | null;
   lastSuccessfulCheckAt: Date | null;

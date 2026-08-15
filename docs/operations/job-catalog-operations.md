@@ -541,7 +541,17 @@ lives in Supabase, so the instance remains replaceable.
 
 - `pnpm jobs:status` gives a snapshot of sources, runs and events.
 - `/admin/job-sources` (administrator) shows the same data in the browser and
-  can request runs, pause/resume sources and correct source URLs.
+  can request runs, pause/resume sources and correct source URLs. Sources
+  show consecutive zero-result crawls and the last time they produced jobs:
+  a source that previously had active jobs and suddenly returns an empty
+  listing on a successful crawl is recorded as a `partial` run with a
+  `listing_empty_anomaly` event — verify the board before trusting the empty
+  result. Jobs are never closed by a failed or zero-result crawl.
+- Per-job lifecycle events (`app.job_event`: discovered, updated,
+  possibly_closed, closed, reopened) are recorded by the ingestion
+  transaction with field-level diffs for updates; they are the foundation for
+  "new today", "recently updated", "recently closed", job alerts and
+  employer update feeds.
 - Structured logs use `event` names such as `job_source_crawl_succeeded`,
   `job_source_crawl_failed`, `job_source_skipped`, `robots_txt_unavailable`,
   `job_enrichment_failed`. Sensitive fields (titles, URLs, slugs, companies)
