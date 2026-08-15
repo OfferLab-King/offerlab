@@ -72,15 +72,19 @@ describe("membership entitlements", () => {
       // Direct cross-member reads are filtered by RLS and writes affect no
       // rows; the owner-scoped application API is never handed another
       // member's id by the server routes.
-      const directRead = await asUser(memberTwo, (database) =>
-        database<{ plan: string }[]>`
+      const directRead = await asUser(
+        memberTwo,
+        (database) =>
+          database<{ plan: string }[]>`
           select plan from app.membership where user_id = ${memberOne}::uuid
         `,
       );
       expect(directRead).toHaveLength(0);
 
-      await asUser(memberTwo, (database) =>
-        database`
+      await asUser(
+        memberTwo,
+        (database) =>
+          database`
           update app.membership set status = 'cancelled'
           where user_id = ${memberOne}::uuid
         `,
