@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isDestinationCurrent, memberNavLinks } from "./site-navigation";
+import { isDestinationCurrent, memberNavLinks, publicNavLinks } from "./site-navigation";
 
 describe("isDestinationCurrent", () => {
   it("keeps Home current only on exactly /member", () => {
@@ -62,7 +62,22 @@ describe("isDestinationCurrent", () => {
       "CVs",
       "Cover letters",
       "Prepare",
+      "Membership",
       "Profile",
+    ]);
+  });
+
+  it("keeps Membership current on the membership routes", () => {
+    expect(isDestinationCurrent("/member/membership", "/member/membership")).toBe(true);
+    expect(isDestinationCurrent("/member/learn", "/member/membership")).toBe(false);
+  });
+
+  it("exposes Plans in the public navigation", () => {
+    expect(publicNavLinks.map(({ label }) => label)).toEqual([
+      "Jobs",
+      "Employers",
+      "Recruitment Intelligence",
+      "Plans",
     ]);
   });
 });

@@ -38,6 +38,7 @@
     "env:check": "tsx scripts/validate-environment.ts",
     "env:example:check": "tsx scripts/validate-environment-example.ts",
     "admin:promote": "tsx scripts/promote-administrator.ts",
+    "membership:grant": "tsx scripts/membership/grant.ts",
     "auth-rate-limits:cleanup": "tsx scripts/cleanup-auth-rate-limits.ts",
     "jobs:test": "pnpm test:unit",
     "jobs:crawl": "tsx scripts/jobs/crawl-company.ts",

@@ -181,7 +181,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await page.waitForLoadState("networkidle");
     const memberNavigation = page.getByRole("navigation", { name: "Member navigation" });
     await memberNavigation.getByRole("button", { name: /Menu|Close/ }).click();
-    await expect(memberNavigation.getByRole("link")).toHaveCount(8);
+    await expect(memberNavigation.getByRole("link")).toHaveCount(9);
     for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl].filter(
       (url): url is string => url !== null,
     )) {

@@ -5,6 +5,8 @@ import {
   readCareerJobTargets,
 } from "../../../../modules/career-documents/application/career-documents";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
+import { readMembershipSummary } from "../../../../modules/membership/application/membership";
+import { isActiveMembership } from "../../../../modules/membership/domain/membership";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { CareerDocumentNavigation } from "../../career-document-navigation";
@@ -28,13 +30,14 @@ export default async function CvWorkspacePage({
   const { documentId } = await params;
   const query = await searchParams;
   const requestedVersion = query.version;
-  const [workspace, jobTargets] = await Promise.all([
+  const [workspace, jobTargets, membership] = await Promise.all([
     readCareerDocumentWorkspace(
       userId,
       documentId,
       typeof requestedVersion === "string" ? requestedVersion : null,
     ),
     readCareerJobTargets(userId),
+    readMembershipSummary(userId),
   ]);
   if (!workspace || workspace.document.kind !== "cv") notFound();
   return (
@@ -59,6 +62,7 @@ export default async function CvWorkspacePage({
         document={workspace.document}
         jobTargets={jobTargets}
         key={workspace.selectedVersion.id}
+        membershipActive={isActiveMembership(membership)}
         reviews={workspace.reviews}
         selectedVersion={workspace.selectedVersion}
         versionSummaries={workspace.versionSummaries}

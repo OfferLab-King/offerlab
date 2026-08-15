@@ -71,7 +71,10 @@ export default function FoundationPage() {
               </Link>
               <a href="#how-it-helps">See how OfferLab helps</a>
             </div>
-            <p className="marketing-note">Free account · No invitation required</p>
+            <p className="marketing-note">
+              Free account · No invitation required ·{" "}
+              <Link href="/plans">Membership available</Link>
+            </p>
           </div>
 
           <aside aria-label="Example OfferLab coaching" className="coaching-preview">
@@ -171,6 +174,21 @@ export default function FoundationPage() {
           </div>
         </section>
 
+        <section className="marketing-section membership-preview-section">
+          <div className="section-introduction">
+            <p className="eyebrow">OfferLab Membership</p>
+            <h2>Stay free, upgrade when capacity matters</h2>
+            <p>
+              Every preparation capability stays free. Membership doubles your review capacity and
+              gives you early access to new capabilities — clearly labelled, never hiding what was
+              already free.
+            </p>
+          </div>
+          <Link className="button-link marketing-primary-action" href="/plans">
+            Compare plans
+          </Link>
+        </section>
+
         <section className="marketing-cta">
           <div>
             <p className="eyebrow">Start with what you already have</p>
@@ -188,6 +206,7 @@ export default function FoundationPage() {
           </Link>
           <p>Practical preparation for UK graduate recruitment.</p>
           <Link href="/intelligence">Recruitment Intelligence</Link>
+          <Link href="/plans">Plans</Link>
           <Link href="/member">Open workspace</Link>
         </footer>
       </main>

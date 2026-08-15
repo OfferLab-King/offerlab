@@ -22,6 +22,7 @@ const primaryLinks: readonly AdminNavLink[] = [
   { href: "/admin/job-sources", label: "Job sources", section: "job-sources" },
   { href: "/admin/source-discovery", label: "Discovery", section: "discovery" },
   { href: "/admin/employers", label: "Employers", section: "employers" },
+  { href: "/admin/membership", label: "Memberships", section: "membership" },
 ];
 
 function getActiveSection(pathname: string, type: string | null) {
@@ -34,6 +35,7 @@ function getActiveSection(pathname: string, type: string | null) {
   if (pathname === "/admin/job-sources") return "job-sources";
   if (pathname.startsWith("/admin/source-discovery")) return "discovery";
   if (pathname.startsWith("/admin/employers")) return "employers";
+  if (pathname.startsWith("/admin/membership")) return "membership";
   if (pathname === "/admin/content" && type === "coaching_case") return "coaching";
   if (pathname.startsWith("/admin/content")) return "content";
   return null;

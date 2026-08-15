@@ -126,7 +126,7 @@ test("the signed-in member navigation is available on the member home", async ({
     await page.waitForURL(/\/member$/);
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link")).toHaveCount(8);
+    await expect(navigation.getByRole("link")).toHaveCount(9);
     await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -138,6 +138,7 @@ test("the signed-in member navigation is available on the member home", async ({
       "CVs",
       "Cover letters",
       "Prepare",
+      "Membership",
       "Profile",
     ]) {
       await expect(navigation.getByRole("link", { name: label })).not.toHaveAttribute(
