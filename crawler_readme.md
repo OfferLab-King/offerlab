@@ -164,6 +164,44 @@ pnpm jobs:crawl:due --limit=5
 3. **Watch results**: `/admin/job-sources` → Recent ingestion runs;
    `pnpm jobs:status` for a snapshot.
 
+### Connector matrix (2026-08-15)
+
+| Platform | Connector | Config key | Verified sources | Status |
+| --- | --- | --- | --- | --- |
+| Workday | CXS/RaaS API | `cxsEndpoint` | 20 | ✅ dry-run verified |
+| Workable | widget API | `workableAccount` | 4 | ✅ dry-run verified |
+| Teamtailor | jobs.json feed | `teamtailorCompany` | 3 | ✅ dry-run verified |
+| Ashby | posting API | `ashbyOrg` | 1 | ✅ configured |
+| Greenhouse | boards API | `greenhouseBoardToken` | 0 real | tooling ready |
+| Lever | postings API | `leverCompany` | 0 real | tooling ready |
+| SmartRecruiters | postings API | `smartRecruitersCompany` | 0 real | tooling ready |
+| iCIMS / other | — | — | 1 | below adapter threshold |
+
+### First resume batch (recommended starter cohort)
+
+Start with the small, fully-verified connectors, then the Workday cohort:
+
+```sql
+-- Batch 1: workable + teamtailor + ashby (8 sources, dry-run proven)
+update app.job_source set status = 'active'
+where slug in (
+  'apply-workable-com-workable',          -- 4 accounts
+  'bacb-teamtailor-com-teamtailor',
+  'ghanainternationalbank-1644937212-teamtailor-com-teamtailor',
+  'keplercheuvreux-teamtailor-com-teamtailor',
+  'jobs-ashbyhq-com-ashby'
+);
+
+-- Batch 2: workday sources with a configured cxsEndpoint (20 sources)
+update app.job_source set status = 'active'
+where configuration ? 'cxsEndpoint' and status = 'paused';
+```
+
+Run `pnpm dev:jobs`, then verify each source's first crawl in
+`/admin/job-sources` → Recent ingestion runs. A source that fails (e.g.
+`http_403`) auto-pauses after `JOB_CRAWLER_FAILURE_PAUSE_THRESHOLD` — fix or
+pause it manually.
+
 ---
 
 ## Stage 6 — Monitor
