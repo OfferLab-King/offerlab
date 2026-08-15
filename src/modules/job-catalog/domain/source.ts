@@ -5,6 +5,8 @@ export const sourceTypes = [
   "lever",
   "smartrecruiters",
   "ashby",
+  "workable",
+  "teamtailor",
   "custom",
   "unknown",
 ] as const;

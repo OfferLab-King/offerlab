@@ -6,6 +6,8 @@ import { createGenericHtmlConnector } from "./generic-html";
 import { createGreenhouseConnector } from "./greenhouse";
 import { createLeverConnector } from "./lever";
 import { createSmartRecruitersConnector } from "./smartrecruiters";
+import { createTeamtailorConnector } from "./teamtailor";
+import { createWorkableConnector } from "./workable";
 import { createWorkdayConnector } from "./workday";
 import type { JobSourceConnector } from "./types";
 
@@ -15,6 +17,8 @@ const connectors = new Map<SourceType, () => JobSourceConnector>([
   ["ashby", createAshbyConnector],
   ["smartrecruiters", createSmartRecruitersConnector],
   ["workday", createWorkdayConnector],
+  ["workable", createWorkableConnector],
+  ["teamtailor", createTeamtailorConnector],
   ["direct_html", createGenericHtmlConnector],
   ["custom", createGenericHtmlConnector],
 ]);

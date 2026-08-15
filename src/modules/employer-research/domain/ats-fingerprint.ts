@@ -265,6 +265,8 @@ export function sourceTypeForPlatform(platform: AtsPlatform): string {
     case "lever":
     case "ashby":
     case "smartrecruiters":
+    case "workable":
+    case "teamtailor":
       return platform;
     case "unknown":
       return "unknown";

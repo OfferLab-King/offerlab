@@ -50,8 +50,47 @@ const GREENHOUSE = "greenhouse" as const;
 const LEVER = "lever" as const;
 const ASHBY = "ashby" as const;
 const SMARTRECRUITERS = "smartrecruiters" as const;
+const WORKABLE = "workable" as const;
+const TEAMTAILOR = "teamtailor" as const;
 
 const platformRules: readonly PlatformRule[] = [
+  {
+    configKey: "workableAccount",
+    sourceTypes: [WORKABLE],
+    derive: (careersUrl) => {
+      const url = new URL(careersUrl);
+      const segments = url.pathname.split("/").filter(Boolean);
+      // The account is the first path segment (apply.workable.com/<account>);
+      // the host is shared across all accounts.
+      const account = segments[0] ?? null;
+      if (!account) return [];
+      return [
+        {
+          key: account,
+          verifyUrl: `https://apply.workable.com/api/v1/widget/accounts/${encodeURIComponent(account)}`,
+        },
+      ];
+    },
+    verifyOk: (status, body) =>
+      status >= 200 && status < 300 && Array.isArray(JSON.parse(body).jobs),
+  },
+  {
+    configKey: "teamtailorCompany",
+    sourceTypes: [TEAMTAILOR],
+    derive: (careersUrl) => {
+      const url = new URL(careersUrl);
+      const company = url.host.split(".")[0] ?? null;
+      if (!company) return [];
+      return [
+        {
+          key: company,
+          verifyUrl: `https://${encodeURIComponent(company)}.teamtailor.com/jobs.json`,
+        },
+      ];
+    },
+    verifyOk: (status, body) =>
+      status >= 200 && status < 300 && Array.isArray(JSON.parse(body).items),
+  },
   {
     configKey: "greenhouseBoardToken",
     sourceTypes: [GREENHOUSE],
