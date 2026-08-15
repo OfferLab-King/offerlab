@@ -1,7 +1,11 @@
 import { planCrawlChanges } from "../domain/change-detection";
 import type { DiscoveredJob } from "../domain/deduplication";
 import { nextCheckAfterFailure, nextCheckAtWithJitter } from "../domain/scheduler";
-import { sourceUrlHealthAfterCheck, type SourceUrlHealth } from "../domain/source-health";
+import {
+  sourceUrlHealthAfterCheck,
+  zeroResultTrackingAfterSuccessfulCrawl,
+  type SourceUrlHealth,
+} from "../domain/source-health";
 import { isCrawlable, sourceKey, type JobSource, type SourceStatus } from "../domain/source";
 import { canonicalizeJobUrl, slugifyTitle } from "../domain/urls";
 import {
@@ -183,6 +187,8 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
           ? "repeated_failures"
           : null,
       consecutiveFailures: source.consecutiveFailures + 1,
+      consecutiveZeroResults: source.consecutiveZeroResults,
+      lastNonZeroResultAt: source.lastNonZeroResultAt,
       status: sourceStatusAfterFailure(
         source.consecutiveFailures + 1,
         configuration.failurePauseThreshold,
@@ -289,14 +295,16 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
     let updatedIds: string[] = [];
     let reactivatedIds: string[] = [];
     if (!options.dryRun) {
+      const planOptions: Parameters<typeof applyCrawlPlan>[3] = {
+        classifyFor: classifyDiscoveredJob,
+        missingCrawlThreshold: configuration.missingCrawlThreshold,
+        now,
+        slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
+        sourceId: source.id,
+        ...(runId ? { crawlRunId: runId } : {}),
+      };
       const applied = await withCrawlerRole((transaction) =>
-        applyCrawlPlan(transaction, source.companyId, plan, {
-          missingCrawlThreshold: configuration.missingCrawlThreshold,
-          now,
-          slugFor: (job, companySlug) => slugifyTitle(job.title, companySlug),
-          classifyFor: classifyDiscoveredJob,
-          sourceId: source.id,
-        }),
+        applyCrawlPlan(transaction, source.companyId, plan, planOptions),
       );
       newIds = applied.newIds;
       updatedIds = applied.updatedIds;
@@ -304,12 +312,20 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
     }
 
     const durationMs = Date.now() - startedAt;
+    const zeroTracking = zeroResultTrackingAfterSuccessfulCrawl({
+      discoveredCount: discovered.length,
+      hadActiveJobs: existing.some((job) => job.active),
+      now,
+      previousConsecutiveZeroResults: source.consecutiveZeroResults,
+    });
     const outcome: SourceRunOutcome = {
       consecutiveFailures: 0,
-      status: "active",
+      consecutiveZeroResults: zeroTracking.consecutiveZeroResults,
+      lastNonZeroResultAt: zeroTracking.lastNonZeroResultAt,
       lastCheckedAt: now,
       lastSuccessfulCheckAt: now,
       nextCheckAt: nextCheckAtWithJitter(source.crawlFrequencyMinutes, now),
+      status: "active",
     };
 
     if (!options.dryRun) {
@@ -328,8 +344,9 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
             newIds,
             reactivatedIds,
             updatedIds,
+            zeroResultAnomaly: zeroTracking.anomaly,
           },
-          status: "succeeded",
+          status: zeroTracking.anomaly ? "partial" : "succeeded",
         });
         if (plan.deactivate.length > 0) {
           await recordSourceEvent(
@@ -351,13 +368,27 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
             source.id,
           );
         }
-        if (discovered.length === 0) {
+        if (zeroTracking.anomaly) {
+          await recordSourceEvent(
+            transaction,
+            source.companyId,
+            "listing_empty_anomaly",
+            `${existing.length} previously listed jobs not deactivated — verify the board before trusting this empty result`,
+            {
+              consecutiveZeroResults: zeroTracking.consecutiveZeroResults,
+              previouslyActiveJobs: existing.filter((job) => job.active).length,
+            },
+            source.id,
+          );
+        } else if (discovered.length === 0) {
           await recordSourceEvent(
             transaction,
             source.companyId,
             "listing_empty",
             null,
-            {},
+            {
+              consecutiveZeroResults: zeroTracking.consecutiveZeroResults,
+            },
             source.id,
           );
         }
@@ -407,6 +438,8 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
           ? "repeated_failures"
           : null,
       consecutiveFailures: source.consecutiveFailures + 1,
+      consecutiveZeroResults: source.consecutiveZeroResults,
+      lastNonZeroResultAt: source.lastNonZeroResultAt,
       status: sourceStatusAfterFailure(
         source.consecutiveFailures + 1,
         configuration.failurePauseThreshold,

@@ -1,7 +1,9 @@
 import type { TransactionSql } from "postgres";
 import { jsonParameter } from "./crawler-database";
+import type { CanonicalJobContent } from "../domain/content-hash";
 import {
   contentHashForDiscovered,
+  jobContentForHash,
   type CrawlChangePlan,
   type ExistingJobRecord,
 } from "../domain/change-detection";
@@ -27,15 +29,24 @@ export type JobClassificationWrite = Readonly<{
 
 export type ExistingJobRow = Readonly<{
   active: boolean;
+  application_deadline: Date | null;
   application_url: string;
   classification_source: string;
   content_hash: string;
+  description_text: string | null;
+  employment_type: string | null;
   external_job_id: string | null;
   id: string;
   last_seen_at: Date;
   location_text: string | null;
   missed_crawls: number;
+  posted_at: Date | null;
   publication_status: string;
+  remote_type: string | null;
+  salary_currency: string | null;
+  salary_max: number | null;
+  salary_min: number | null;
+  salary_period: string | null;
   slug: string;
   source_url: string | null;
   title: string;
@@ -62,7 +73,9 @@ export async function listJobsForCompany(
 ): Promise<readonly ExistingJobRow[]> {
   return database<ExistingJobRow[]>`
     select id, slug, external_job_id, source_url, application_url, title,
-      location_text, active, content_hash, missed_crawls, last_seen_at,
+      location_text, description_text, posted_at, application_deadline,
+      employment_type, remote_type, salary_min, salary_max, salary_currency,
+      salary_period, active, content_hash, missed_crawls, last_seen_at,
       classification_source, publication_status
     from app.job
     where company_id = ${companyId}::uuid
@@ -75,7 +88,9 @@ export async function listJobsForSource(
 ): Promise<readonly ExistingJobRow[]> {
   return database<ExistingJobRow[]>`
     select id, slug, external_job_id, source_url, application_url, title,
-      location_text, active, content_hash, missed_crawls, last_seen_at,
+      location_text, description_text, posted_at, application_deadline,
+      employment_type, remote_type, salary_min, salary_max, salary_currency,
+      salary_period, active, content_hash, missed_crawls, last_seen_at,
       classification_source, publication_status
     from app.job
     where source_id = ${sourceId}::uuid
@@ -83,6 +98,75 @@ export async function listJobsForSource(
 }
 
 export type SlugAllocator = (discovered: DiscoveredJob, companySlug: string) => string;
+
+export type JobEventType = "discovered" | "updated" | "possibly_closed" | "closed" | "reopened";
+
+export async function recordJobEvent(
+  database: TransactionSql,
+  input: Readonly<{
+    companyId: string;
+    crawlRunId: string | null;
+    eventAt: Date;
+    eventType: JobEventType;
+    jobId: string;
+    sourceId: string | null;
+    changedFields?: readonly string[];
+    previousValues?: Readonly<Record<string, unknown>>;
+    newValues?: Readonly<Record<string, unknown>>;
+  }>,
+): Promise<void> {
+  await database`
+    insert into app.job_event (
+      job_id, company_id, source_id, crawl_run_id, event_type, event_at,
+      changed_fields, previous_values, new_values
+    ) values (
+      ${input.jobId}::uuid, ${input.companyId}::uuid, ${input.sourceId ?? null}::uuid,
+      ${input.crawlRunId ?? null}::uuid, ${input.eventType}, ${input.eventAt},
+      ${jsonParameter(database, input.changedFields ?? [])},
+      ${jsonParameter(database, input.previousValues ?? {})},
+      ${jsonParameter(database, input.newValues ?? {})}
+    )
+  `;
+}
+
+function previousCanonicalValues(row: ExistingJobRow): CanonicalJobContent {
+  return {
+    applicationDeadline: row.application_deadline?.toISOString() ?? null,
+    applicationUrl: row.application_url,
+    descriptionText: row.description_text,
+    employmentType: row.employment_type,
+    externalJobId: row.external_job_id,
+    locationText: row.location_text,
+    postedAt: row.posted_at?.toISOString() ?? null,
+    remoteType: row.remote_type,
+    salaryCurrency: row.salary_currency,
+    salaryMax: row.salary_max,
+    salaryMin: row.salary_min,
+    salaryPeriod: row.salary_period,
+    title: row.title,
+  };
+}
+
+function changedCanonicalValues(
+  previous: CanonicalJobContent,
+  next: CanonicalJobContent,
+): Readonly<{
+  changedFields: readonly string[];
+  previousValues: Readonly<Record<string, unknown>>;
+  newValues: Readonly<Record<string, unknown>>;
+}> {
+  const changedFields: string[] = [];
+  const previousValues: Record<string, unknown> = {};
+  const newValues: Record<string, unknown> = {};
+  for (const key of Object.keys(next) as (keyof CanonicalJobContent)[]) {
+    if (previous[key] !== next[key]) {
+      changedFields.push(key);
+      previousValues[key] = previous[key];
+      newValues[key] = next[key];
+    }
+  }
+  return { changedFields, newValues, previousValues };
+}
 
 export async function applyCrawlPlan(
   database: TransactionSql,
@@ -94,6 +178,7 @@ export async function applyCrawlPlan(
     slugFor: SlugAllocator;
     classifyFor: (discovered: DiscoveredJob) => JobClassificationWrite;
     sourceId?: string;
+    crawlRunId?: string;
   }>,
 ): Promise<Readonly<{ newIds: string[]; updatedIds: string[]; reactivatedIds: string[] }>> {
   const newIds: string[] = [];
@@ -139,6 +224,19 @@ export async function applyCrawlPlan(
     const insertedId = rows[0]!.id;
     newIds.push(insertedId);
     await replaceJobLocations(database, insertedId, discovered);
+    await recordJobEvent(database, {
+      companyId,
+      crawlRunId: options.crawlRunId ?? null,
+      eventAt: options.now,
+      eventType: "discovered",
+      jobId: insertedId,
+      newValues: {
+        applicationUrl: discovered.applicationUrl,
+        externalJobId: discovered.externalJobId,
+        title: discovered.title,
+      },
+      sourceId: options.sourceId ?? null,
+    });
   }
 
   for (const { discovered, existing: job } of plan.update) {
@@ -158,6 +256,21 @@ export async function applyCrawlPlan(
     );
     if (classification) await replaceJobLocations(database, job.id, discovered);
     updatedIds.push(job.id);
+    const diff = changedCanonicalValues(
+      previousCanonicalValues(row),
+      jobContentForHash(discovered),
+    );
+    if (diff.changedFields.length > 0) {
+      await recordJobEvent(database, {
+        companyId,
+        crawlRunId: options.crawlRunId ?? null,
+        eventAt: options.now,
+        eventType: "updated",
+        jobId: job.id,
+        ...diff,
+        sourceId: options.sourceId ?? null,
+      });
+    }
   }
 
   for (const { discovered, existing: job } of plan.reactivate) {
@@ -177,6 +290,15 @@ export async function applyCrawlPlan(
     );
     if (classification) await replaceJobLocations(database, job.id, discovered);
     reactivatedIds.push(job.id);
+    await recordJobEvent(database, {
+      companyId,
+      crawlRunId: options.crawlRunId ?? null,
+      eventAt: options.now,
+      eventType: "reopened",
+      jobId: job.id,
+      newValues: { title: discovered.title },
+      sourceId: options.sourceId ?? null,
+    });
   }
 
   for (const job of plan.touch) {
@@ -196,6 +318,15 @@ export async function applyCrawlPlan(
             updated_at = now()
         where id = ${job.id}::uuid
       `;
+    await recordJobEvent(database, {
+      companyId,
+      crawlRunId: options.crawlRunId ?? null,
+      eventAt: options.now,
+      eventType: "closed",
+      jobId: job.id,
+      newValues: { missedCrawls: options.missingCrawlThreshold, title: job.title },
+      sourceId: options.sourceId ?? null,
+    });
   }
 
   for (const job of plan.incrementMissed) {
@@ -204,6 +335,17 @@ export async function applyCrawlPlan(
         set missed_crawls = missed_crawls + 1, updated_at = now()
         where id = ${job.id}::uuid
       `;
+    if (job.missedCrawls === 0) {
+      await recordJobEvent(database, {
+        companyId,
+        crawlRunId: options.crawlRunId ?? null,
+        eventAt: options.now,
+        eventType: "possibly_closed",
+        jobId: job.id,
+        newValues: { missedCrawls: 1, title: job.title },
+        sourceId: options.sourceId ?? null,
+      });
+    }
   }
 
   return { newIds, reactivatedIds, updatedIds };

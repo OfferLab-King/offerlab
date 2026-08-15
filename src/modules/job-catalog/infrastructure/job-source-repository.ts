@@ -10,10 +10,12 @@ type JobSourceRow = Readonly<{
   company_slug: string;
   configuration: Readonly<Record<string, unknown>>;
   consecutive_failures: number;
+  consecutive_zero_results: number;
   crawl_endpoint_url: string | null;
   crawl_frequency_minutes: number;
   id: string;
   last_checked_at: Date | null;
+  last_non_zero_result_at: Date | null;
   last_successful_check_at: Date | null;
   needs_browser: boolean;
   next_check_at: Date | null;
@@ -29,7 +31,8 @@ const sourceColumns = `
   s.slug as source_slug, s.name as source_name, s.channel, s.careers_url,
   s.crawl_endpoint_url, s.source_type, s.status, s.crawl_frequency_minutes,
   s.last_checked_at, s.last_successful_check_at, s.next_check_at,
-  s.run_requested_at, s.consecutive_failures, s.needs_browser, s.configuration
+  s.run_requested_at, s.consecutive_failures, s.consecutive_zero_results,
+  s.last_non_zero_result_at, s.needs_browser, s.configuration
 `;
 
 function mapSource(row: JobSourceRow): JobSource {
@@ -41,6 +44,8 @@ function mapSource(row: JobSourceRow): JobSource {
     companySlug: row.company_slug,
     configuration: row.configuration,
     consecutiveFailures: row.consecutive_failures,
+    consecutiveZeroResults: row.consecutive_zero_results,
+    lastNonZeroResultAt: row.last_non_zero_result_at,
     crawlEndpointUrl: row.crawl_endpoint_url,
     crawlFrequencyMinutes: row.crawl_frequency_minutes,
     id: row.id,
@@ -138,6 +143,8 @@ export type JobSourceAdminRow = Readonly<{
   next_check_at: Date | null;
   run_requested_at: Date | null;
   consecutive_failures: number;
+  consecutive_zero_results: number;
+  last_non_zero_result_at: Date | null;
   landing_health_status: string;
   landing_last_status_code: number | null;
   landing_final_url: string | null;
@@ -166,7 +173,8 @@ export async function listJobSourcesForAdmin(
       s.slug as source_slug, s.name as source_name, s.channel, s.careers_url,
       s.crawl_endpoint_url, s.source_type, s.status, s.crawl_frequency_minutes,
       s.last_checked_at, s.last_successful_check_at, s.next_check_at,
-      s.run_requested_at, s.consecutive_failures, s.landing_health_status,
+      s.run_requested_at, s.consecutive_failures, s.consecutive_zero_results,
+      s.last_non_zero_result_at, s.landing_health_status,
       s.landing_last_status_code, s.landing_final_url, s.landing_invalid_since,
       s.endpoint_health_status, s.endpoint_last_status_code, s.endpoint_final_url,
       s.endpoint_invalid_since,
@@ -244,7 +252,9 @@ export async function recordJobSourceHealth(
 export type SourceRunOutcome = Readonly<{
   automaticPauseReason?: string | null;
   consecutiveFailures: number;
+  consecutiveZeroResults: number;
   lastCheckedAt: Date;
+  lastNonZeroResultAt: Date | null;
   lastSuccessfulCheckAt: Date | null;
   nextCheckAt: Date | null;
   status: SourceStatus;
@@ -263,6 +273,11 @@ export async function updateJobSourceAfterRun(
         run_requested_at = null,
         run_requested_by_user_id = null,
         consecutive_failures = ${outcome.consecutiveFailures},
+        consecutive_zero_results = ${outcome.consecutiveZeroResults},
+        last_non_zero_result_at = coalesce(
+          ${outcome.lastNonZeroResultAt},
+          last_non_zero_result_at
+        ),
         status = ${outcome.status},
         automatic_pause_reason = ${outcome.automaticPauseReason ?? null},
         updated_at = now()

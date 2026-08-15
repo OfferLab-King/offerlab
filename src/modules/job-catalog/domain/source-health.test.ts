@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sourceUrlHealthAfterCheck, type SourceUrlHealth } from "./source-health";
+import {
+  sourceUrlHealthAfterCheck,
+  zeroResultTrackingAfterSuccessfulCrawl,
+  type SourceUrlHealth,
+} from "./source-health";
 
 const unchecked: SourceUrlHealth = {
   checkedAt: null,
@@ -52,5 +56,48 @@ describe("source URL health", () => {
     });
     expect(recovered.invalidSince).toBeNull();
     expect(recovered.status).toBe("healthy");
+  });
+});
+
+describe("zero-result tracking", () => {
+  const now = new Date("2026-08-15T00:00:00.000Z");
+
+  it("resets the counter and records the last non-zero time when jobs appear", () => {
+    expect(
+      zeroResultTrackingAfterSuccessfulCrawl({
+        discoveredCount: 5,
+        hadActiveJobs: true,
+        now,
+        previousConsecutiveZeroResults: 3,
+      }),
+    ).toEqual({ anomaly: false, consecutiveZeroResults: 0, lastNonZeroResultAt: now });
+  });
+
+  it("counts consecutive zero results and never flags a quiet new source", () => {
+    expect(
+      zeroResultTrackingAfterSuccessfulCrawl({
+        discoveredCount: 0,
+        hadActiveJobs: false,
+        now,
+        previousConsecutiveZeroResults: 0,
+      }),
+    ).toEqual({ anomaly: false, consecutiveZeroResults: 1, lastNonZeroResultAt: null });
+  });
+
+  it("flags an anomaly only when a source with active jobs suddenly returns empty", () => {
+    const first = zeroResultTrackingAfterSuccessfulCrawl({
+      discoveredCount: 0,
+      hadActiveJobs: true,
+      now,
+      previousConsecutiveZeroResults: 0,
+    });
+    expect(first).toEqual({ anomaly: true, consecutiveZeroResults: 1, lastNonZeroResultAt: null });
+    const second = zeroResultTrackingAfterSuccessfulCrawl({
+      discoveredCount: 0,
+      hadActiveJobs: true,
+      now: new Date("2026-08-16T00:00:00.000Z"),
+      previousConsecutiveZeroResults: first.consecutiveZeroResults,
+    });
+    expect(second).toEqual({ anomaly: true, consecutiveZeroResults: 2, lastNonZeroResultAt: null });
   });
 });

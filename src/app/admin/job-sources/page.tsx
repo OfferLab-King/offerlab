@@ -168,6 +168,18 @@ export default async function JobSourcesPage() {
                   <dd>{company.consecutive_failures}</dd>
                 </div>
                 <div>
+                  <dt>Consecutive zero results</dt>
+                  <dd>
+                    {company.consecutive_zero_results}
+                    {company.consecutive_zero_results > 0 && company.last_non_zero_result_at && (
+                      <span className="hint">
+                        {" "}
+                        · last non-zero {formatAdminDateTime(company.last_non_zero_result_at)}
+                      </span>
+                    )}
+                  </dd>
+                </div>
+                <div>
                   <dt>Landing page</dt>
                   <dd>
                     <span
