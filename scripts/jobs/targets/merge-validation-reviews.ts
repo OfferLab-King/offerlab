@@ -61,19 +61,14 @@ function readInputFlag(): string {
  */
 function normalizeUrlValue(value: string): string | null {
   const trimmed = value.trim();
-  const unwrapped = /^\[(https?:\/\/[^\]\s]+)\]\((?:https?:\/\/[^)\s]+)\)$/u.exec(
-    trimmed,
-  )?.[1] ?? trimmed;
+  const unwrapped =
+    /^\[(https?:\/\/[^\]\s]+)\]\((?:https?:\/\/[^)\s]+)\)$/u.exec(trimmed)?.[1] ?? trimmed;
   if (!/^https:\/\/[^\s]+$/u.test(unwrapped)) return null;
   return unwrapped;
 }
 
 function normalizeUrls(value: unknown): string[] {
-  const raw = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? [value]
-      : [];
+  const raw = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
   const urls: string[] = [];
   for (const entry of raw) {
     if (typeof entry !== "string") continue;
@@ -106,9 +101,7 @@ function normalizeReviews(input: unknown): ValidationReview[] {
       rank,
       verdict,
       suggestedUrl:
-        typeof suggested === "string" && suggested.trim()
-          ? normalizeUrlValue(suggested)
-          : null,
+        typeof suggested === "string" && suggested.trim() ? normalizeUrlValue(suggested) : null,
       earlyCareerUrls: normalizeUrls(
         record.earlyCareerUrls ??
           record.early_career_urls ??
