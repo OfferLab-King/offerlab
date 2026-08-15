@@ -110,6 +110,7 @@ export async function fetchText(
         options.httpClient,
         controller.signal,
         request,
+        options.headers,
       );
       if (response.status === 403) {
         logger.warn({
@@ -185,6 +186,7 @@ async function fetchWithBoundedRedirects(
   httpClient: HttpClient,
   signal: AbortSignal,
   request: Readonly<{ body?: string; method: "GET" | "POST" }>,
+  extraHeaders?: Readonly<Record<string, string>>,
 ): Promise<Response> {
   let currentUrl = initialUrl;
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
@@ -193,6 +195,7 @@ async function fetchWithBoundedRedirects(
       headers: {
         accept: "*/*",
         "user-agent": httpClient.userAgent,
+        ...extraHeaders,
       },
       method: request.method,
       redirect: "manual",

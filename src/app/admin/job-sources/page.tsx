@@ -245,7 +245,15 @@ export default async function JobSourcesPage() {
                       type="url"
                     />
                   </label>
-                  <button type="submit">Save URLs</button>
+                  <label>
+                    Connector configuration (JSON)
+                    <textarea
+                      defaultValue={JSON.stringify(company.configuration ?? {}, null, 2)}
+                      name="configuration"
+                      rows={4}
+                    />
+                  </label>
+                  <button type="submit">Save URLs and configuration</button>
                 </form>
               </details>
             </li>

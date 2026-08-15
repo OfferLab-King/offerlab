@@ -46,6 +46,7 @@
     "jobs:enrich": "tsx scripts/jobs/enrich.ts",
     "jobs:seed-companies": "tsx scripts/jobs/seed-companies.ts",
     "jobs:status": "tsx scripts/jobs/status.ts",
+    "jobs:workday-endpoints": "tsx scripts/jobs/workday-endpoints.ts",
     "jobs:clean-synthetic-catalog": "tsx scripts/jobs/clean-synthetic-catalog.ts",
     "jobs:targets:validate": "tsx scripts/jobs/targets/validate.ts",
     "jobs:targets:export": "tsx scripts/jobs/targets/export.ts",

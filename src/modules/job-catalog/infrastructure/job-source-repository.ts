@@ -153,6 +153,7 @@ export type JobSourceAdminRow = Readonly<{
   endpoint_last_status_code: number | null;
   endpoint_final_url: string | null;
   endpoint_invalid_since: Date | null;
+  configuration: Readonly<Record<string, unknown>>;
   latest_run_status: string | null;
   latest_run_started_at: Date | null;
   latest_run_finished_at: Date | null;
@@ -177,7 +178,7 @@ export async function listJobSourcesForAdmin(
       s.last_non_zero_result_at, s.landing_health_status,
       s.landing_last_status_code, s.landing_final_url, s.landing_invalid_since,
       s.endpoint_health_status, s.endpoint_last_status_code, s.endpoint_final_url,
-      s.endpoint_invalid_since,
+      s.endpoint_invalid_since, s.configuration,
       r.status as latest_run_status, r.started_at as latest_run_started_at,
       r.finished_at as latest_run_finished_at,
       r.jobs_discovered as latest_run_jobs_discovered,
@@ -204,10 +205,12 @@ export async function updateJobSourceUrls(
   sourceId: string,
   careersUrl: string,
   crawlEndpointUrl: string | null,
+  configuration: Readonly<Record<string, unknown>> | null = null,
 ): Promise<boolean> {
   const rows = await database<{ id: string }[]>`
     update app.job_source
     set careers_url = ${careersUrl}, crawl_endpoint_url = ${crawlEndpointUrl},
+        configuration = coalesce(${configuration === null ? null : JSON.stringify(configuration)}::jsonb, configuration),
         manually_overridden = true, updated_at = now()
     where id = ${sourceId}::uuid
     returning id
