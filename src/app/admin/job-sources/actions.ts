@@ -28,6 +28,32 @@ const sourceUrlsSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().url().max(1000).optional(),
   ),
+  configuration: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z
+      .string()
+      .max(20000)
+      .transform((value, context) => {
+        try {
+          const parsed: unknown = JSON.parse(value);
+          if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+            context.addIssue({
+              code: "custom",
+              message: "Connector configuration must be a JSON object.",
+            });
+            return z.NEVER;
+          }
+          return parsed as Readonly<Record<string, unknown>>;
+        } catch {
+          context.addIssue({
+            code: "custom",
+            message: "Connector configuration must be valid JSON.",
+          });
+          return z.NEVER;
+        }
+      })
+      .optional(),
+  ),
 });
 
 const eligibilityOverrideSchema = z.object({
@@ -70,10 +96,12 @@ export async function updateSourceUrls(formData: FormData): Promise<void> {
     sourceId: formData.get("sourceId"),
     careersUrl: formData.get("careersUrl"),
     crawlEndpointUrl: formData.get("crawlEndpointUrl"),
+    configuration: formData.get("configuration"),
   });
   await updateSourceUrlsForAdmin(administrator.userId, parsed.sourceId, {
     careersUrl: parsed.careersUrl,
     crawlEndpointUrl: parsed.crawlEndpointUrl ?? null,
+    configuration: parsed.configuration ?? null,
   });
   revalidatePath("/admin/job-sources");
 }

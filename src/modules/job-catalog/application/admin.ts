@@ -150,10 +150,20 @@ export async function requestSourceRunForAdmin(
 export async function updateSourceUrlsForAdmin(
   administratorUserId: string,
   sourceId: string,
-  input: Readonly<{ careersUrl: string; crawlEndpointUrl: string | null }>,
+  input: Readonly<{
+    careersUrl: string;
+    crawlEndpointUrl: string | null;
+    configuration?: Readonly<Record<string, unknown>> | null;
+  }>,
 ): Promise<void> {
   const updated = await withApplicationUser(administratorUserId, (database) =>
-    updateJobSourceUrls(database, sourceId, input.careersUrl, input.crawlEndpointUrl),
+    updateJobSourceUrls(
+      database,
+      sourceId,
+      input.careersUrl,
+      input.crawlEndpointUrl,
+      input.configuration ?? null,
+    ),
   );
   if (!updated) throw new Error("job_source_not_found");
   await insertAuditEvent(administratorUserId, "job_source.updated", "job_source", sourceId);

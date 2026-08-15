@@ -33,6 +33,7 @@ export type DiscoveryFilters = Readonly<{
   status: string | null;
   search: string | null;
   limit: number;
+  offset?: number;
 }>;
 
 export async function listDiscoveryCandidates(
@@ -85,6 +86,7 @@ export async function listDiscoveryCandidates(
       )
     order by coalesce(s.crawler_priority_score, 0) desc, c.name asc
     limit $7
+    offset $8
   `,
     [
       filters.candidateId ?? null,
@@ -94,6 +96,7 @@ export async function listDiscoveryCandidates(
       filters.status ?? null,
       filters.search ?? null,
       filters.limit,
+      filters.offset ?? 0,
     ],
   );
   return rows.map((row) => ({
