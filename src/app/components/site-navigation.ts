@@ -6,6 +6,7 @@ export const publicNavLinks = [
   { href: "/jobs", label: "Jobs" },
   { href: "/employers", label: "Employers" },
   { href: "/intelligence", label: "Recruitment Intelligence" },
+  { href: "/plans", label: "Plans" },
 ] as const satisfies readonly SiteNavigationLink[];
 
 export const memberNavLinks = [
@@ -16,6 +17,7 @@ export const memberNavLinks = [
   { href: "/member/cvs", label: "CVs" },
   { href: "/member/cover-letters", label: "Cover letters" },
   { href: "/member/learn", label: "Prepare" },
+  { href: "/member/membership", label: "Membership" },
   { href: "/member/onboarding", label: "Profile" },
 ] as const satisfies readonly SiteNavigationLink[];
 

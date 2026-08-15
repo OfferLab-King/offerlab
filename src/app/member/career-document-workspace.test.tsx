@@ -64,6 +64,7 @@ describe("CareerDocumentWorkspace", () => {
           title: "Developer CV",
         }}
         jobTargets={[]}
+        membershipActive={false}
         reviews={[review]}
         selectedVersion={selectedVersion}
         versionSummaries={[
@@ -92,6 +93,7 @@ describe("CareerDocumentWorkspace", () => {
     expect(html).toContain("50");
     expect(html).toContain("1 of 2 assessed requirements");
     expect(html).toContain("CV evidence");
+    expect(html).toContain("Membership doubles your monthly review capacity");
     expect(html).toContain("Advanced SQL querying and data manipulation");
     expect(html).toContain("Build a SQL evidence project");
     expect(html).toContain("OfferLab currently receives no commission");

@@ -27,6 +27,7 @@ import {
   careerDocumentNoticeVersion,
   readCareerDocumentRuntime,
 } from "../infrastructure/provider-runtime";
+import { readMembershipBenefits } from "../../membership/application/membership";
 import { reviewCareerDocumentWithFallback } from "../infrastructure/review-provider";
 import { reserveCareerDocumentReviewUsage } from "../infrastructure/review-usage-repository";
 
@@ -65,6 +66,28 @@ export function readCareerDocumentReviewUsageLimits() {
       defaultReviewUsageLimits.memberMonthly,
     ),
   } as const;
+}
+
+export type CareerDocumentReviewUsageLimits = ReturnType<
+  typeof readCareerDocumentReviewUsageLimits
+>;
+
+/**
+ * Review ceilings for a specific member. Active membership multiplies the
+ * member daily and monthly capacity; the hosted-account cap stays a shared
+ * safety ceiling.
+ */
+export async function readEffectiveReviewUsageLimits(
+  owner: string,
+  base: CareerDocumentReviewUsageLimits = readCareerDocumentReviewUsageLimits(),
+): Promise<CareerDocumentReviewUsageLimits> {
+  const benefits = await readMembershipBenefits(owner);
+  if (benefits.reviewCapacityMultiplier <= 1) return base;
+  return {
+    hostedAccountMonthly: base.hostedAccountMonthly,
+    memberDaily: base.memberDaily * benefits.reviewCapacityMultiplier,
+    memberMonthly: base.memberMonthly * benefits.reviewCapacityMultiplier,
+  };
 }
 
 export function readCareerDocumentConfiguration() {
@@ -178,7 +201,7 @@ export async function reviewCareerDocument(
   ) {
     throw new Error("career_document_review_consent_required");
   }
-  const limits = readCareerDocumentReviewUsageLimits();
+  const limits = await readEffectiveReviewUsageLimits(owner);
   const prepared = await withApplicationUser(owner, async (database) => {
     const [document, version] = await Promise.all([
       findCareerDocument(database, owner, documentId),

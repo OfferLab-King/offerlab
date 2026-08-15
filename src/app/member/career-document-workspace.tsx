@@ -18,6 +18,7 @@ type Props = Readonly<{
   configuration: Readonly<{ modelAvailable: boolean; noticeVersion: string | null }>;
   document: CareerDocumentWorkspaceDocument;
   jobTargets: readonly CareerJobTarget[];
+  membershipActive: boolean;
   reviews: readonly StoredCareerReview[];
   selectedVersion: CareerDocumentVersion;
   versionSummaries: readonly CareerDocumentVersionSummary[];
@@ -64,6 +65,7 @@ export function CareerDocumentWorkspace({
   configuration,
   document,
   jobTargets,
+  membershipActive,
   reviews,
   selectedVersion,
   versionSummaries,
@@ -482,6 +484,12 @@ export function CareerDocumentWorkspace({
             </div>
           ) : (
             <p className="status">Private deterministic review · no model provider</p>
+          )}
+          {!membershipActive && (
+            <p className="membership-prompt">
+              Membership doubles your monthly review capacity.{" "}
+              <a href="/member/membership">Compare plans →</a>
+            </p>
           )}
           {dirty && (
             <p className="status">Save this working copy as a new version before reviewing it.</p>

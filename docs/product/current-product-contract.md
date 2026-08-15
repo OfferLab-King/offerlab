@@ -68,11 +68,16 @@ in this contract still apply.
 - Validate annotated cases, curated questions, structured intelligence, Group Mock and bounded feedback with real use.
 - Keep public proof honest and useful while protecting member-owned and moderated content.
 - Operate services manually where demand and delivery quality remain uncertain.
+- Monetisation readiness (founder direction 2026-08-15, ADR 0024): the free
+  plan keeps every approved capability; membership adds clearly labelled
+  capacity (double member review ceilings) and early access. Pricing,
+  entitlements, the plans page and member management are implemented;
+  provider-backed checkout remains an open decision below.
 
 ### Next, after an explicit decision
 
 - Human coach operations require a product and architecture decision covering the coach role, vetting, assignment, member consent, least-privilege record access, audit, retention and deletion.
-- In-product payments require a separate decision covering provider, pricing records, refunds, tax/accounting boundaries, entitlements and operational ownership. Stripe is not currently approved.
+- In-product payments require a separate decision covering provider, pricing records, refunds, tax/accounting boundaries, entitlements and operational ownership. Stripe is not currently approved. The membership entitlement model (ADR 0024) is implemented and activated manually or in local test mode until that decision is recorded.
 - A production AI provider requires the privacy, evaluation, model, cost and kill-switch gates in `ai-product-strategy.md`. AI-assisted job classification and enrichment additionally require the eligibility-pipeline gates in the founder's 10 August 2026 decision.
 - JSearch production use requires a fresh recorded decision: the founder's 10 August 2026 decision temporarily disables it in favour of the OfferLab catalogue. Re-enabling JSearch requires recorded approval of the provider's commercial display, retention and automated-use terms.
 - Production operation of the job catalogue requires the `JOB_CATALOG_ENABLED` gate. Official,

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   listCareerDocuments: vi.fn(),
   listCareerDocumentVersionSummaries: vi.fn(),
   listCareerJobTargets: vi.fn(),
+  readMembershipBenefits: vi.fn(),
   readRuntime: vi.fn(),
   reserveUsage: vi.fn(),
   reviewWithFallback: vi.fn(),
@@ -52,9 +53,14 @@ vi.mock("../infrastructure/review-usage-repository", () => ({
   reserveCareerDocumentReviewUsage: mocks.reserveUsage,
 }));
 
+vi.mock("../../membership/application/membership", () => ({
+  readMembershipBenefits: mocks.readMembershipBenefits,
+}));
+
 import {
   readCareerDocumentReviewUsageLimits,
   readCareerDocumentWorkspace,
+  readEffectiveReviewUsageLimits,
   reviewCareerDocument,
 } from "./career-documents";
 
@@ -182,6 +188,10 @@ describe("career-document review application", () => {
     mocks.saveCareerDocumentReview.mockImplementation(async () => {
       mocks.events.push("review:saved");
       return { ...review, createdAt: new Date(), id: "review-id" };
+    });
+    mocks.readMembershipBenefits.mockResolvedValue({
+      earlyAccess: false,
+      reviewCapacityMultiplier: 1,
     });
   });
 
@@ -383,5 +393,26 @@ describe("career-document review application", () => {
     expect(() => readCareerDocumentReviewUsageLimits()).toThrow(
       "career_document_review_usage_configuration_invalid",
     );
+  });
+
+  it("doubles member review ceilings for active membership and keeps free ceilings otherwise", async () => {
+    mocks.readMembershipBenefits.mockResolvedValueOnce({
+      earlyAccess: true,
+      reviewCapacityMultiplier: 2,
+    });
+    await expect(readEffectiveReviewUsageLimits("owner-id")).resolves.toEqual({
+      hostedAccountMonthly: 400,
+      memberDaily: 20,
+      memberMonthly: 80,
+    });
+    mocks.readMembershipBenefits.mockResolvedValueOnce({
+      earlyAccess: false,
+      reviewCapacityMultiplier: 1,
+    });
+    await expect(readEffectiveReviewUsageLimits("owner-id")).resolves.toEqual({
+      hostedAccountMonthly: 400,
+      memberDaily: 10,
+      memberMonthly: 40,
+    });
   });
 });

@@ -291,3 +291,25 @@ Store timestamps in UTC and application deadlines as dates. Calculate calendar d
 RLS and owner-scoped application queries are both mandatory. Every application repository operation requires owner ID and two-user access tests. Normal admin screens do not expose private notes. Logs exclude notes, secrets, tokens, emails, and sensitive onboarding data. Analytics is typed, allow-listed, provider-neutral, and excludes company/role names, notes, emails, and raw application IDs. Audit is separate.
 
 For closed beta, the accepted database RPO is 24 hours. Use managed daily backups, document restoration, and enable PITR when paid-user volume, change rate, or the business impact of 24-hour loss becomes unacceptable. Do not provision extra backup infrastructure in this foundation. Production web and database services run in London.
+
+## Membership monetisation direction (2026-08-15)
+
+The founder directed the product towards paid membership readiness: visitors
+should arrive and be willing to pay, with a clearly labelled offer.
+
+- The free plan keeps every currently approved preparation capability; paid
+  membership adds capacity and early access and never hides previously free
+  functionality.
+- Implemented: `app.membership` entitlements (owner-scoped, forced RLS),
+  public `/plans` pricing page, member `/member/membership` management,
+  administrator membership view, privileged grant CLI
+  (`pnpm membership:grant`), and a first real premium benefit: active
+  membership doubles the member daily and monthly career-document review
+  ceilings (hosted-account safety cap unchanged).
+- Prices are founder-set constants in
+  `src/modules/membership/domain/membership.ts` (currently £9/month and
+  £39/recruitment season).
+- In-product payment provider wiring remains a recorded open decision
+  (see ADR 0024); local and founder-managed activation is the current
+  activation path, honestly labelled. No Stripe account or production
+  payment infrastructure was provisioned.
