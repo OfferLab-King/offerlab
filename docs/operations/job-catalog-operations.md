@@ -164,7 +164,14 @@ pnpm jobs:discover-source --promote --confirm  # create paused sources for verif
 pnpm jobs:discover-source --homepage           # discover careers links for P0/P1 employers without candidates
 pnpm jobs:discover-source --company=<slug>     # one employer
 pnpm jobs:discover-source --tier=P0 --limit=50 # a cohort, ordered by crawler priority
+pnpm jobs:discover-source --offset=500         # page through large candidate sets (limit caps at 500)
 ```
+
+Verification (`--verify`) persists independently of `--confirm`: it performs
+real robots-gated fetches and marks candidates verified or leaves them
+unverified — it is non-destructive. `--confirm` remains the gate for
+fingerprint applies, promotions and homepage discovery. Large candidate sets
+page with `--limit=500` plus `--offset`.
 
 Behaviour:
 

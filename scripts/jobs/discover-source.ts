@@ -38,6 +38,10 @@ const rawLimit = Number(readFlag("limit") ?? "500");
 if (!Number.isInteger(rawLimit) || rawLimit < 1 || rawLimit > 500) {
   throw new Error("--limit must be an integer between 1 and 500");
 }
+const rawOffset = Number(readFlag("offset") ?? "0");
+if (!Number.isInteger(rawOffset) || rawOffset < 0) {
+  throw new Error("--offset must be a non-negative integer");
+}
 const dryRun = !process.argv.includes("--confirm");
 const verify = process.argv.includes("--verify");
 const promote = process.argv.includes("--promote");
@@ -69,6 +73,7 @@ const report = await database.begin(async (transaction) => {
     status: statusFilter,
     search: null,
     limit: rawLimit,
+    offset: rawOffset,
   });
 
   if (candidates.length === 0) {
@@ -85,16 +90,15 @@ const report = await database.begin(async (transaction) => {
   let verifiedCount = 0;
   let verifyFailures = 0;
   if (verify) {
+    // Verification is non-destructive (it only marks candidates verified or
+    // failed after a real robots-gated fetch), so it persists regardless of
+    // --confirm; --confirm remains the gate for fingerprint applies,
+    // promotions and homepage discovery.
     for (const plan of fingerprintPlans) {
-      if (dryRun) {
-        process.stdout.write(
-          `  [verify dry-run] ${plan.companyName}: ${plan.url} -> ${plan.fingerprint.platform}\n`,
-        );
-        continue;
-      }
       const decision = await robotsGate.check(plan.url, "offerlab");
       if (decision === "blocked") {
         process.stdout.write(`  [robots blocked] ${plan.companyName}: ${plan.url}\n`);
+        verifyFailures += 1;
         continue;
       }
       try {
