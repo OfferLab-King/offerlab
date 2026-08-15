@@ -69,27 +69,28 @@ describe("Workday CXS connector", () => {
     );
   });
 
-  it("pages through the listing with offset until total is reached", async () => {
+  it("pages through the listing with offset and stops on an empty page", async () => {
     const pageOne = cxsPage(
-      150,
-      Array.from({ length: 100 }, (_, i) => ({
+      40,
+      Array.from({ length: 20 }, (_, i) => ({
         title: `Role ${i}`,
         externalPath: `/job/X/Role-${i}_${i + 1}`,
       })),
     );
     const pageTwo = cxsPage(
-      150,
-      Array.from({ length: 50 }, (_, i) => ({
-        title: `Role ${i + 100}`,
-        externalPath: `/job/X/Role-${i + 100}_${i + 101}`,
+      40,
+      Array.from({ length: 20 }, (_, i) => ({
+        title: `Role ${i + 20}`,
+        externalPath: `/job/X/Role-${i + 20}_${i + 21}`,
       })),
     );
+    const emptyPage = cxsPage(40, []);
     const calls: string[] = [];
     const fetchImplementation = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
       calls.push(`${url} ${String(init?.body ?? "")}`);
       const offset = JSON.parse(String(init?.body ?? "{}")).offset ?? 0;
-      const body = offset === 0 ? pageOne : pageTwo;
+      const body = offset === 0 ? pageOne : offset < 40 ? pageTwo : emptyPage;
       return {
         headers: new Headers({ "content-type": "application/json" }),
         ok: true,
@@ -101,10 +102,12 @@ describe("Workday CXS connector", () => {
 
     const jobs = await createWorkdayConnector().discoverJobs(context({ maxJobs: 300 }));
 
-    expect(jobs).toHaveLength(150);
-    expect(calls).toHaveLength(2);
+    expect(jobs).toHaveLength(40);
+    expect(calls).toHaveLength(3);
     expect(calls[0]).toContain('"offset":0');
-    expect(calls[1]).toContain('"offset":100');
+    expect(calls[1]).toContain('"offset":20');
+    expect(calls[2]).toContain('"offset":40');
+    expect(JSON.parse(calls[0]!.split(" ").pop()!).limit).toBe(20);
   });
 
   it("stops at the per-source job cap", async () => {
