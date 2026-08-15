@@ -1,21 +1,33 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
+import postgres from "postgres";
+
+import { importReviewCandidates } from "../../../src/modules/employer-research/application/import-targets";
 import type { EmployerResearchRow } from "../../../src/modules/employer-research/domain/research-row";
+import { isLocalDatabaseUrl } from "../../learn-demo-content";
+import { loadLocalEnvironment } from "../../shared/load-local-environment";
 import { GENERATED_TARGETS_JSON } from "./workbook";
 
 /**
- * Merges a ChatGPT URL-validation verdict file back into a review sheet.
+ * Merges a ChatGPT URL-validation verdict file back into a review sheet and,
+ * with --import-candidates, inserts accepted URLs as unverified source
+ * candidates.
  *
  * Expected input (JSON array, one object per ranked employer):
  *   [{ "rank": 1, "verdict": "ok|suspect|better_url|needs_review",
  *      "suggestedUrl": "https://...",
- *      "earlyCareerUrl": "https://..." (optional: separate early-career page),
+ *      "earlyCareerUrls": ["https://..."] (optional: separate early-career pages),
  *      "reason": "...", "confidence": "high|low" }]
  *
- * Outputs data/generated/employer-targets/url-validation-review.csv, one row
- * per verdict matched to the current dataset by rank. It never edits the
- * workbook or the dataset; apply accepted changes to the XLSX workbook (the
- * source of truth) and regenerate with pnpm jobs:targets:export.
+ * The review sheet is written to
+ * data/generated/employer-targets/url-validation-review.csv and never edits
+ * the workbook or the dataset; apply accepted corrections to the XLSX
+ * workbook (the source of truth) and regenerate with pnpm jobs:targets:export.
+ *
+ * --import-candidates inserts accepted URLs into app.job_source_candidate as
+ * unverified candidates (channel general/early_career, discovery method
+ * external_url_review). It never verifies URLs, never activates sources and
+ * never touches app.job_source.
  */
 
 const REVIEW_CSV_PATH = "data/generated/employer-targets/url-validation-review.csv";
@@ -24,19 +36,32 @@ type ValidationReview = Readonly<{
   rank: number;
   verdict: string;
   suggestedUrl: string | null;
-  earlyCareerUrl: string | null;
+  earlyCareerUrls: readonly string[];
   reason: string | null;
   confidence: string | null;
 }>;
+
+const IMPORT_CANDIDATES = process.argv.includes("--import-candidates");
 
 function readInputFlag(): string {
   const flag = process.argv.find((argument) => argument.startsWith("--input="));
   if (!flag) {
     throw new Error(
-      "Usage: pnpm jobs:targets:merge-validation-reviews --input=<chatgpt-verdicts.json>",
+      "Usage: pnpm jobs:targets:merge-validation-reviews --input=<chatgpt-verdicts.json> [--import-candidates]",
     );
   }
   return flag.slice("--input=".length);
+}
+
+function normalizeUrls(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  }
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
 }
 
 function normalizeReviews(input: unknown): ValidationReview[] {
@@ -57,17 +82,17 @@ function normalizeReviews(input: unknown): ValidationReview[] {
       (record.suggested_url as string | undefined) ??
       (record.url as string | undefined) ??
       null;
-    const earlyCareer =
-      (record.earlyCareerUrl as string | undefined) ??
-      (record.early_career_url as string | undefined) ??
-      null;
     const verdict = String(record.verdict ?? record["verdict"] ?? "needs_review").toLowerCase();
     return {
       rank,
       verdict,
       suggestedUrl: typeof suggested === "string" && suggested.trim() ? suggested.trim() : null,
-      earlyCareerUrl:
-        typeof earlyCareer === "string" && earlyCareer.trim() ? earlyCareer.trim() : null,
+      earlyCareerUrls: normalizeUrls(
+        record.earlyCareerUrls ??
+          record.early_career_urls ??
+          record.earlyCareerUrl ??
+          record.early_career_url,
+      ),
       reason:
         typeof record.reason === "string" && record.reason.trim() ? record.reason.trim() : null,
       confidence:
@@ -102,7 +127,7 @@ const header = [
   "currentCareerUrl",
   "verdict",
   "suggestedUrl",
-  "earlyCareerUrl",
+  "earlyCareerUrls",
   "state",
   "reason",
   "confidence",
@@ -112,14 +137,14 @@ const lines = reviews.map((review) => {
   if (!row) return null;
   const current = row.careerSearchUrl ?? "";
   const suggested = review.suggestedUrl ?? "";
-  const state = review.verdict === "ok" || suggested === current ? "unchanged" : "changed";
+  const state = suggested !== "" && suggested !== current ? "changed" : "unchanged";
   return [
     review.rank,
     row.canonicalEmployer,
     current,
     review.verdict,
     suggested,
-    review.earlyCareerUrl ?? "",
+    review.earlyCareerUrls.join(" ; "),
     state,
     review.reason,
     review.confidence,
@@ -150,6 +175,89 @@ if (unknownRanks.length > 0) {
     `  WARNING: ${unknownRanks.length} verdict ranks not found in the dataset.\n`,
   );
 }
-process.stdout.write(
-  "Apply accepted corrections to the XLSX workbook, then run pnpm jobs:targets:export.\n",
-);
+
+if (!IMPORT_CANDIDATES) {
+  process.stdout.write(
+    "Apply accepted corrections to the XLSX workbook, then run pnpm jobs:targets:export.\n",
+  );
+  process.exit(0);
+}
+
+loadLocalEnvironment();
+const databaseUrl = process.env.DATABASE_MIGRATION_URL;
+if (!databaseUrl) throw new Error("Refusing to import: DATABASE_MIGRATION_URL is required.");
+if (!isLocalDatabaseUrl(databaseUrl)) {
+  throw new Error(
+    "Refusing to import: DATABASE_MIGRATION_URL must use an approved local database host.",
+  );
+}
+
+const database = postgres(databaseUrl, { max: 2, prepare: false });
+try {
+  const companyIdsByRank = new Map<number, string>();
+  const snapshotRows = await database<{ companyId: string; internalRank: number }[]>`
+    select distinct on (s.company_id) s.company_id as "companyId", s.internal_rank as "internalRank"
+    from app.employer_research_snapshot s
+    where s.internal_rank = any(${reviews.map((review) => review.rank)})
+      and s.company_id is not null
+    order by s.company_id, s.research_date desc, s.dataset_version desc
+  `;
+  for (const row of snapshotRows) companyIdsByRank.set(row.internalRank, row.companyId);
+
+  const inputs: Array<{
+    companyId: string;
+    channel: "general" | "early_careers";
+    url: string;
+    confidence: string | null;
+    notes: string | null;
+  }> = [];
+  const skippedUnmatched: number[] = [];
+  for (const review of reviews) {
+    const companyId = companyIdsByRank.get(review.rank);
+    if (!companyId) {
+      skippedUnmatched.push(review.rank);
+      continue;
+    }
+    const row = byRank.get(review.rank);
+    const current = row?.careerSearchUrl ?? null;
+    if (
+      review.suggestedUrl &&
+      review.suggestedUrl !== current &&
+      review.suggestedUrl.startsWith("https://")
+    ) {
+      inputs.push({
+        companyId,
+        channel: "general",
+        url: review.suggestedUrl,
+        confidence: review.confidence,
+        notes: review.reason,
+      });
+    }
+    for (const url of review.earlyCareerUrls) {
+      if (url.startsWith("https://")) {
+        inputs.push({
+          companyId,
+          channel: "early_careers",
+          url,
+          confidence: review.confidence,
+          notes: review.reason,
+        });
+      }
+    }
+  }
+
+  const report = await database.begin((transaction) => importReviewCandidates(transaction, inputs));
+  process.stdout.write(
+    `Imported ${report.inserted} candidates (${report.skippedExisting} already present).\n`,
+  );
+  if (skippedUnmatched.length > 0) {
+    process.stdout.write(
+      `  WARNING: ${skippedUnmatched.length} ranks have no researched company in the database: ${skippedUnmatched.join(", ")}\n`,
+    );
+  }
+  process.stdout.write(
+    "Candidates stay unverified (candidate_found). Verify them with pnpm jobs:discover-source --verify, then promote from /admin/source-discovery.\n",
+  );
+} finally {
+  await database.end();
+}

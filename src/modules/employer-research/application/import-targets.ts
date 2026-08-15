@@ -26,6 +26,51 @@ export type ImportReport = Readonly<{
   warnings: readonly string[];
 }>;
 
+export type ReviewCandidateInput = Readonly<{
+  companyId: string;
+  channel: "general" | "early_careers";
+  url: string;
+  confidence: string | null;
+  notes: string | null;
+}>;
+
+/**
+ * Idempotent candidate insertion for URLs accepted from an external URL
+ * validation review. Candidates are never verified and never activated:
+ * they stay `candidate_found` until the discovery pipeline verifies them and
+ * an administrator promotes them to a paused source.
+ */
+export async function importReviewCandidates(
+  database: TransactionSql,
+  inputs: readonly ReviewCandidateInput[],
+): Promise<Readonly<{ inserted: number; skippedExisting: number }>> {
+  let inserted = 0;
+  let skippedExisting = 0;
+  for (const input of inputs) {
+    const existing = await database<{ id: string }[]>`
+      select id from app.job_source_candidate
+      where company_id = ${input.companyId}::uuid and candidate_url = ${input.url}
+    `;
+    if (existing.length > 0) {
+      skippedExisting += 1;
+      continue;
+    }
+    await database`
+      insert into app.job_source_candidate (
+        company_id, channel, candidate_url, discovery_method, status,
+        confidence, evidence, notes
+      ) values (
+        ${input.companyId}::uuid, ${input.channel}, ${input.url},
+        'external_url_review', 'candidate_found',
+        ${input.confidence ?? null}, ${input.notes ?? null},
+        'External URL validation review'
+      )
+    `;
+    inserted += 1;
+  }
+  return { inserted, skippedExisting };
+}
+
 const SOURCE_REFERENCE =
   "Home Office register of licensed sponsors (2026-08-12) via Top 1,000 enhanced research workbook";
 
