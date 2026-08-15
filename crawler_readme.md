@@ -166,16 +166,16 @@ pnpm jobs:crawl:due --limit=5
 
 ### Connector matrix (2026-08-15)
 
-| Platform | Connector | Config key | Verified sources | Status |
-| --- | --- | --- | --- | --- |
-| Workday | CXS/RaaS API | `cxsEndpoint` | 20 | ✅ dry-run verified |
-| Workable | widget API | `workableAccount` | 4 | ✅ dry-run verified |
-| Teamtailor | jobs.json feed | `teamtailorCompany` | 3 | ✅ dry-run verified |
-| Ashby | posting API | `ashbyOrg` | 1 | ✅ configured |
-| Greenhouse | boards API | `greenhouseBoardToken` | 0 real | tooling ready |
-| Lever | postings API | `leverCompany` | 0 real | tooling ready |
-| SmartRecruiters | postings API | `smartRecruitersCompany` | 0 real | tooling ready |
-| iCIMS / other | — | — | 1 | below adapter threshold |
+| Platform        | Connector      | Config key               | Verified sources | Status                  |
+| --------------- | -------------- | ------------------------ | ---------------- | ----------------------- |
+| Workday         | CXS/RaaS API   | `cxsEndpoint`            | 20               | ✅ dry-run verified     |
+| Workable        | widget API     | `workableAccount`        | 4                | ✅ dry-run verified     |
+| Teamtailor      | jobs.json feed | `teamtailorCompany`      | 3                | ✅ dry-run verified     |
+| Ashby           | posting API    | `ashbyOrg`               | 1                | ✅ configured           |
+| Greenhouse      | boards API     | `greenhouseBoardToken`   | 0 real           | tooling ready           |
+| Lever           | postings API   | `leverCompany`           | 0 real           | tooling ready           |
+| SmartRecruiters | postings API   | `smartRecruitersCompany` | 0 real           | tooling ready           |
+| iCIMS / other   | —              | —                        | 1                | below adapter threshold |
 
 ### First resume batch (recommended starter cohort)
 

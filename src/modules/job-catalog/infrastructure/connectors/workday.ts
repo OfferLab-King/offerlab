@@ -13,7 +13,8 @@ import {
 
 export const workdaySourceType = "workday" as const;
 
-const WORKDAY_CXS_PAGE_SIZE = 100;
+// The Workday CXS search API rejects request limits above 20.
+const WORKDAY_CXS_PAGE_SIZE = 20;
 
 type WorkdayCxsPosting = Readonly<{
   bulletFields?: readonly string[];
@@ -108,7 +109,9 @@ async function discoverWorkdayCxsJobs(
   const host = jobsUrl.host;
   const discovered: DiscoveredJob[] = [];
   let offset = 0;
-  for (let page = 0; page < 20; page += 1) {
+  // Workday's deep pages report an unreliable `total` (0 on later pages), so
+  // pagination stops on an empty page or the max-jobs cap, never on `total`.
+  for (let page = 0; page < 30; page += 1) {
     const remaining = context.maxJobs - discovered.length;
     if (remaining <= 0) break;
     const limit = Math.min(WORKDAY_CXS_PAGE_SIZE, remaining);
@@ -129,7 +132,7 @@ async function discoverWorkdayCxsJobs(
     });
     const payload = parseCxsResponse(response.body);
     const postings = payload.jobPostings ?? [];
-    if (postings.length === 0 || payload.total === undefined) {
+    if (postings.length === 0) {
       if (discovered.length === 0) {
         throw new JobFetchError("parser_changed", "workday_cxs_no_postings");
       }
@@ -140,11 +143,7 @@ async function discoverWorkdayCxsJobs(
       discovered.push(normalizeWorkdayCxsPosting(posting, host));
     }
     offset += postings.length;
-    if (
-      postings.length < limit ||
-      offset >= payload.total ||
-      discovered.length >= context.maxJobs
-    ) {
+    if (postings.length < limit || discovered.length >= context.maxJobs) {
       break;
     }
   }
