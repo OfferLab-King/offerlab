@@ -134,10 +134,16 @@ Fix config problems from the admin page — the "Edit official source URLs"
 form now also accepts **Connector configuration (JSON)** — or via SQL:
 
 ```bash
-# Auto-derive + live-verify Workday CXS endpoints for every unconfigured source
-pnpm jobs:workday-endpoints                # dry run report
-pnpm jobs:workday-endpoints --confirm      # write the verified endpoints
+# Auto-derive + live-verify connector configuration for ALL supported ATS
+# platforms (workday, greenhouse, lever, ashby, smartrecruiters)
+pnpm jobs:connector-config                # dry run report
+pnpm jobs:connector-config --confirm      # write the verified endpoints
 ```
+
+Platforms without a typed connector (Workable, Teamtailor, iCIMS...) are
+reported as `unsupported` — add a connector in
+`src/modules/job-catalog/infrastructure/connectors/` when a platform shows
+repeated measured frequency (founder rule: 2-3+ verified employers).
 
 ---
 
