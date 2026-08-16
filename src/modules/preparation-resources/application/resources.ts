@@ -74,7 +74,9 @@ export const readPublicResource = (slug: string) =>
   withApplicationRole((db) => findPublishedResource(db, slug, null));
 
 export const readPublicResourceList = () =>
-  withApplicationRole((db) => listPublishedResources(db, null, { page: 1, query: "", queryInvalid: false, saved: false }));
+  withApplicationRole((db) =>
+    listPublishedResources(db, null, { page: 1, query: "", queryInvalid: false, saved: false }),
+  );
 export async function changeResourceState(
   ownerId: string,
   resourceId: string,

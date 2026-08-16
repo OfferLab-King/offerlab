@@ -41,10 +41,7 @@ export function ResourceCardControls({
       <button className="button-secondary" disabled={busy} onClick={() => void changeSavedState()}>
         {busy ? "Updating…" : saved ? "Saved" : "Save"}
       </button>
-      <span
-        aria-live="polite"
-        className={error ? "resource-save-error" : "visually-hidden"}
-      >
+      <span aria-live="polite" className={error ? "resource-save-error" : "visually-hidden"}>
         {message}
       </span>
     </div>

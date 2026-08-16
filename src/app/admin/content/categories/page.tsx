@@ -81,36 +81,36 @@ export default async function Page({
               formClassName="application-form cms-taxonomy-row"
               key={row.id}
             >
-                <input type="hidden" name="id" value={row.id} />
-                <input type="hidden" name="version" value={row.version} />
-                <div className="cms-content-badges">
-                  <code>{row.slug}</code>
-                  <span
-                    className={`cms-status cms-status-${row.archivedAt ? "archived" : "published"}`}
-                  >
-                    {row.archivedAt ? "archived" : "active"}
-                  </span>
-                </div>
-                <label>
-                  Name
-                  <input name="name" defaultValue={row.name} required maxLength={80} />
-                </label>
-                <label>
-                  Description
-                  <textarea name="description" defaultValue={row.description ?? ""} maxLength={500} />
-                </label>
-                <div className="form-actions">
-                  <button name="intent" value="save">
-                    Save
-                  </button>
-                  <button
-                    className="button-secondary"
-                    name="intent"
-                    value={row.archivedAt ? "restore" : "archive"}
-                  >
-                    {row.archivedAt ? "Restore" : "Archive"}
-                  </button>
-                </div>
+              <input type="hidden" name="id" value={row.id} />
+              <input type="hidden" name="version" value={row.version} />
+              <div className="cms-content-badges">
+                <code>{row.slug}</code>
+                <span
+                  className={`cms-status cms-status-${row.archivedAt ? "archived" : "published"}`}
+                >
+                  {row.archivedAt ? "archived" : "active"}
+                </span>
+              </div>
+              <label>
+                Name
+                <input name="name" defaultValue={row.name} required maxLength={80} />
+              </label>
+              <label>
+                Description
+                <textarea name="description" defaultValue={row.description ?? ""} maxLength={500} />
+              </label>
+              <div className="form-actions">
+                <button name="intent" value="save">
+                  Save
+                </button>
+                <button
+                  className="button-secondary"
+                  name="intent"
+                  value={row.archivedAt ? "restore" : "archive"}
+                >
+                  {row.archivedAt ? "Restore" : "Archive"}
+                </button>
+              </div>
             </ConfirmIntentForm>
           ))}
         </section>

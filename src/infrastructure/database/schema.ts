@@ -493,34 +493,40 @@ export const interviewQuestions = appSchema.table("interview_question", {
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
 });
 
-export const memberAnswers = appSchema.table("member_answer", {
-  applicationId: uuid("application_id"),
-  archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
-  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
-  customQuestion: text("custom_question"),
-  draftAnswer: text("draft_answer").default("").notNull(),
-  id: uuid("id").defaultRandom().primaryKey(),
-  keyPoints: text("key_points").default("").notNull(),
-  ownerUserId: uuid("owner_user_id")
-    .notNull()
-    .references(() => appUsers.id, { onDelete: "restrict" }),
-  questionFamily: text("question_family").notNull(),
-  questionId: uuid("question_id").references(() => interviewQuestions.id, { onDelete: "restrict" }),
-  readyAt: timestamp("ready_at", { mode: "date", withTimezone: true }),
-  recruitmentStage: text("recruitment_stage"),
-  relationRevision: integer("relation_revision").default(0).notNull(),
-  title: text("title").notNull(),
-  updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
-  version: integer("version").default(1).notNull(),
-}, (table) => [
-  // Matches the migration-level composite FK
-  // (owner_user_id, application_id) -> app.application(owner_user_id, id).
-  foreignKey({
-    columns: [table.ownerUserId, table.applicationId],
-    foreignColumns: [applications.ownerUserId, applications.id],
-    name: "member_answer_application_fk",
-  }).onDelete("restrict"),
-]);
+export const memberAnswers = appSchema.table(
+  "member_answer",
+  {
+    applicationId: uuid("application_id"),
+    archivedAt: timestamp("archived_at", { mode: "date", withTimezone: true }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    customQuestion: text("custom_question"),
+    draftAnswer: text("draft_answer").default("").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    keyPoints: text("key_points").default("").notNull(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    questionFamily: text("question_family").notNull(),
+    questionId: uuid("question_id").references(() => interviewQuestions.id, {
+      onDelete: "restrict",
+    }),
+    readyAt: timestamp("ready_at", { mode: "date", withTimezone: true }),
+    recruitmentStage: text("recruitment_stage"),
+    relationRevision: integer("relation_revision").default(0).notNull(),
+    title: text("title").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
+    version: integer("version").default(1).notNull(),
+  },
+  (table) => [
+    // Matches the migration-level composite FK
+    // (owner_user_id, application_id) -> app.application(owner_user_id, id).
+    foreignKey({
+      columns: [table.ownerUserId, table.applicationId],
+      foreignColumns: [applications.ownerUserId, applications.id],
+      name: "member_answer_application_fk",
+    }).onDelete("restrict"),
+  ],
+);
 
 export const answerCoachReviews = appSchema.table(
   "answer_coach_review",

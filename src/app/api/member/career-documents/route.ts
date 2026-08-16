@@ -77,7 +77,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (code in uploadErrors) {
       return NextResponse.json({ message: uploadErrors[code] }, { status: 422 });
     }
-    logger.error({ event: "career_document_upload_failed" }, "Career document upload failed");
+    logger.error({ err: error, event: "career_document_upload_failed" }, "Career document upload failed");
     return NextResponse.json(genericCareerError, { status: 500 });
   }
 }

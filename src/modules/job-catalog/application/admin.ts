@@ -127,16 +127,19 @@ export async function pauseCompanySource(
   administratorUserId: string,
   sourceId: string,
   paused: boolean,
-): Promise<void> {
-  await withApplicationUser(administratorUserId, (database) =>
+): Promise<boolean> {
+  const changed = await withApplicationUser(administratorUserId, (database) =>
     setJobSourceStatus(database, sourceId, paused ? "paused" : "active"),
   );
-  await insertAuditEvent(
-    administratorUserId,
-    paused ? "job_source.paused" : "job_source.resumed",
-    "job_source",
-    sourceId,
-  );
+  if (changed) {
+    await insertAuditEvent(
+      administratorUserId,
+      paused ? "job_source.paused" : "job_source.resumed",
+      "job_source",
+      sourceId,
+    );
+  }
+  return changed;
 }
 
 export async function requestSourceRunForAdmin(

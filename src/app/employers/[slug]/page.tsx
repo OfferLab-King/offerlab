@@ -237,7 +237,11 @@ export default async function EmployerProfilePage({ params }: { params: Employer
               {opportunities.map((label, index) => (
                 <span key={label}>
                   {label.toLowerCase()}
-                  {index < opportunities.length - 2 ? ", " : index === opportunities.length - 2 ? " and " : ""}
+                  {index < opportunities.length - 2
+                    ? ", "
+                    : index === opportunities.length - 2
+                      ? " and "
+                      : ""}
                 </span>
               ))}
               .

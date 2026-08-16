@@ -28,18 +28,21 @@ const auditQuerySchema = z.object({
  */
 export const readAuditEventsForAdmin = (administrator: string, query: unknown) => {
   const parsed = auditQuerySchema.safeParse(query);
-  if (!parsed.success) return Promise.resolve({ events: [] as readonly AuditEventRecord[], hasNextPage: false });
+  if (!parsed.success)
+    return Promise.resolve({ events: [] as readonly AuditEventRecord[], hasNextPage: false });
   const { action, entityType, page } = parsed.data;
   return withApplicationUser(administrator, async (database) => {
-    const rows = await database<{
-      action: string;
-      actor_user_id: string;
-      created_at: Date;
-      entity_id: string | null;
-      entity_type: string;
-      id: string;
-      metadata: Record<string, unknown>;
-    }[]>`
+    const rows = await database<
+      {
+        action: string;
+        actor_user_id: string;
+        created_at: Date;
+        entity_id: string | null;
+        entity_type: string;
+        id: string;
+        metadata: Record<string, unknown>;
+      }[]
+    >`
       select id, actor_user_id, action, entity_type, entity_id, metadata, created_at
       from app.audit_event
       where (${action ?? null}::text is null or action ilike ${`%${action}%`})

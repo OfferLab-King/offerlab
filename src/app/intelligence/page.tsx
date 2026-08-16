@@ -26,7 +26,9 @@ export async function generateMetadata({
     if (typeof value === "string") params.set(key, value);
   const filters = parseReportFilters(params);
   const filtered =
-    filters.query !== "" || filters.stage !== undefined || filters.cycle !== undefined ||
+    filters.query !== "" ||
+    filters.stage !== undefined ||
+    filters.cycle !== undefined ||
     filters.industry !== undefined;
   return filtered ? { ...baseMetadata, robots: { index: false, follow: true } } : baseMetadata;
 }
@@ -105,8 +107,7 @@ export default async function PublicIntelligencePage({
             <h2>No report matches your search yet</h2>
             <p>
               OfferLab publishes only useful, confidential and clearly dated reports. Clear the
-              search, or join to explore preparation resources while the intelligence library
-              grows.
+              search, or join to explore preparation resources while the intelligence library grows.
             </p>
             <Link className="button-link" href="/register">
               Create free account

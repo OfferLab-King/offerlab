@@ -26,7 +26,9 @@ export function JobSaveButton({
       });
       if (response.status === 401) {
         const query = searchParams.toString();
-        router.push(`/sign-in?next=${encodeURIComponent(query ? `${pathname}?${query}` : pathname)}`);
+        router.push(
+          `/sign-in?next=${encodeURIComponent(query ? `${pathname}?${query}` : pathname)}`,
+        );
         return;
       }
       if (!response.ok) {

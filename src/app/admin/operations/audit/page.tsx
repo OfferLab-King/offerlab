@@ -61,7 +61,11 @@ export default async function AuditTrailPage({
         </label>
         <label>
           Entity type contains
-          <input defaultValue={entityType ?? ""} name="entityType" placeholder="e.g. preparation_resource" />
+          <input
+            defaultValue={entityType ?? ""}
+            name="entityType"
+            placeholder="e.g. preparation_resource"
+          />
         </label>
         <button type="submit">Filter</button>
       </form>
@@ -78,7 +82,9 @@ export default async function AuditTrailPage({
               <li className="cms-operation-card cms-audit-row" key={event.id}>
                 <span className="cms-meta-badge">{event.action}</span>
                 <code>{event.entityType}</code>
-                {event.entityId && <code title={event.entityId}>{event.entityId.slice(0, 8)}…</code>}
+                {event.entityId && (
+                  <code title={event.entityId}>{event.entityId.slice(0, 8)}…</code>
+                )}
                 <span>{formatTimestamp(event.createdAt)}</span>
                 <span className="cms-meta-badge">actor {event.actorUserId.slice(0, 8)}…</span>
               </li>

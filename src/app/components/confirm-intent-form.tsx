@@ -51,12 +51,19 @@ export function ConfirmIntentForm({
   }
 
   return (
-    <div className={pending ? "confirm-intent-form confirm-intent-form--open" : "confirm-intent-form"}>
+    <div
+      className={pending ? "confirm-intent-form confirm-intent-form--open" : "confirm-intent-form"}
+    >
       <form action={action} className={formClassName} onSubmit={handleSubmit} ref={formRef}>
         {children}
       </form>
       {pending && (
-        <div className="confirm-intent-panel" role="alertdialog" aria-modal="true" aria-labelledby="confirm-intent-title">
+        <div
+          className="confirm-intent-panel"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="confirm-intent-title"
+        >
           <h3 id="confirm-intent-title">{pending.confirmation.label}</h3>
           <p>{pending.confirmation.prompt}</p>
           {pending.confirmation.description && (

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import {
   JobSearchUsageLimitError,
   searchJobsForMember,
 } from "../../../../../modules/job-discovery/application/search-jobs";
 import { createJobDiscoveryRuntime } from "../../../../../modules/job-discovery/infrastructure/provider-runtime";
 import { JobDiscoveryProviderError } from "../../../../../modules/job-discovery/infrastructure/jsearch-provider";
+import { logger } from "../../../../../infrastructure/logging/logger";
 import { hasSameOrigin } from "../../../../../modules/identity-access/application/request-security";
 import { careerApiOwner, genericCareerError } from "../../career/access";
 import {
@@ -77,9 +79,19 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: rateLimited ? 429 : 503 },
       );
     }
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { message: "Check the search fields and try again." },
+        { status: 422 },
+      );
+    }
+    logger.error(
+      { err: error },
+      "External job search failed with an unexpected error",
+    );
     return NextResponse.json(
-      { message: "Check the search fields and try again." },
-      { status: 422 },
+      { message: "Job search is temporarily unavailable. Try again later." },
+      { status: 500 },
     );
   }
 }

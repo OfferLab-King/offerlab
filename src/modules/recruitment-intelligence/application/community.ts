@@ -17,9 +17,17 @@ export async function submitIntelligenceComment(owner: string, input: unknown) {
   );
 }
 
-export async function reportIntelligenceComment(owner: string, commentId: unknown, reason: unknown) {
+export async function reportIntelligenceComment(
+  owner: string,
+  commentId: unknown,
+  reason: unknown,
+) {
   const parsed = parseCommentFlagReason(reason);
-  if (!parsed || typeof commentId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(commentId)) {
+  if (
+    !parsed ||
+    typeof commentId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(commentId)
+  ) {
     return { error: "invalid", ok: false } as const;
   }
   return withApplicationUser(owner, (database) =>

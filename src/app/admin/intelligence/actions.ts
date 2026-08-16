@@ -85,12 +85,7 @@ export async function moderateIntelligenceAction(formData: FormData) {
 export async function moderateIntelligenceCommentAction(formData: FormData) {
   const administrator = await requireAdministrator();
   const state = formData.get("state");
-  if (
-    state !== "pending" &&
-    state !== "published" &&
-    state !== "rejected" &&
-    state !== "removed"
-  )
+  if (state !== "pending" && state !== "published" && state !== "rejected" && state !== "removed")
     redirect("/admin/intelligence?result=comment-error#discussion-moderation");
   const result = await reviewIntelligenceComment(
     administrator.userId,

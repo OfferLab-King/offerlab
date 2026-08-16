@@ -21,6 +21,8 @@ const administrator = "20000000-0000-4000-8000-000000000003";
 const uniqueSlug = (base: string): string =>
   `${base}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+const createdCompanyIds = new Set<string>();
+
 async function asUser<T>(
   userId: string,
   operation: (database: TransactionSql) => PromiseLike<T>,
@@ -48,6 +50,7 @@ async function setupEmployer(
     returning id
   `;
   const companyId = company[0]!.id;
+  createdCompanyIds.add(companyId);
   if (input.employeeBand || input.industry) {
     await migrationDatabase`
       insert into app.employer_research_snapshot (
@@ -85,6 +88,31 @@ async function setupEmployer(
 }
 
 afterAll(async () => {
+  const companyIds = [...createdCompanyIds];
+  if (companyIds.length > 0) {
+    // app.job, app.job_source and app.job_event restrict company deletion, so
+    // remove dependent rows first, then the fixtures themselves. This keeps
+    // repeated local runs from accumulating employers that can push the
+    // directory fixtures off the first page.
+    await migrationDatabase`
+      delete from app.job_event where company_id = any(${companyIds}::uuid[])
+    `;
+    await migrationDatabase`
+      delete from app.job_source where company_id = any(${companyIds}::uuid[])
+    `;
+    await migrationDatabase`
+      delete from app.job where company_id = any(${companyIds}::uuid[])
+    `;
+    await migrationDatabase`
+      delete from app.employer_research_snapshot where company_id = any(${companyIds}::uuid[])
+    `;
+    await migrationDatabase`
+      delete from app.employer_sponsor_entity where company_id = any(${companyIds}::uuid[])
+    `;
+    await migrationDatabase`
+      delete from app.company where id = any(${companyIds}::uuid[])
+    `;
+  }
   await migrationDatabase.end();
   await runtimeDatabase.end();
 });

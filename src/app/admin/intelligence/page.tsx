@@ -150,12 +150,7 @@ export default async function AdminIntelligencePage({
                   )}
                   {(comment.moderationState === "rejected" ||
                     comment.moderationState === "removed") && (
-                    <button
-                      className="button-secondary"
-                      name="state"
-                      type="submit"
-                      value="pending"
-                    >
+                    <button className="button-secondary" name="state" type="submit" value="pending">
                       Restore to pending
                     </button>
                   )}

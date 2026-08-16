@@ -66,9 +66,9 @@ export async function runCreateResourceAction(
   const result = await dependencies.mutate(actor.userId, form);
   return result.ok
     ? ({ id: result.id, outcome: "created" } as const)
-    : ("error" in result && result.error
-        ? ({ errorMessage: result.error, outcome: "validation" } as const)
-        : ({ outcome: "validation" } as const));
+    : "error" in result && result.error
+      ? ({ errorMessage: result.error, outcome: "validation" } as const)
+      : ({ outcome: "validation" } as const);
 }
 
 type CreateTaxonomyActionDependencies = Readonly<{
