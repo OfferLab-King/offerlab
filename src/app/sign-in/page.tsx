@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { isLocalAuthBypassEnabled } from "../../infrastructure/config/local-development";
 import { AuthShell, StatusMessage } from "../components/auth-shell";
 import { SignInForm } from "./sign-in-form";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: "Sign in | OfferLab",
+};
 
 export default async function SignInPage({
   searchParams,

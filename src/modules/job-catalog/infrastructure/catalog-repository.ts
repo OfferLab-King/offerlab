@@ -70,7 +70,7 @@ export type JobDetailRow = Readonly<{
   career_level_key: string | null;
   classification_source: string;
   classification_version: number;
-  company_careers_url: string;
+  company_careers_url: string | null;
   company_employee_band: string | null;
   company_has_sponsor: boolean;
   company_id: string;

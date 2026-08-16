@@ -45,6 +45,7 @@ export type EligibilityQueueRow = Readonly<{
   eligibility_status: string;
   id: string;
   opportunity_type: string;
+  publication_status: string;
   title: string;
   updated_at: Date;
 }>;
@@ -53,6 +54,7 @@ export type ClassificationQueueRow = Readonly<{
   company_name: string;
   id: string;
   opportunity_type: string;
+  publication_status: string;
   sector_key: string | null;
   subsector_key: string | null;
   title: string;

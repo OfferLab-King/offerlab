@@ -186,7 +186,7 @@ export function StoryForm({ initial }: { initial?: Story }) {
       ))}
       <section>
         <h2>8. Competencies</h2>
-        <fieldset aria-invalid={Boolean(errors.competencies)}>
+        <fieldset aria-invalid={Boolean(errors.competencies)} id="competencies">
           <legend>Which competencies does this story demonstrate?</legend>
           <div className="choice-grid">
             {Object.entries(competencies).map(([k, l]) => (

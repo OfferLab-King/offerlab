@@ -178,7 +178,7 @@ export async function moderateReport(
   administrator: string,
   id: string,
   expectedVersion: number,
-  state: "published" | "rejected",
+  state: "pending" | "published" | "rejected",
   confidence: "low" | "medium" | "high",
 ) {
   const current = await db<
@@ -192,7 +192,8 @@ export async function moderateReport(
     moderation_confidence=${confidence},moderated_by_user_id=${administrator}::uuid,moderated_at=now()
     where id=${id}::uuid and version=${expectedVersion}`;
   await db`insert into app.audit_event(actor_user_id,action,entity_type,entity_id,metadata)
-    values(${administrator}::uuid,${state === "published" ? "intelligence.published" : "intelligence.rejected"},
+    values(${administrator}::uuid,
+      ${state === "published" ? "intelligence.published" : state === "rejected" ? "intelligence.rejected" : "intelligence.sent_to_pending"},
     'recruitment_intelligence_report',${id}::uuid,'{}'::jsonb)`;
   return { outcome: "changed" } as const;
 }

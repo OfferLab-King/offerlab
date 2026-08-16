@@ -12,7 +12,9 @@
   --focus: #146b42;
   --muted: #526159;
   --surface: #ffffff;
+  --surface-raised: #f1f5f1;
   --surface-subtle: #f9faf8;
+  --text: #102219;
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
@@ -3556,6 +3558,53 @@ progress {
   padding: 1rem;
 }
 
+.public-breadcrumb {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-size: 0.9rem;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.public-breadcrumb a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.public-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.public-resource-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 2rem 0;
+  padding: 0;
+}
+
+.public-resource-list .card h2 {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.public-resource-list .card h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.public-resource-list .card h2 a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.public-resource-minutes {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
 .applications-heading,
 .application-card {
   align-items: center;
@@ -4822,6 +4871,15 @@ progress {
   font-size: 0.78rem;
   padding: 0.24rem 0.5rem;
   text-transform: capitalize;
+}
+
+.cms-meta-badge {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.24rem 0.5rem;
 }
 
 .cms-row-actions {
@@ -6537,6 +6595,45 @@ progress {
   font-size: 0.85rem;
 }
 
+.resource-save-error {
+  color: #a23b2e;
+  display: block;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+}
+
+.confirm-intent-form {
+  position: relative;
+}
+
+.confirm-intent-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-raised);
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.confirm-intent-panel h3 {
+  margin: 0 0 0.4rem;
+}
+
+.confirm-intent-panel p {
+  margin: 0 0 0.6rem;
+}
+
+.confirm-intent-panel .confirm-intent-description {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.confirm-intent-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
 .saved-jobs-list {
   display: grid;
   gap: 0.75rem;
@@ -6820,7 +6917,46 @@ progress {
   display: grid;
   gap: 0.75rem;
   list-style: none;
+  margin: 0;
   padding: 0;
+}
+
+.cms-audit-filters {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cms-audit-filters label {
+  display: grid;
+  font-size: 0.85rem;
+  gap: 0.3rem;
+}
+
+.cms-audit-filters input {
+  min-width: 14rem;
+}
+
+.cms-audit-list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.cms-audit-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.cms-audit-row code {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .cms-review-list .cms-operation-card {

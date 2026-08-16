@@ -1,8 +1,8 @@
 import postgres, { type TransactionSql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  assertUsageAllowed,
   listReviews,
+  reserveAnswerCoachReviewUsage,
   saveReview,
   setCommentState,
 } from "../../src/modules/answer-coach/infrastructure/review-repository";
@@ -61,7 +61,7 @@ afterAll(async () => {
 describe("Answer Coach PostgreSQL persistence", () => {
   it("persists recoverable reviews and comment state without mutating the answer", async () => {
     const saved = await as(one, async (db) => {
-      await assertUsageAllowed(db, one);
+      await reserveAnswerCoachReviewUsage(db, one);
       return saveReview(
         db,
         one,

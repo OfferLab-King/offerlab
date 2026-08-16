@@ -42,13 +42,13 @@ function applyPrivateSecurityHeaders(response: NextResponse, pathname: string): 
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const pathname = request.nextUrl.pathname;
-  const cataloguePath =
+  const publicCataloguePath =
     pathname.startsWith("/jobs") ||
     pathname.startsWith("/employers") ||
-    pathname.startsWith("/api/jobs") ||
-    pathname.startsWith("/member/saved-jobs") ||
-    pathname === "/api/member/saved-jobs";
-  if (cataloguePath) {
+    pathname.startsWith("/api/jobs");
+  const memberCataloguePath =
+    pathname.startsWith("/member/saved-jobs") || pathname === "/api/member/saved-jobs";
+  if (publicCataloguePath || memberCataloguePath) {
     if (process.env.JOB_CATALOG_ENABLED !== "true") {
       return new NextResponse("Not found", {
         headers: {
@@ -59,9 +59,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         status: 404,
       });
     }
-    // Catalogue enabled: the page and API layers enforce visibility; the
-    // middleware only passes requests through.
-    return NextResponse.next({ request });
+    // Public catalogue enabled: the page and API layers enforce visibility;
+    // the middleware only passes those requests through. Member catalogue
+    // paths still need session refresh and private cache headers below.
+    if (publicCataloguePath) {
+      return NextResponse.next({ request });
+    }
   }
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

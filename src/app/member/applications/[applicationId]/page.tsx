@@ -78,7 +78,7 @@ export default async function ApplicationDetailPage({ params }: Props) {
               <p>No motivation and fit answer is linked to this application yet.</p>
             )}
           </div>
-          <Link className="button-link" href="/member/learn/answer-bank/answers/new">
+          <Link className="button-link" href="/member/learn/answer-bank/answers">
             Open Answer Bank
           </Link>
         </section>

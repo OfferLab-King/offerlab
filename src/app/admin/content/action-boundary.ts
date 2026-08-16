@@ -14,12 +14,15 @@ type ActionResult =
   | Readonly<{ conflict?: boolean; error?: string; ok: false }>;
 
 export type CmsActionOutcome = Readonly<{
+  errorMessage?: string;
   outcome: "changed" | "conflict" | "created" | "unchanged" | "validation";
 }>;
 
 function safeOutcome(result: ActionResult): CmsActionOutcome {
   if (result.ok) return { outcome: result.outcome ?? "created" };
-  return { outcome: result.conflict ? "conflict" : "validation" };
+  return result.conflict
+    ? { outcome: "conflict" }
+    : { errorMessage: result.error ?? "validation", outcome: "validation" };
 }
 
 type ResourceActionDependencies = Readonly<{
@@ -63,7 +66,9 @@ export async function runCreateResourceAction(
   const result = await dependencies.mutate(actor.userId, form);
   return result.ok
     ? ({ id: result.id, outcome: "created" } as const)
-    : ({ outcome: "validation" } as const);
+    : ("error" in result && result.error
+        ? ({ errorMessage: result.error, outcome: "validation" } as const)
+        : ({ outcome: "validation" } as const));
 }
 
 type CreateTaxonomyActionDependencies = Readonly<{

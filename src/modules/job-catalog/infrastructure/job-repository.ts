@@ -604,6 +604,7 @@ export type EligibilityQueueRow = Readonly<{
   eligibility_status: string;
   id: string;
   opportunity_type: string;
+  publication_status: string;
   title: string;
   updated_at: Date;
 }>;
@@ -615,7 +616,7 @@ export async function listEligibilityReviewQueue(
   return database<EligibilityQueueRow[]>`
     select j.id, j.title, j.opportunity_type, j.eligibility_status,
       j.eligibility_reasons, j.eligibility_evidence, j.updated_at,
-      c.name as company_name
+      j.publication_status, c.name as company_name
     from app.job j
     join app.company c on c.id = j.company_id
     where j.active and j.eligibility_status in ('needs_review', 'ineligible')
@@ -628,6 +629,7 @@ export type ClassificationQueueRow = Readonly<{
   company_name: string;
   id: string;
   opportunity_type: string;
+  publication_status: string;
   sector_key: string | null;
   subsector_key: string | null;
   title: string;
@@ -640,7 +642,7 @@ export async function listClassificationReviewQueue(
 ): Promise<ClassificationQueueRow[]> {
   return database<ClassificationQueueRow[]>`
     select j.id, j.title, j.opportunity_type, j.sector_key, j.subsector_key,
-      j.updated_at, c.name as company_name
+      j.updated_at, j.publication_status, c.name as company_name
     from app.job j
     join app.company c on c.id = j.company_id
     where j.active

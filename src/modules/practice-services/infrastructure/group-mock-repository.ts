@@ -404,9 +404,19 @@ export async function updateBookingForAdmin(
   status: "confirmed" | "cancelled" | "attended" | "no_show",
 ) {
   const rows = await db<{ id: string }[]>`
-    update app.group_mock_booking set status=${status}
-    where id=${bookingId}::uuid and version=${expectedVersion} returning id`;
-  if (!rows[0]) return { outcome: "conflict" } as const;
+    update app.group_mock_booking b set status=${status}
+    from app.group_mock_session s
+    where b.id=${bookingId}::uuid and b.version=${expectedVersion}
+      and b.session_id=s.id
+      and (
+        ${status} <> 'confirmed'
+        or (
+          select count(*) from app.group_mock_booking x
+          where x.session_id=b.session_id and x.status='confirmed' and x.id<>b.id
+        ) < s.capacity
+      )
+    returning b.id`;
+  if (!rows[0]) return { outcome: "capacity_or_conflict" } as const;
   await db`insert into app.audit_event(actor_user_id,action,entity_type,entity_id,metadata)
     values(${administrator}::uuid,'group_mock.booking_updated','group_mock_booking',${bookingId}::uuid,'{}'::jsonb)`;
   return { outcome: "changed" } as const;

@@ -17,9 +17,11 @@ export async function submitIntelligenceComment(owner: string, input: unknown) {
   );
 }
 
-export async function reportIntelligenceComment(owner: string, commentId: string, reason: unknown) {
+export async function reportIntelligenceComment(owner: string, commentId: unknown, reason: unknown) {
   const parsed = parseCommentFlagReason(reason);
-  if (!parsed) return { error: "invalid", ok: false } as const;
+  if (!parsed || typeof commentId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(commentId)) {
+    return { error: "invalid", ok: false } as const;
+  }
   return withApplicationUser(owner, (database) =>
     repository.flagComment(database, owner, commentId, parsed),
   );
@@ -34,7 +36,7 @@ export const reviewIntelligenceComment = (
   administrator: string,
   commentId: string,
   version: number,
-  state: "published" | "rejected" | "removed",
+  state: "pending" | "published" | "rejected" | "removed",
 ) =>
   withApplicationUser(administrator, (database) =>
     repository.moderateComment(database, administrator, commentId, version, state),

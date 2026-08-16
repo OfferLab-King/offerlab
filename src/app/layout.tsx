@@ -3,10 +3,29 @@ import type { ReactNode } from "react";
 
 import "./styles.css";
 
+const defaultDescription =
+  "OfferLab helps UK graduate applicants organise applications, tailor truthful CVs and cover letters, and prepare with evidence for each recruitment stage.";
+
 export const metadata: Metadata = {
-  description: "Structured preparation for UK graduate recruitment.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000"),
+  applicationName: "OfferLab",
+  description: defaultDescription,
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ??
+      (process.env.NODE_ENV === "production" ? "https://offerlab.uk" : "http://127.0.0.1:3000"),
+  ),
+  openGraph: {
+    description: defaultDescription,
+    locale: "en_GB",
+    siteName: "OfferLab",
+    title: "OfferLab",
+    type: "website",
+  },
   title: "OfferLab",
+  twitter: {
+    card: "summary",
+    description: defaultDescription,
+    title: "OfferLab",
+  },
 };
 
 export const viewport: Viewport = {

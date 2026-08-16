@@ -7,12 +7,29 @@ import { IntelligenceReportCard } from "../components/intelligence-report";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
+
+const baseMetadata: Metadata = {
   title: "Graduate Recruitment and Interview Experiences | OfferLab",
   description:
     "Search moderated, cycle-dated candidate experiences for graduate interviews, online tests and assessment centres.",
   alternates: { canonical: "/intelligence" },
 };
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const raw = await searchParams;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(raw))
+    if (typeof value === "string") params.set(key, value);
+  const filters = parseReportFilters(params);
+  const filtered =
+    filters.query !== "" || filters.stage !== undefined || filters.cycle !== undefined ||
+    filters.industry !== undefined;
+  return filtered ? { ...baseMetadata, robots: { index: false, follow: true } } : baseMetadata;
+}
 
 export default async function PublicIntelligencePage({
   searchParams,
@@ -65,28 +82,31 @@ export default async function PublicIntelligencePage({
         <button type="submit">Search experiences</button>
       </form>
       <section className="public-intelligence-results" aria-labelledby="experience-results">
-        <div>
-          <p className="eyebrow">Current reports</p>
-          <h2 id="experience-results">
-            {reports.length} moderated {reports.length === 1 ? "experience" : "experiences"}
-          </h2>
-        </div>
         {reports.length ? (
-          <div className="intelligence-grid">
-            {reports.map((report) => (
-              <IntelligenceReportCard
-                href={`/intelligence/${report.slug}`}
-                key={report.id}
-                report={report}
-              />
-            ))}
-          </div>
+          <>
+            <div>
+              <p className="eyebrow">Current reports</p>
+              <h2 id="experience-results">
+                {reports.length} moderated {reports.length === 1 ? "experience" : "experiences"}
+              </h2>
+            </div>
+            <div className="intelligence-grid">
+              {reports.map((report) => (
+                <IntelligenceReportCard
+                  href={`/intelligence/${report.slug}`}
+                  key={report.id}
+                  report={report}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="card empty-state">
-            <h2>No exact report is published yet</h2>
+            <h2>No report matches your search yet</h2>
             <p>
-              OfferLab publishes only useful, confidential and clearly dated reports. Join to
-              explore preparation resources while the intelligence library grows.
+              OfferLab publishes only useful, confidential and clearly dated reports. Clear the
+              search, or join to explore preparation resources while the intelligence library
+              grows.
             </p>
             <Link className="button-link" href="/register">
               Create free account

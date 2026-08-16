@@ -512,7 +512,15 @@ export const memberAnswers = appSchema.table("member_answer", {
   title: text("title").notNull(),
   updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).defaultNow().notNull(),
   version: integer("version").default(1).notNull(),
-});
+}, (table) => [
+  // Matches the migration-level composite FK
+  // (owner_user_id, application_id) -> app.application(owner_user_id, id).
+  foreignKey({
+    columns: [table.ownerUserId, table.applicationId],
+    foreignColumns: [applications.ownerUserId, applications.id],
+    name: "member_answer_application_fk",
+  }).onDelete("restrict"),
+]);
 
 export const answerCoachReviews = appSchema.table(
   "answer_coach_review",

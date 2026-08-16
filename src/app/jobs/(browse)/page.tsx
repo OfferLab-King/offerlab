@@ -24,7 +24,7 @@ export async function generateMetadata({
     description:
       "Search current UK roles sourced directly from official employer career sites. Filter by sector, employer, location, job type and more.",
     robots: filtered ? { index: false, follow: true } : undefined,
-    title: "Jobs at Leading Employers | OfferLab",
+    title: "Current UK Graduate and Experienced Jobs | OfferLab",
   };
 }
 

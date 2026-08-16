@@ -170,6 +170,15 @@ export default async function ResourceLibraryPage({
             <ResourceCard key={resource.id} resource={resource} />
           ))}
         </div>
+      ) : filters.queryInvalid ? (
+        <section className="card empty-state">
+          <h2>That search could not be used</h2>
+          <p>
+            Searches are limited to 120 characters and cannot include control characters. Shorten
+            the query or clear it to see resources.
+          </p>
+          {anyFiltersActive && <Link href="/member/learn/resources">Clear filters</Link>}
+        </section>
       ) : (
         <section className="card empty-state">
           <h2>No matching resources</h2>

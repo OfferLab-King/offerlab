@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAdministrator } from "../../../../modules/identity-access/application/authorization";
 import { listTags } from "../../../../modules/preparation-resources/application/admin-content";
 import { runCreateTaxonomyAction, runUpdateTaxonomyAction } from "../action-boundary";
+import { ConfirmIntentForm } from "../../../components/confirm-intent-form";
 import { ConflictAlert } from "../conflict-alert";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,19 @@ export default async function Page({
             </div>
           </div>
           {rows.map((row) => (
-            <form action={update} className="application-form cms-taxonomy-row" key={row.id}>
+            <ConfirmIntentForm
+              action={update}
+              confirmations={{
+                archive: {
+                  description:
+                    "Every published resource using this tag will be automatically unpublished. Restore the tag to republish them.",
+                  label: "Archive this tag?",
+                  prompt: "Archiving removes it from the library and unpublishes affected content.",
+                },
+              }}
+              formClassName="application-form cms-taxonomy-row"
+              key={row.id}
+            >
               <input type="hidden" name="id" value={row.id} />
               <input type="hidden" name="version" value={row.version} />
               <div className="cms-content-badges">
@@ -90,7 +103,7 @@ export default async function Page({
                   {row.archivedAt ? "Restore" : "Archive"}
                 </button>
               </div>
-            </form>
+            </ConfirmIntentForm>
           ))}
         </section>
       </div>

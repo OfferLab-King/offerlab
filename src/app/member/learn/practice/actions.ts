@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
+import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import {
   cancelServiceRequest,
   requestService,
@@ -10,8 +11,15 @@ import {
   reserveGroupMockSeat,
 } from "../../../../modules/practice-services/application/group-mock";
 
+async function requireOnboardedMember() {
+  const authorization = await requireMember();
+  const profile = await readOnboardingProfile(authorization.userId);
+  if (!profile?.completedAt) redirect("/member/onboarding");
+  return authorization;
+}
+
 export async function reserveGroupMockAction(formData: FormData) {
-  const { userId } = await requireMember();
+  const { userId } = await requireOnboardedMember();
   const result = await reserveGroupMockSeat(userId, {
     ageConfirmed: formData.get("ageConfirmed") === "yes",
     rulesConfirmed: formData.get("rulesConfirmed") === "yes",
@@ -24,7 +32,7 @@ export async function reserveGroupMockAction(formData: FormData) {
 }
 
 export async function cancelGroupMockAction(formData: FormData) {
-  const { userId } = await requireMember();
+  const { userId } = await requireOnboardedMember();
   const result = await cancelGroupMockSeat(
     userId,
     String(formData.get("bookingId")),
@@ -36,7 +44,7 @@ export async function cancelGroupMockAction(formData: FormData) {
 }
 
 export async function requestServiceAction(formData: FormData) {
-  const { userId } = await requireMember();
+  const { userId } = await requireOnboardedMember();
   const result = await requestService(userId, { offeringId: formData.get("offeringId") });
   redirect(
     `/member/learn/practice?result=${result.outcome === "invalid" || result.outcome === "not_found" ? "error" : "requested"}`,
@@ -44,7 +52,7 @@ export async function requestServiceAction(formData: FormData) {
 }
 
 export async function cancelServiceAction(formData: FormData) {
-  const { userId } = await requireMember();
+  const { userId } = await requireOnboardedMember();
   const result = await cancelServiceRequest(
     userId,
     String(formData.get("requestId")),

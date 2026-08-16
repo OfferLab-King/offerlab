@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { AuthShell, StatusMessage } from "../../components/auth-shell";
 import { UpdatePasswordForm } from "./update-password-form";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: "Set new password | OfferLab",
+};
 
 export default async function UpdatePasswordPage({
   searchParams,

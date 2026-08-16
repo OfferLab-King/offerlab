@@ -232,7 +232,16 @@ export default async function EmployerProfilePage({ params }: { params: Employer
         {opportunities.length > 0 && (
           <section className="employer-profile-opportunities" aria-labelledby="employer-opps">
             <h2 id="employer-opps">Opportunities</h2>
-            <p>Current OfferLab roles include: {opportunities.join(", ").toLowerCase()}.</p>
+            <p>
+              Current OfferLab roles include:{" "}
+              {opportunities.map((label, index) => (
+                <span key={label}>
+                  {label.toLowerCase()}
+                  {index < opportunities.length - 2 ? ", " : index === opportunities.length - 2 ? " and " : ""}
+                </span>
+              ))}
+              .
+            </p>
           </section>
         )}
 

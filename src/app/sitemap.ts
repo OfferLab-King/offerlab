@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { readPublicIntelligenceReports } from "../modules/recruitment-intelligence/application/reports";
+import { readPublicResourceList } from "../modules/preparation-resources/application/resources";
 import { readSitemapEmployers, readSitemapJobs } from "../modules/job-catalog/application/catalog";
 import { isJobCatalogEnabled } from "../modules/job-catalog/application/config";
 
@@ -8,10 +9,11 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
-  const [reports, jobs, employers] = await Promise.all([
+  const [reports, jobs, employers, publicResources] = await Promise.all([
     readPublicIntelligenceReports({ query: "" }),
     isJobCatalogEnabled() ? readSitemapJobs(10_000) : Promise.resolve([]),
     isJobCatalogEnabled() ? readSitemapEmployers(10_000) : Promise.resolve([]),
+    readPublicResourceList(),
   ]);
   return [
     { changeFrequency: "weekly", priority: 1, url: new URL("/", base).toString() },
@@ -20,6 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
       url: new URL("/intelligence", base).toString(),
     },
+    {
+      changeFrequency: "weekly",
+      priority: 0.7,
+      url: new URL("/learn", base).toString(),
+    },
+    { changeFrequency: "monthly", priority: 0.5, url: new URL("/plans", base).toString() },
     ...(isJobCatalogEnabled()
       ? [
           {
@@ -45,6 +53,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(employer.last_modified),
       priority: 0.6,
       url: new URL(`/employers/${employer.slug}`, base).toString(),
+    })),
+    ...publicResources.map((resource) => ({
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+      url: new URL(`/learn/${resource.slug}`, base).toString(),
     })),
     ...reports.map((report) => ({
       changeFrequency: "monthly" as const,

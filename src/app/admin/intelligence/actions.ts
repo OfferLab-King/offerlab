@@ -66,7 +66,7 @@ export async function moderateIntelligenceAction(formData: FormData) {
   const state = formData.get("state");
   const confidence = formData.get("confidence");
   if (
-    (state !== "published" && state !== "rejected") ||
+    (state !== "pending" && state !== "published" && state !== "rejected") ||
     (confidence !== "low" && confidence !== "medium" && confidence !== "high")
   )
     redirect("/admin/intelligence?result=error");
@@ -85,7 +85,12 @@ export async function moderateIntelligenceAction(formData: FormData) {
 export async function moderateIntelligenceCommentAction(formData: FormData) {
   const administrator = await requireAdministrator();
   const state = formData.get("state");
-  if (state !== "published" && state !== "rejected" && state !== "removed")
+  if (
+    state !== "pending" &&
+    state !== "published" &&
+    state !== "rejected" &&
+    state !== "removed"
+  )
     redirect("/admin/intelligence?result=comment-error#discussion-moderation");
   const result = await reviewIntelligenceComment(
     administrator.userId,

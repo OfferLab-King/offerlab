@@ -36,14 +36,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ v
       </header>
       {!stories.length ? (
         <section className="card empty-state">
-          <h2>Build your first evidence story</h2>
+          <h2>{archived ? "No archived stories" : "Build your first evidence story"}</h2>
           <p>
-            Start with a strong example from education, employment, volunteering, an internship or a
-            personal project.
+            {archived
+              ? "Stories you archive will remain available here and can be restored at any time."
+              : "Start with a strong example from education, employment, volunteering, an internship or a personal project."}
           </p>
-          <Link className="button-link" href="/member/learn/answer-bank/stories/new">
-            Add a story
-          </Link>
+          {!archived && (
+            <Link className="button-link" href="/member/learn/answer-bank/stories/new">
+              Add a story
+            </Link>
+          )}
         </section>
       ) : (
         <section className="item-list">

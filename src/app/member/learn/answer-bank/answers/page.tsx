@@ -38,11 +38,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ v
       </header>
       {!answers.length ? (
         <section className="card empty-state">
-          <h2>Draft your first interview answer</h2>
-          <p>Start from a Core Interview Question or add a custom question.</p>
-          <Link className="button-link" href="/member/learn/answer-bank/questions">
-            Browse questions
-          </Link>
+          <h2>{archived ? "No archived answers" : "Draft your first interview answer"}</h2>
+          <p>
+            {archived
+              ? "Answers you archive will remain available here and can be restored at any time."
+              : "Start from a Core Interview Question or add a custom question."}
+          </p>
+          {!archived && (
+            <Link className="button-link" href="/member/learn/answer-bank/questions">
+              Browse questions
+            </Link>
+          )}
         </section>
       ) : (
         <section className="item-list">

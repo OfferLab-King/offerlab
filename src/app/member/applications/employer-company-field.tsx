@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 type EmployerOption = Readonly<{
   id: string;
@@ -27,8 +27,10 @@ export function EmployerCompanyField({
   const [options, setOptions] = useState<readonly EmployerOption[]>([]);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const abortRef = useRef<AbortController | null>(null);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const optionsId = useId();
 
   useEffect(() => {
     return () => {
@@ -42,6 +44,7 @@ export function EmployerCompanyField({
     if (trimmed.length < MIN_QUERY_LENGTH) {
       setOptions([]);
       setOpen(false);
+      setActiveIndex(-1);
       return;
     }
     abortRef.current?.abort();
@@ -56,6 +59,7 @@ export function EmployerCompanyField({
       const payload = (await response.json()) as { results: EmployerOption[] };
       setOptions(payload.results);
       setOpen(payload.results.length > 0);
+      setActiveIndex(payload.results.length > 0 ? 0 : -1);
     } catch {
       // aborted or network failure; keep current state
     } finally {
@@ -67,15 +71,26 @@ export function EmployerCompanyField({
     setValue(option.name);
     setCompanyId(option.id);
     setOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function moveActive(direction: 1 | -1): void {
+    if (!open || options.length === 0) return;
+    setActiveIndex((current) => {
+      const next = (current + direction + options.length) % options.length;
+      return next;
+    });
   }
 
   return (
     <div className="employer-company-field">
       <input
-        aria-controls="employer-company-options"
+        aria-activedescendant={activeIndex >= 0 ? `${optionsId}-${activeIndex}` : undefined}
+        aria-controls={optionsId}
         aria-describedby={describedBy}
         aria-expanded={open}
         aria-invalid={invalid}
+        aria-autocomplete="list"
         autoComplete="off"
         id="company"
         maxLength={120}
@@ -84,6 +99,7 @@ export function EmployerCompanyField({
           const next = event.currentTarget.value;
           setValue(next);
           setCompanyId("");
+          setActiveIndex(-1);
           void search(next);
         }}
         onFocus={() => {
@@ -92,6 +108,26 @@ export function EmployerCompanyField({
         onBlur={() => {
           blurTimerRef.current = setTimeout(() => setOpen(false), 120);
         }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            if (!open) setOpen(options.length > 0);
+            else moveActive(1);
+          } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            moveActive(-1);
+          } else if (event.key === "Enter") {
+            if (open && activeIndex >= 0 && options[activeIndex]) {
+              event.preventDefault();
+              select(options[activeIndex]!);
+            }
+          } else if (event.key === "Escape") {
+            if (open) {
+              event.preventDefault();
+              setOpen(false);
+            }
+          }
+        }}
         placeholder="Type an employer name"
         required
         role="combobox"
@@ -99,14 +135,19 @@ export function EmployerCompanyField({
       />
       <input name="companyId" type="hidden" value={companyId} />
       {open && (
-        <ul className="employer-company-options" id="employer-company-options" role="listbox">
-          {options.map((option) => (
+        <ul className="employer-company-options" id={optionsId} role="listbox">
+          {options.map((option, index) => (
             <li key={option.slug}>
               <button
+                aria-selected={index === activeIndex}
+                id={`${optionsId}-${index}`}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   select(option);
                 }}
+                onClick={() => select(option)}
+                onMouseEnter={() => setActiveIndex(index)}
+                role="option"
                 type="button"
               >
                 {option.name}

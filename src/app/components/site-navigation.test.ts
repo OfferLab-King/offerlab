@@ -57,6 +57,7 @@ describe("isDestinationCurrent", () => {
     expect(memberNavLinks.map(({ label }) => label)).toEqual([
       "Home",
       "Jobs",
+      "Saved jobs",
       "Employers",
       "Applications",
       "CVs",
@@ -65,6 +66,12 @@ describe("isDestinationCurrent", () => {
       "Membership",
       "Profile",
     ]);
+  });
+
+  it("keeps Saved jobs current on its workspace routes", () => {
+    expect(isDestinationCurrent("/member/saved-jobs", "/member/saved-jobs")).toBe(true);
+    expect(isDestinationCurrent("/member", "/member/saved-jobs")).toBe(false);
+    expect(isDestinationCurrent("/member/saved-jobs", "/member")).toBe(false);
   });
 
   it("keeps Membership current on the membership routes", () => {

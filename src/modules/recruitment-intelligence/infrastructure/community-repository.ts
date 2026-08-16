@@ -35,6 +35,7 @@ type AdminCommentRow = CommentRow &
   Readonly<{
     company_name: string;
     open_flags: { id: string; reason: CommentFlagReason }[];
+    report_moderation_state: "pending" | "published" | "rejected";
     role_title: string;
     slug: string;
   }>;
@@ -43,6 +44,7 @@ export type AdminIntelligenceComment = IntelligenceComment &
   Readonly<{
     companyName: string;
     openFlags: readonly Readonly<{ id: string; reason: CommentFlagReason }>[];
+    reportModerationState: "pending" | "published" | "rejected";
     roleTitle: string;
     slug: string;
   }>;
@@ -87,6 +89,7 @@ export async function listReportDiscussion(db: TransactionSql, owner: string, re
     from app.recruitment_intelligence_comment c
     join app.recruitment_intelligence_report r on r.id=c.report_id
     where c.report_id=${reportId}::uuid
+      and (r.moderation_state='published' or r.owner_user_id=${owner}::uuid)
       and (c.moderation_state='published' or c.owner_user_id=${owner}::uuid)
     order by c.created_at,c.id`;
   return rows.map((row) => mapComment(row, owner));
@@ -133,19 +136,21 @@ export async function listCommentsForAdmin(db: TransactionSql, administrator: st
   const rows = await db<AdminCommentRow[]>`select c.id,c.report_id,c.owner_user_id,
     c.parent_comment_id,c.body,c.moderation_state,c.version,c.created_at,
     (c.owner_user_id=r.owner_user_id) report_author,r.company_name,r.role_title,r.slug,
+    r.moderation_state report_moderation_state,
     coalesce(jsonb_agg(jsonb_build_object('id',f.id,'reason',f.reason))
       filter(where f.id is not null),'[]'::jsonb) open_flags
     from app.recruitment_intelligence_comment c
     join app.recruitment_intelligence_report r on r.id=c.report_id
     left join app.recruitment_intelligence_comment_flag f
       on f.comment_id=c.id and f.resolution is null
-    where c.moderation_state='pending' or f.id is not null
+    where c.moderation_state<>'published' or f.id is not null
     group by c.id,r.id
-    order by case when c.moderation_state='pending' then 0 else 1 end,c.created_at,c.id`;
+    order by case c.moderation_state when 'pending' then 0 when 'rejected' then 1 when 'removed' then 2 else 3 end,c.created_at,c.id`;
   return rows.map((row) => ({
     ...mapComment(row, administrator),
     companyName: row.company_name,
     openFlags: row.open_flags,
+    reportModerationState: row.report_moderation_state,
     roleTitle: row.role_title,
     slug: row.slug,
   }));
@@ -156,7 +161,7 @@ export async function moderateComment(
   administrator: string,
   commentId: string,
   expectedVersion: number,
-  state: "published" | "rejected" | "removed",
+  state: "pending" | "published" | "rejected" | "removed",
 ) {
   const rows = await db<{ id: string }[]>`update app.recruitment_intelligence_comment set
     moderation_state=${state},moderated_by_user_id=${administrator}::uuid,

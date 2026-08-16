@@ -7,6 +7,7 @@ import { requireMember } from "../../../modules/identity-access/application/auth
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
 import { opportunityTypes } from "../../../modules/taxonomy/domain/opportunity-types";
 import { industries } from "../../../modules/taxonomy/domain/industries";
+import { formatDate } from "../../jobs/job-display";
 import { MemberApplicationsHeader } from "./member-applications-header";
 
 export const runtime = "nodejs";
@@ -78,7 +79,7 @@ export default async function ApplicationsPage({ searchParams }: Props) {
                   {relevantDate && (
                     <p className="application-date">
                       {application.nextStageDeadline ? "Next-stage deadline" : "Deadline"}:{" "}
-                      {relevantDate}
+                      {formatDate(relevantDate)}
                     </p>
                   )}
                 </div>

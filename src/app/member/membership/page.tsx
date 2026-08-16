@@ -12,6 +12,8 @@ import { activateTestMembershipAction, cancelMembershipAction } from "./actions"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const selfServeAllowed = process.env.APP_ENV !== "production" && process.env.APP_ENV !== "staging";
+
 function formatDate(value: Date | null): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("en-GB", {
@@ -91,15 +93,18 @@ export default async function MembershipPage() {
               Membership is {formatPence(MEMBERSHIP_PRICING.membershipMonthlyPence)} per month or{" "}
               {formatPence(MEMBERSHIP_PRICING.membershipSeasonPence)} for the recruitment season.
             </p>
-            <form action={activateTestMembershipAction}>
-              <button className="button-link" type="submit">
-                Activate membership
-              </button>
-            </form>
-            <p className="hint">
-              Online payment is activated by the OfferLab founder; activation today records the
-              entitlement without charging.
-            </p>
+            {selfServeAllowed ? (
+              <form action={activateTestMembershipAction}>
+                <button className="button-link" type="submit">
+                  Activate membership
+                </button>
+              </form>
+            ) : (
+              <p className="hint">
+                Membership is activated by the OfferLab team once payment is confirmed. Contact the
+                team if you have already subscribed.
+              </p>
+            )}
           </>
         )}
       </section>

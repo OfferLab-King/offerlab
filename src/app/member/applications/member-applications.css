@@ -32,6 +32,10 @@
   background: var(--surface-raised);
 }
 
+.employer-company-options [aria-selected="true"] {
+  background: var(--accent-soft);
+}
+
 .employer-company-option-industry {
   color: var(--muted);
   font-size: 0.8rem;

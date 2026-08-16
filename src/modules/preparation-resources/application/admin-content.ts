@@ -307,6 +307,11 @@ export async function createDraft(adminId: string, input: FormData) {
   return withApplicationUser(adminId, async (db) => {
     if (!(await validateAssociations(db, crypto.randomUUID(), parsed.data, false)))
       return { ok: false as const, error: "Content associations are unavailable or invalid." };
+    const duplicate = await db<
+      { found: boolean }[]
+    >`select exists(select 1 from app.preparation_resource where slug=${parsed.data.slug}) found`;
+    if (duplicate[0]?.found)
+      return { ok: false as const, error: "That slug is already used by another resource." };
     const key = `content_${crypto.randomUUID().replaceAll("-", "")}`;
     const rows = await db<
       { id: string }[]
@@ -423,6 +428,13 @@ export async function updateResource(
       return { ok: false as const, error: "Invalid action." };
     if (current.firstPublishedAt && parsed.data.slug !== current.slug)
       return { ok: false as const, error: "The slug cannot change after first publication." };
+    if (parsed.data.slug !== current.slug) {
+      const duplicate = await db<
+        { found: boolean }[]
+      >`select exists(select 1 from app.preparation_resource where slug=${parsed.data.slug} and id<>${id}::uuid) found`;
+      if (duplicate[0]?.found)
+        return { ok: false as const, error: "That slug is already used by another resource." };
+    }
     if (state === "published" && (!parsed.data.title || !parsed.data.shortDescription))
       return { ok: false as const, error: "A title and summary are required for publication." };
     if (!(await validateAssociations(db, id, parsed.data, state === "published", current.tagIds)))

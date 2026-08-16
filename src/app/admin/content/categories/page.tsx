@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireAdministrator } from "../../../../modules/identity-access/application/authorization";
 import { listCategories } from "../../../../modules/preparation-resources/application/admin-content";
 import { runCreateTaxonomyAction, runUpdateTaxonomyAction } from "../action-boundary";
+import { ConfirmIntentForm } from "../../../components/confirm-intent-form";
 import { ConflictAlert } from "../conflict-alert";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,38 +68,50 @@ export default async function Page({
             </div>
           </div>
           {rows.map((row) => (
-            <form action={update} className="application-form cms-taxonomy-row" key={row.id}>
-              <input type="hidden" name="id" value={row.id} />
-              <input type="hidden" name="version" value={row.version} />
-              <div className="cms-content-badges">
-                <code>{row.slug}</code>
-                <span
-                  className={`cms-status cms-status-${row.archivedAt ? "archived" : "published"}`}
-                >
-                  {row.archivedAt ? "archived" : "active"}
-                </span>
-              </div>
-              <label>
-                Name
-                <input name="name" defaultValue={row.name} required maxLength={80} />
-              </label>
-              <label>
-                Description
-                <textarea name="description" defaultValue={row.description ?? ""} maxLength={500} />
-              </label>
-              <div className="form-actions">
-                <button name="intent" value="save">
-                  Save
-                </button>
-                <button
-                  className="button-secondary"
-                  name="intent"
-                  value={row.archivedAt ? "restore" : "archive"}
-                >
-                  {row.archivedAt ? "Restore" : "Archive"}
-                </button>
-              </div>
-            </form>
+            <ConfirmIntentForm
+              action={update}
+              confirmations={{
+                archive: {
+                  description:
+                    "Every published resource using this category will be automatically unpublished. Restore the category to republish them.",
+                  label: "Archive this category?",
+                  prompt: "Archiving removes it from the library and unpublishes affected content.",
+                },
+              }}
+              formClassName="application-form cms-taxonomy-row"
+              key={row.id}
+            >
+                <input type="hidden" name="id" value={row.id} />
+                <input type="hidden" name="version" value={row.version} />
+                <div className="cms-content-badges">
+                  <code>{row.slug}</code>
+                  <span
+                    className={`cms-status cms-status-${row.archivedAt ? "archived" : "published"}`}
+                  >
+                    {row.archivedAt ? "archived" : "active"}
+                  </span>
+                </div>
+                <label>
+                  Name
+                  <input name="name" defaultValue={row.name} required maxLength={80} />
+                </label>
+                <label>
+                  Description
+                  <textarea name="description" defaultValue={row.description ?? ""} maxLength={500} />
+                </label>
+                <div className="form-actions">
+                  <button name="intent" value="save">
+                    Save
+                  </button>
+                  <button
+                    className="button-secondary"
+                    name="intent"
+                    value={row.archivedAt ? "restore" : "archive"}
+                  >
+                    {row.archivedAt ? "Restore" : "Archive"}
+                  </button>
+                </div>
+            </ConfirmIntentForm>
           ))}
         </section>
       </div>
