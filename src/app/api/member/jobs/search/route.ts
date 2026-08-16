@@ -85,10 +85,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 422 },
       );
     }
-    logger.error(
-      { err: error },
-      "External job search failed with an unexpected error",
-    );
+    logger.error({ err: error }, "External job search failed with an unexpected error");
     return NextResponse.json(
       { message: "Job search is temporarily unavailable. Try again later." },
       { status: 500 },

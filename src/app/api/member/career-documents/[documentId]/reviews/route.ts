@@ -74,7 +74,10 @@ export async function POST(
         { status: 503 },
       );
     }
-    logger.error({ err: error, event: "career_document_review_failed" }, "Career document review failed");
+    logger.error(
+      { err: error, event: "career_document_review_failed" },
+      "Career document review failed",
+    );
     return NextResponse.json(genericCareerError, { status: 500 });
   }
 }

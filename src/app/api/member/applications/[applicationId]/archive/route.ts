@@ -29,7 +29,10 @@ export async function POST(request: Request, context: Context): Promise<NextResp
       return NextResponse.json({ ok: true, outcome: "conflict" }, { status: 409 });
     return NextResponse.json(result);
   } catch (error) {
-    logger.error({ err: error, event: "application_archive_failed" }, "Application archive change failed");
+    logger.error(
+      { err: error, event: "application_archive_failed" },
+      "Application archive change failed",
+    );
     return NextResponse.json(genericApplicationError, { status: 500 });
   }
 }
