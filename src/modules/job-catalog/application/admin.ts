@@ -39,11 +39,13 @@ export type JobCatalogAdminView = Readonly<{
 }>;
 
 export type EligibilityQueueRow = Readonly<{
+  application_url: string;
   company_name: string;
   eligibility_evidence: string | null;
   eligibility_reasons: readonly string[];
   eligibility_status: string;
   id: string;
+  location_text: string | null;
   opportunity_type: string;
   publication_status: string;
   title: string;
@@ -70,7 +72,7 @@ export async function readJobCatalogAdmin(
         listJobSourcesForAdmin(database),
         listRecentRuns(database, 25),
         listRecentEvents(database, 25),
-        listEligibilityReviewQueue(database, 50),
+        listEligibilityReviewQueue(database, 200),
         listClassificationReviewQueue(database, 50),
       ]);
     return {
@@ -180,6 +182,27 @@ export async function overrideJobClassificationForAdmin(
     overrideJobClassification(database, jobId, input),
   );
   await insertAuditEvent(administratorUserId, "job.classification_changed", "job", jobId);
+}
+
+export async function overrideJobEligibilityBatchForAdmin(
+  administratorUserId: string,
+  jobIds: readonly string[],
+  eligibilityStatus: "eligible" | "ineligible",
+): Promise<number> {
+  let applied = 0;
+  await withApplicationUser(administratorUserId, async (database) => {
+    for (const jobId of jobIds) {
+      await overrideJobClassification(database, jobId, {
+        eligibilityStatus,
+        publicationStatus: eligibilityStatus === "eligible" ? "published" : "suppressed",
+      });
+      applied += 1;
+    }
+  });
+  for (const jobId of jobIds) {
+    await insertAuditEvent(administratorUserId, "job.eligibility_changed", "job", jobId);
+  }
+  return applied;
 }
 
 export async function overrideJobPublicationForAdmin(

@@ -8379,3 +8379,35 @@ progress {
   margin: 0;
   padding-left: 1.1rem;
 }
+
+/* ============ Eligibility review queue ============ */
+
+.cms-review-queue {
+  display: grid;
+  gap: 1rem;
+}
+
+.cms-review-filters {
+  grid-template-columns: minmax(14rem, 2fr) minmax(12rem, 1fr) max-content;
+}
+
+.cms-bulk-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.cms-reason-list li {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.cms-reason-list .status-badge {
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 0.15rem 0.5rem;
+}
+
+.cms-job-source-state > form:not(:last-child) {
+  margin-right: 0;
+}

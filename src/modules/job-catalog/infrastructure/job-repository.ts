@@ -598,11 +598,13 @@ export async function markEnrichmentSkipped(
 }
 
 export type EligibilityQueueRow = Readonly<{
+  application_url: string;
   company_name: string;
   eligibility_evidence: string | null;
   eligibility_reasons: readonly string[];
   eligibility_status: string;
   id: string;
+  location_text: string | null;
   opportunity_type: string;
   publication_status: string;
   title: string;
@@ -616,7 +618,8 @@ export async function listEligibilityReviewQueue(
   return database<EligibilityQueueRow[]>`
     select j.id, j.title, j.opportunity_type, j.eligibility_status,
       j.eligibility_reasons, j.eligibility_evidence, j.updated_at,
-      j.publication_status, c.name as company_name
+      j.location_text, j.application_url, j.publication_status,
+      c.name as company_name
     from app.job j
     join app.company c on c.id = j.company_id
     where j.active and j.eligibility_status in ('needs_review', 'ineligible')

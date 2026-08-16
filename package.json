@@ -46,6 +46,7 @@
     "jobs:enrich": "tsx scripts/jobs/enrich.ts",
     "jobs:seed-companies": "tsx scripts/jobs/seed-companies.ts",
     "jobs:status": "tsx scripts/jobs/status.ts",
+    "jobs:resolve-locations": "tsx scripts/jobs/resolve-locations.ts",
     "jobs:workday-endpoints": "tsx scripts/jobs/workday-endpoints.ts",
     "jobs:connector-config": "tsx scripts/jobs/connector-config.ts",
     "jobs:clean-synthetic-catalog": "tsx scripts/jobs/clean-synthetic-catalog.ts",

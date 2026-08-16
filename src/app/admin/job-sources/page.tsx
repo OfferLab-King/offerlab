@@ -11,17 +11,13 @@ import {
   jobSubsectors,
 } from "../../../modules/job-catalog/domain/taxonomy";
 import {
-  eligibilityReasonLabels,
-  eligibilityStatusLabels,
-} from "../../../modules/job-catalog/domain/eligibility";
-import {
   overrideClassification,
-  overrideEligibility,
   overridePublication,
   requestSourceRun,
   updateSourcePause,
   updateSourceUrls,
 } from "./actions";
+import { EligibilityReviewQueue } from "./eligibility-queue";
 import { formatAdminDateTime } from "../format";
 
 export const runtime = "nodejs";
@@ -264,58 +260,20 @@ export default async function JobSourcesPage() {
       <section className="cms-operations-section" aria-labelledby="eligibility-queue">
         <div className="cms-section-heading">
           <div>
-            <h2 id="eligibility-queue">Eligibility review queue</h2>
+            <h2 id="eligibility-queue">
+              Eligibility review queue ({view.eligibilityQueue.length})
+            </h2>
             <p>
               Jobs awaiting an eligibility decision. Needs-review and ineligible roles are never
-              published automatically.
+              published automatically. Use the filters, quick decisions and bulk actions to clear
+              the queue; opening the listing link shows the employer page.
             </p>
           </div>
         </div>
         {view.eligibilityQueue.length === 0 ? (
           <p className="hint">No jobs waiting for an eligibility decision.</p>
         ) : (
-          <ul className="cms-review-list">
-            {view.eligibilityQueue.map((job) => (
-              <li className="cms-operation-card" key={job.id}>
-                <div className="cms-job-source-head">
-                  <h3>{job.title}</h3>
-                  <span className="status-badge">
-                    {
-                      eligibilityStatusLabels[
-                        job.eligibility_status as keyof typeof eligibilityStatusLabels
-                      ]
-                    }
-                  </span>
-                </div>
-                <p>
-                  {job.company_name} · {job.opportunity_type}
-                </p>
-                <ul className="cms-reason-list">
-                  {job.eligibility_reasons.map((reason) => (
-                    <li key={reason}>
-                      {eligibilityReasonLabels[reason as keyof typeof eligibilityReasonLabels] ??
-                        reason}
-                    </li>
-                  ))}
-                </ul>
-                {job.eligibility_evidence && (
-                  <p className="cms-review-evidence">&ldquo;{job.eligibility_evidence}&rdquo;</p>
-                )}
-                <form action={overrideEligibility} className="cms-job-source-form">
-                  <input name="jobId" type="hidden" value={job.id} />
-                  <label>
-                    Eligibility decision
-                    <select defaultValue={job.eligibility_status} name="eligibilityStatus">
-                      <option value="eligible">Eligible</option>
-                      <option value="needs_review">Needs review</option>
-                      <option value="ineligible">Ineligible</option>
-                    </select>
-                  </label>
-                  <button type="submit">Save decision</button>
-                </form>
-              </li>
-            ))}
-          </ul>
+          <EligibilityReviewQueue queue={view.eligibilityQueue} />
         )}
       </section>
 
