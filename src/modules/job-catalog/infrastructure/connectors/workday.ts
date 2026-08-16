@@ -185,9 +185,7 @@ function normalizeWorkdayCxsPosting(
   site: string | null,
 ): DiscoveredJob {
   const externalPath = posting.externalPath?.trim() ?? "";
-  const detailPath = externalPath.startsWith("/")
-    ? externalPath
-    : `/${externalPath}`;
+  const detailPath = externalPath.startsWith("/") ? externalPath : `/${externalPath}`;
   const rawUrl =
     site && detailPath.startsWith("/job/")
       ? `https://${host}/${site}${detailPath}`
