@@ -196,3 +196,35 @@ describe("UK location admission", () => {
     ).toBe("ambiguous");
   });
 });
+
+describe("full country names from structured sources", () => {
+  const job = (country: string) => ({
+    locationText: "Anywhere, " + country,
+    locations: [
+      {
+        city: "Austin",
+        country,
+        hybrid: false,
+        onSite: true,
+        region: "TX",
+        remote: false,
+        sourceText: "Austin, TX, " + country,
+      },
+    ],
+    remoteType: null,
+  });
+
+  it("treats United States of America as a structured non-UK country", () => {
+    expect(evaluateUkLocation(job("United States of America"))).toMatchObject({
+      reason: "non_uk_location",
+      status: "non_uk",
+    });
+  });
+
+  it("treats United Kingdom as a structured UK country", () => {
+    expect(evaluateUkLocation(job("United Kingdom"))).toMatchObject({
+      reason: "uk_location",
+      status: "uk_confirmed",
+    });
+  });
+});

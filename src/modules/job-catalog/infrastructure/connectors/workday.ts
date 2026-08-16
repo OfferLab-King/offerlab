@@ -107,6 +107,10 @@ async function discoverWorkdayCxsJobs(
 ): Promise<DiscoveredJob[]> {
   const jobsUrl = workdayCxsJobsUrl(cxsEndpoint);
   const host = jobsUrl.host;
+  // Job detail pages live under the site segment of the careers URL
+  // (https://<host>/<site>/job/...); the CXS endpoint carries it:
+  // /wday/cxs/<tenant>/<site>/jobs.
+  const site = jobsUrl.pathname.split("/")[4] ?? null;
   const discovered: DiscoveredJob[] = [];
   let offset = 0;
   // Workday's deep pages report an unreliable `total` (0 on later pages), so
@@ -140,7 +144,7 @@ async function discoverWorkdayCxsJobs(
     }
     for (const posting of postings) {
       if (discovered.length >= context.maxJobs) break;
-      discovered.push(normalizeWorkdayCxsPosting(posting, host));
+      discovered.push(normalizeWorkdayCxsPosting(posting, host, site));
     }
     offset += postings.length;
     if (postings.length < limit || discovered.length >= context.maxJobs) {
@@ -175,11 +179,17 @@ function parseCxsResponse(body: string): WorkdayCxsResponse {
   return payload as WorkdayCxsResponse;
 }
 
-function normalizeWorkdayCxsPosting(posting: WorkdayCxsPosting, host: string): DiscoveredJob {
+function normalizeWorkdayCxsPosting(
+  posting: WorkdayCxsPosting,
+  host: string,
+  site: string | null,
+): DiscoveredJob {
   const externalPath = posting.externalPath?.trim() ?? "";
-  const rawUrl = externalPath.startsWith("/")
-    ? `https://${host}${externalPath}`
-    : `https://${host}/${externalPath}`;
+  const detailPath = externalPath.startsWith("/") ? externalPath : `/${externalPath}`;
+  const rawUrl =
+    site && detailPath.startsWith("/job/")
+      ? `https://${host}/${site}${detailPath}`
+      : `https://${host}${detailPath}`;
   const canonical = canonicalizeJobUrl(rawUrl);
   const applicationUrl = canonical ?? rawUrl;
   return {
