@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireAdministrator } from "../../../modules/identity-access/application/authorization";
 import {
   overrideJobClassificationForAdmin,
+  overrideJobEligibilityBatchForAdmin,
   overrideJobPublicationForAdmin,
   pauseCompanySource,
   requestSourceRunForAdmin,
@@ -115,6 +116,36 @@ export async function overrideEligibility(formData: FormData): Promise<void> {
   await overrideJobClassificationForAdmin(administrator.userId, parsed.jobId, {
     eligibilityStatus: parsed.eligibilityStatus,
   });
+  revalidatePath("/admin/job-sources");
+}
+
+const eligibilityDecisionSchema = z.object({
+  jobId: z.string().uuid(),
+  decision: z.enum(["eligible", "ineligible"]),
+});
+
+const bulkDecisionSchema = z.object({
+  jobIds: z.array(z.string().uuid()).min(1).max(200),
+  decision: z.enum(["eligible", "ineligible"]),
+});
+
+export async function quickEligibilityDecision(formData: FormData): Promise<void> {
+  const administrator = await requireAdministrator();
+  const parsed = eligibilityDecisionSchema.parse({
+    jobId: formData.get("jobId"),
+    decision: formData.get("decision"),
+  });
+  await overrideJobEligibilityBatchForAdmin(administrator.userId, [parsed.jobId], parsed.decision);
+  revalidatePath("/admin/job-sources");
+}
+
+export async function bulkEligibilityDecision(formData: FormData): Promise<void> {
+  const administrator = await requireAdministrator();
+  const parsed = bulkDecisionSchema.parse({
+    jobIds: formData.getAll("jobIds"),
+    decision: formData.get("decision"),
+  });
+  await overrideJobEligibilityBatchForAdmin(administrator.userId, parsed.jobIds, parsed.decision);
   revalidatePath("/admin/job-sources");
 }
 

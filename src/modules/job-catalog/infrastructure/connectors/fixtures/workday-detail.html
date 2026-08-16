@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <title>Synthetic Workday Detail Fixture</title>
+    <!-- Application Properties -->
+    <meta http-equiv="X-UA-Compatible" content="chrome=1;IE=EDGE" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0" />
+
+    <link
+      rel="canonical"
+      href="https://syntheticco.wd3.myworkdayjobs.com/en-US/Careers/job/Example-Analyst_R-10001"
+    />
+
+    <!-- OpenGraph Tags -->
+    <meta name="title" property="og:title" content="Example Analyst" />
+    <meta
+      name="description"
+      property="og:description"
+      content="Synthetic fixture description for the Workday detail page parser. This is not a real posting and contains no real employer content."
+    />
+    <meta
+      name="image"
+      property="og:image"
+      content="https://syntheticco.wd3.myworkdayjobs.com/Careers/assets/logo"
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://syntheticco.wd3.myworkdayjobs.com/Careers/job/Rocky-Mount/Example-Analyst_R-10001"
+    />
+
+    <!-- SEO Tags -->
+
+    <script type="application/ld+json">
+      {
+        "jobLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "United States of America",
+            "addressLocality": "Rocky Mount"
+          }
+        },
+        "hiringOrganization": {
+          "name": "Synthetic Company US Branch",
+          "@type": "Organization",
+          "sameAs": ""
+        },
+        "identifier": {
+          "name": "Example Analyst",
+          "@type": "PropertyValue",
+          "value": "R-10001"
+        },
+        "datePosted": "2026-08-01",
+        "validThrough": "2026-08-31",
+        "employmentType": "FULL_TIME",
+        "title": "Example Analyst",
+        "description": "Synthetic fixture description for the Workday detail page parser.",
+        "@context": "http://schema.org",
+        "@type": "JobPosting"
+      }
+    </script>
+
+    <script type="text/javascript">
+      window.workday = window.workday || {
+        tenant: "syntheticco",
+        siteId: "Careers",
+        locale: "",
+        requestLocale: "en-US",
+        supportedLocales: ["en-US", "fr-FR", "de-DE"],
+        clientOrigin: "https://wd3.myworkday.com",
+        language: null,
+        cdnEndpoint: "wd3.myworkdaycdn.com",
+        useCdn: true,
+        maintenancePageUrl: "https://wd3.myworkday.com/wday/drs/outage?t=syntheticco&s=Careers",
+        token: "synthetic-fixture-token-not-a-secret",
+        environment: "PROD",
+        isExternal: true,
+        appName: "cxs",
+        loggingEndpoint: "https://wd3.myworkday.com/wday/microscope/prelogin",
+        postingAvailable: true,
+        allowedFileTypes: [],
+        blockedFileTypes: ["exe", "js"],
+        toggles: ["synthetic-toggle-0001", "synthetic-toggle-0002"],
+        branding: {
+          formFields: { color: "#2D354A", textColor: "#2D354A" },
+          progressBar: { color: "#2D354A" },
+          button: {
+            primary: {
+              color: "#2D354A",
+              borderColor: "#2D354A",
+              textColor: "#FFFFFF",
+              hover: { color: "#FFFFFF", borderColor: "#2D354A", textColor: "#2D354A" },
+            },
+            secondary: {
+              color: "#FFFFFF",
+              borderColor: "#2D354A",
+              textColor: "#2D354A",
+              hover: { color: "#FFFFFF", borderColor: "#2D354A", textColor: "#2D354A" },
+            },
+            shape: "SQUARE",
+          },
+          header: {
+            imageBanner: {
+              maintainAspectRatio: true,
+              image: { id: "synthetic-image-0001", altText: null },
+            },
+            banner: {
+              color: "#FFFFFF",
+              borderColor: "#2D354A",
+              textColor: "#2D354A",
+              image: { id: "synthetic-image-0002", altText: null },
+            },
+          },
+          embedded: false,
+        },
+        geoIpCountryCode: "gb" == null ? "" : "gb",
+      };
+      function createScriptTag(src) {
+        var scriptTag = document.createElement("script");
+        scriptTag.src = src;
+        scriptTag.setAttribute("defer", "true");
+        scriptTag.setAttribute("crossorigin", "anonymous");
+        return scriptTag;
+      }
+      var isIE = typeof Symbol === "undefined";
+      var sharedAssetPath = "/wday/asset/uic-shared-vendors";
+      var sharedVendorLoaderAsset = sharedAssetPath + "/shared-vendors.min.js";
+      var cdnOrigin = "https://" + "wd3.myworkdaycdn.com";
+      var sharedVendorsLoaderUrlOrigin =
+        workday.clientOrigin !== "" ? workday.clientOrigin : cdnOrigin;
+      var sharedVendorsLoaderScript = createScriptTag(
+        sharedVendorsLoaderUrlOrigin + sharedVendorLoaderAsset,
+      );
+      sharedVendorsLoaderScript.onload = function () {
+        var jobsScriptSrcFilename = isIE ? "cx-jobs-ie.min.js" : "cx-jobs.min.js";
+        var cxJobsAsset = "/wday/asset/candidate-experience-jobs/" + jobsScriptSrcFilename;
+        var jobsScript = createScriptTag(cdnOrigin + cxJobsAsset);
+        jobsScript.onerror = function () {
+          window.workday.useCdn = false;
+          var jobsScriptFromClientOrigin = createScriptTag(workday.clientOrigin + cxJobsAsset);
+          document.head.removeChild(jobsScript);
+          document.head.appendChild(jobsScriptFromClientOrigin);
+        };
+        document.head.appendChild(jobsScript);
+      };
+      document.head.appendChild(sharedVendorsLoaderScript);
+
+      var uxInsightsAssetPath = "/wday/asset/client-analytics";
+      var uxInsightsAsset = uxInsightsAssetPath + "/uxInsights.min.js?plate=BMT216A";
+      var uxInsightsUrlOrigin = workday.clientOrigin !== "" ? workday.clientOrigin : cdnOrigin;
+      var uxInsightsScript = createScriptTag(uxInsightsUrlOrigin + uxInsightsAsset);
+      document.head.appendChild(uxInsightsScript);
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

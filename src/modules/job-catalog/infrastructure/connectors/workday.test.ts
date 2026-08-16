@@ -62,10 +62,11 @@ describe("Workday CXS connector", () => {
       externalJobId: "26014403",
       locationText: "Oklahoma City",
       employmentType: "full_time",
-      applicationUrl: "https://ghr.wd1.myworkdayjobs.com/job/Oklahoma-City/Wealth-Planner_26014403",
+      applicationUrl:
+        "https://ghr.wd1.myworkdayjobs.com/lateral-us/job/Oklahoma-City/Wealth-Planner_26014403",
     });
     expect(jobs[1]!.applicationUrl).toBe(
-      "https://ghr.wd1.myworkdayjobs.com/job/London/Software-Engineer_26014404",
+      "https://ghr.wd1.myworkdayjobs.com/lateral-us/job/London/Software-Engineer_26014404",
     );
   });
 
