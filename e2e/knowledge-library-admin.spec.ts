@@ -31,6 +31,12 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     "/admin/content/tags",
     "/admin/operations",
   ] as const;
+  const confirmIntent = async (name: string) => {
+    await page
+      .getByRole("alertdialog", { name })
+      .getByRole("button", { name: "Confirm", exact: true })
+      .click();
+  };
   const submitAndInspectConflict = async (
     button: ReturnType<typeof page.getByRole>,
     prohibited: readonly string[],
@@ -305,6 +311,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
       .click();
 
     await page.getByRole("button", { name: "Unpublish" }).click();
+    await confirmIntent("Unpublish this content?");
     await expect(page.getByText(/Content editor · draft/)).toBeVisible();
     const publicationAuditsBefore = await database<
       { count: number }[]
@@ -343,8 +350,10 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText(/Content editor · published/)).toBeVisible();
     await page.getByRole("button", { name: "Unpublish" }).click();
+    await confirmIntent("Unpublish this content?");
     await expect(page.getByText(/Content editor · draft/)).toBeVisible();
     await page.getByRole("button", { name: "Archive" }).click();
+    await confirmIntent("Archive this content?");
     await expect(page.getByText(/Content editor · archived/)).toBeVisible();
     await page.getByRole("button", { name: "Restore to draft" }).click();
     await expect(page.getByText(/Content editor · draft/)).toBeVisible();
@@ -385,6 +394,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await tagConflict.getByRole("link", { name: "Reload current content" }).click();
     tagForm = page.locator("form.cms-taxonomy-row").filter({ hasText: tagSlug });
     await tagForm.getByRole("button", { name: "Archive" }).click();
+    await confirmIntent("Archive this tag?");
     await expect(page.getByRole("status")).toContainText("changed");
     const restoredTag = page.locator("form.cms-taxonomy-row").filter({ hasText: tagSlug });
     await restoredTag.getByRole("button", { name: "Restore" }).click();
@@ -421,6 +431,7 @@ test("administrator manages taxonomy and a resource lifecycle", async ({ page },
     await categoryConflict.getByRole("link", { name: "Reload current content" }).click();
     categoryForm = page.locator("form.cms-taxonomy-row").filter({ hasText: categorySlug });
     await categoryForm.getByRole("button", { name: "Archive" }).click();
+    await confirmIntent("Archive this category?");
     await expect(page.getByRole("status")).toContainText("changed");
     const restoredCategory = page
       .locator("form.cms-taxonomy-row")

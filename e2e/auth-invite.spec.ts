@@ -50,6 +50,7 @@ async function openMemberNavigationIfNarrow(page: Page) {
 }
 
 async function signOutAndVerify(page: Page) {
+  await openMemberNavigationIfNarrow(page);
   await Promise.all([
     page.waitForURL(/\/sign-in\?signed-out=1$/),
     page.getByRole("button", { name: "Sign out" }).click(),

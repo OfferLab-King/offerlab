@@ -31,8 +31,13 @@ export function ConfirmIntentForm({
     confirmation: Confirmation;
   } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const confirmingRef = useRef(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    if (confirmingRef.current) {
+      confirmingRef.current = false;
+      return;
+    }
     const submitter = (event.nativeEvent as SubmitEvent).submitter;
     if (!(submitter instanceof HTMLButtonElement)) return;
     const key = submitter.name === "intent" ? submitter.value : submitter.name;
@@ -47,7 +52,10 @@ export function ConfirmIntentForm({
     const form = formRef.current;
     const button = pending.button;
     setPending(null);
-    if (form) form.requestSubmit(button);
+    if (form) {
+      confirmingRef.current = true;
+      form.requestSubmit(button);
+    }
   }
 
   return (
