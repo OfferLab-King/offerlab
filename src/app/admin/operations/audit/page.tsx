@@ -86,7 +86,9 @@ export default async function AuditTrailPage({
                   <code title={event.entityId}>{event.entityId.slice(0, 8)}…</code>
                 )}
                 <span>{formatTimestamp(event.createdAt)}</span>
-                <span className="cms-meta-badge">actor {event.actorUserId.slice(0, 8)}…</span>
+                <span className="cms-meta-badge">
+                  {event.actorUserId ? `actor ${event.actorUserId.slice(0, 8)}…` : "actor system"}
+                </span>
               </li>
             ))}
           </ul>

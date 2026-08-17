@@ -472,6 +472,11 @@ main {
   gap: 0.75rem;
 }
 
+.site-header > form {
+  display: flex;
+  margin-top: 0;
+}
+
 .site-header > form button {
   background: transparent;
   border: 1px solid var(--border);

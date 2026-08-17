@@ -5,7 +5,7 @@ import { withApplicationUser } from "../../../infrastructure/database/runtime-co
 
 export type AuditEventRecord = Readonly<{
   action: string;
-  actorUserId: string;
+  actorUserId: string | null;
   createdAt: Date;
   entityId: string | null;
   entityType: string;
@@ -35,7 +35,7 @@ export const readAuditEventsForAdmin = (administrator: string, query: unknown) =
     const rows = await database<
       {
         action: string;
-        actor_user_id: string;
+        actor_user_id: string | null;
         created_at: Date;
         entity_id: string | null;
         entity_type: string;

@@ -7,6 +7,7 @@ import {
   isActiveMembership,
   MEMBERSHIP_PRICING,
 } from "../../../modules/membership/domain/membership";
+import { MemberApplicationsHeader } from "../applications/member-applications-header";
 import { activateTestMembershipAction, cancelMembershipAction } from "./actions";
 
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ export default async function MembershipPage() {
 
   return (
     <main className="applications-shell dashboard-shell">
+      <MemberApplicationsHeader />
       <header className="applications-heading">
         <div>
           <p className="eyebrow">Account</p>
