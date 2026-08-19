@@ -397,26 +397,31 @@ main {
 
 .site-header {
   align-items: center;
-  backdrop-filter: saturate(180%) blur(10px);
-  background: rgb(255 255 255 / 86%);
+  backdrop-filter: saturate(180%) blur(12px);
+  background: rgb(255 255 255 / 90%);
   border-bottom: 1px solid #e2e8f0;
+  box-sizing: border-box;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
   margin: 0 auto;
   max-width: 80rem;
   min-height: 4rem;
-  padding: 0 clamp(var(--space-2), 4vw, var(--space-4));
+  height: 4rem;
+  padding: 0 clamp(var(--space-2), 4vw, var(--space-6));
   position: sticky;
   top: 0;
   z-index: 40;
 }
 
 .site-header--workspace {
+  max-width: var(--member-workspace-width);
   margin-bottom: var(--space-2);
+  padding: 0 clamp(var(--space-2), 4vw, var(--space-3));
 }
 
 .site-header .brand {
+  flex-shrink: 0;
   font-size: 1.12rem;
   font-weight: 820;
   letter-spacing: -0.025em;
@@ -436,8 +441,10 @@ main {
 .site-nav {
   align-items: center;
   display: flex;
+  flex: 1;
   gap: 0.35rem;
-  margin-left: auto;
+  justify-content: center;
+  margin: 0 1rem;
 }
 
 .site-nav-toggle {
@@ -492,6 +499,7 @@ main {
 .site-header-actions {
   align-items: center;
   display: flex;
+  flex-shrink: 0;
   gap: 0.75rem;
 }
 
@@ -541,6 +549,7 @@ main {
 @media (max-width: 60rem) {
   .site-header {
     flex-wrap: wrap;
+    height: auto;
     min-height: auto;
     padding-block: 0.75rem;
     position: relative;
@@ -557,7 +566,9 @@ main {
   }
 
   .site-nav {
-    margin-left: 0;
+    flex: none;
+    justify-content: flex-start;
+    margin: 0;
   }
 
   .site-nav-links {
