@@ -11,6 +11,7 @@ export default defineConfig({
   test: {
     environment: "node",
     fileParallelism: false,
+    globalSetup: ["tests/setup/integration-admin-guard.ts"],
     include: ["tests/integration/**/*.test.ts", "tests/security/**/*.test.ts"],
     passWithNoTests: false,
     restoreMocks: true,

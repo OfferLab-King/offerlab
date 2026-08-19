@@ -1,8 +1,7 @@
 # OfferLab crawler — operator's guide
 
 Everything needed to take the ChatGPT-validated employer URLs from spreadsheet
-to live crawled jobs. Run commands from the repo root
-(`/Users/teaching/Desktop/offerlab-worktrees/web-performance`).
+to live crawled jobs. Run commands from the repo root.
 
 ---
 
@@ -222,14 +221,14 @@ pause it manually.
 
 ## Troubleshooting
 
-| Symptom                        | Cause / fix                                                                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| Crawl fails `not_configured`   | Workday source missing `raasEndpoint` (Stage 4)                                                                  |
-| `http_403`                     | Site blocks bots; keep unverified/blocked, don't bypass                                                          |
-| Zero jobs after crawl          | Could be a landing page (Stage 4) or legitimately empty board — check the run's `partial`/`listing_empty` events |
-| `robots_blocked`               | Site disallows crawling; record as blocked, never evade                                                          |
-| Candidates not promoted        | Company has no researched snapshot, or source already exists for the URL (guarded, not duplicated)               |
-| Integration tests fail locally | The single-administrator constraint — local DB has a real admin; CI's fresh DB passes                            |
+| Symptom                        | Cause / fix                                                                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Crawl fails `not_configured`   | Workday source missing `cxsEndpoint`/`raasEndpoint` (Stage 4 — use `pnpm jobs:connector-config --confirm`)                                        |
+| `http_403`                     | Site blocks bots; keep unverified/blocked, don't bypass                                                                                           |
+| Zero jobs after crawl          | Could be a landing page (Stage 4) or legitimately empty board — check the run's `partial`/`listing_empty` events                                  |
+| `robots_blocked`               | Site disallows crawling; record as blocked, never evade                                                                                           |
+| Candidates not promoted        | Company has no researched snapshot, or source already exists for the URL (guarded, not duplicated)                                                |
+| Integration tests fail locally | The single-administrator constraint — local DB has a real admin; run `pnpm db:reset` for a fresh disposable DB (CI does this via `pnpm validate`) |
 
 ## Reference
 

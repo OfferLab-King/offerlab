@@ -8,6 +8,17 @@ import {
 } from "../domain/catalog";
 import { EMPLOYER_DIRECTORY_PAGE_SIZE } from "../domain/employer-directory";
 
+/**
+ * Safety invariant for `database.unsafe` usage in this file:
+ * - Every dynamic fragment is either a constant string from this module or
+ *   derived from `buildJobFilterClauses`, which only emits `$n` placeholders
+ *   with separately bound `values`.
+ * - User-controlled content (search query, slugs, locations) never appears as
+ *   SQL text; it is always a bound parameter. This keeps the faceted search as
+ *   a single prepared-statement-style round trip while preserving injection
+ *   safety. Keep this invariant under review when adding facets or ordering.
+ */
+
 export const PUBLIC_JOB_VISIBILITY = `j.publication_status = 'published'
   and j.eligibility_status = 'eligible'
   and j.active`;
