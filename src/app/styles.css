@@ -1,20 +1,20 @@
 :root {
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  background: #f5f7f4;
-  color: #102219;
-  --accent: #146b42;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", "Segoe UI", sans-serif;
+  background: #f8faf9;
+  color: #0f172a;
+  --accent: #0f5a3a;
   --accent-dark: #0b3f27;
-  --accent-soft: #e7f2ea;
-  --border: #d9e1da;
-  --border-strong: #b8c5ba;
-  --canvas: #f5f7f4;
-  --focus: #146b42;
-  --muted: #526159;
+  --accent-soft: #e8f3ec;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --canvas: #f8faf9;
+  --focus: #0f5a3a;
+  --muted: #64748b;
   --surface: #ffffff;
-  --surface-raised: #f1f5f1;
-  --surface-subtle: #f9faf8;
-  --text: #102219;
+  --surface-raised: #f1f5f9;
+  --surface-subtle: #f8fafc;
+  --text: #0f172a;
   --space-1: 0.5rem;
   --space-2: 1rem;
   --space-3: 1.5rem;
@@ -125,24 +125,26 @@ main {
   align-items: center;
   box-sizing: border-box;
   display: grid;
-  gap: clamp(var(--space-4), 5vw, var(--space-8));
-  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
-  min-height: min(43rem, calc(100svh - 5rem));
-  padding: clamp(var(--space-6), 7vw, var(--space-10)) 0;
+  gap: clamp(var(--space-4), 5vw, var(--space-6));
+  grid-template-columns: minmax(0, 1.05fr) minmax(20rem, 0.95fr);
+  min-height: min(42rem, calc(100svh - 4rem));
+  padding: clamp(var(--space-6), 7vw, var(--space-8)) 0;
 }
 
 .marketing-hero-copy h1 {
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 740;
-  line-height: 0.98;
+  color: var(--text);
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.97;
   margin: var(--space-2) 0 var(--space-3);
-  max-width: 10ch;
+  max-width: 12ch;
 }
 
 .marketing-lead {
-  color: #405249;
-  font-size: clamp(1.1rem, 2vw, 1.3rem);
-  line-height: 1.6;
+  color: #475569;
+  font-size: clamp(1.08rem, 1.8vw, 1.2rem);
+  line-height: 1.65;
   max-width: 38rem;
 }
 
@@ -213,26 +215,28 @@ main {
 }
 
 .marketing-section {
-  border-top: 1px solid var(--border);
-  padding: clamp(var(--space-8), 8vw, 7rem) 0;
+  border-top: 1px solid #e2e8f0;
+  padding: clamp(var(--space-6), 7vw, 6rem) 0;
 }
 
 .section-introduction {
-  max-width: 47rem;
+  max-width: 46rem;
 }
 
 .section-introduction h2,
 .marketing-cta h2 {
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  margin: 0.75rem 0 1.25rem;
+  color: var(--text);
+  font-size: clamp(1.9rem, 3.5vw, 2.9rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.08;
+  margin: 0.6rem 0 1rem;
 }
 
 .section-introduction > p:last-child,
 .marketing-cta p {
-  color: #405249;
-  font-size: 1.08rem;
+  color: #475569;
+  font-size: 1.07rem;
   line-height: 1.65;
 }
 
@@ -254,8 +258,8 @@ main {
 
 .marketing-feature-card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -263,10 +267,10 @@ main {
 }
 
 .marketing-feature-card:hover {
-  border-color: var(--border-strong);
+  border-color: #cbd5e1;
   box-shadow:
-    0 2px 4px rgb(16 34 25 / 4%),
-    0 14px 36px rgb(16 34 25 / 7%);
+    0 4px 10px rgb(15 23 42 / 6%),
+    0 14px 30px rgb(15 23 42 / 7%);
   transform: translateY(-2px);
 }
 
@@ -288,17 +292,20 @@ main {
 }
 
 .distinctive-section {
-  background: #123e28;
-  border: 0;
+  background: #0f172a;
+  border: 1px solid #1e293b;
   border-radius: var(--radius-panel);
   color: white;
   padding-inline: clamp(1.25rem, 5vw, 4rem);
 }
 
-.distinctive-section .eyebrow,
+.distinctive-section .eyebrow {
+  color: #86efac;
+}
+
 .distinctive-section .section-introduction > p:last-child,
 .distinctive-card p {
-  color: #dcefe1;
+  color: #cbd5e1;
 }
 
 .distinctive-grid {
@@ -386,18 +393,23 @@ main {
   width: 1.05rem;
 }
 
-/* ============ Shared site header ============ */
+/* ============ Shared site header — professional, sticky ============ */
 
 .site-header {
   align-items: center;
-  border-bottom: 1px solid var(--border);
+  backdrop-filter: saturate(180%) blur(10px);
+  background: rgb(255 255 255 / 86%);
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   justify-content: space-between;
   margin: 0 auto;
   max-width: 80rem;
-  min-height: 4.5rem;
-  padding: 0 clamp(var(--space-2), 4vw, var(--space-6));
+  min-height: 4rem;
+  padding: 0 clamp(var(--space-2), 4vw, var(--space-4));
+  position: sticky;
+  top: 0;
+  z-index: 40;
 }
 
 .site-header--workspace {
@@ -405,18 +417,26 @@ main {
 }
 
 .site-header .brand {
-  font-size: 1.05rem;
-  letter-spacing: -0.015em;
+  font-size: 1.12rem;
+  font-weight: 820;
+  letter-spacing: -0.025em;
+  color: var(--text);
 }
 
 .site-header .status {
+  background: #fef3c7;
+  border-radius: 999px;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
   white-space: nowrap;
 }
 
 .site-nav {
   align-items: center;
   display: flex;
-  gap: 0.25rem;
+  gap: 0.35rem;
   margin-left: auto;
 }
 
@@ -447,17 +467,20 @@ main {
 }
 
 .site-nav-links a {
-  border-radius: var(--radius-control);
-  color: #294b38;
+  border-radius: 999px;
+  color: #334155;
   display: inline-flex;
-  min-height: 38px;
-  padding: 0.5rem 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-height: 36px;
+  padding: 0.45rem 0.8rem;
   text-decoration: none;
 }
 
 .site-nav-links a:hover {
-  background: var(--accent-soft);
-  color: var(--accent-dark);
+  background: #f1f5f9;
+  color: var(--text);
 }
 
 .site-nav-links a[aria-current="page"] {
