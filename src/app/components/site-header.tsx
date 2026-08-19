@@ -22,37 +22,42 @@ export async function SiteHeader({ className, variant = "public" }: SiteHeaderPr
 
   return (
     <header className={classNames}>
-      <Link className="brand" href={memberVariant ? "/member" : "/"}>
-        OfferLab
-      </Link>
-      {memberVariant ? (
-        <SiteNav label="Member navigation" links={memberNavLinks} />
-      ) : (
-        <SiteNav label="Public navigation" links={publicNavLinks} />
-      )}
-      {memberVariant ? (
-        localBypass ? (
-          <span className="status">Local test access</span>
+      <div className="site-header__inner">
+        <Link className="brand" href={memberVariant ? "/member" : "/"} aria-label="OfferLab home">
+          <span className="brand__mark" aria-hidden="true" />
+          <span className="brand__word">OfferLab</span>
+        </Link>
+        {memberVariant ? (
+          <SiteNav label="Member navigation" links={memberNavLinks} />
+        ) : (
+          <SiteNav label="Public navigation" links={publicNavLinks} />
+        )}
+        {memberVariant ? (
+          localBypass ? (
+            <span className="status">Local test access</span>
+          ) : (
+            <div className="site-header-actions">
+              <nav aria-label="Account" className="site-account-nav">
+                {memberAccountLinks.map((link) => (
+                  <Link href={link.href} key={link.href}>
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+              <SignOutButton />
+            </div>
+          )
         ) : (
           <div className="site-header-actions">
-            <nav aria-label="Account" className="site-account-nav">
-              {memberAccountLinks.map((link) => (
-                <Link href={link.href} key={link.href}>
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-            <SignOutButton />
+            <Link className="site-header__link" href="/sign-in">
+              Sign in
+            </Link>
+            <Link className="button-link site-header__cta" href="/register">
+              Create free account
+            </Link>
           </div>
-        )
-      ) : (
-        <div className="site-header-actions">
-          <Link href="/sign-in">Sign in</Link>
-          <Link className="button-link compact-button" href="/register">
-            Create free account
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
     </header>
   );
 }
