@@ -80,7 +80,16 @@ export async function updateSourcePause(formData: FormData): Promise<void> {
     sourceId: formData.get("sourceId"),
     paused: formData.get("paused"),
   });
-  await pauseCompanySource(administrator.userId, parsed.sourceId, parsed.paused === "true");
+  const changed = await pauseCompanySource(
+    administrator.userId,
+    parsed.sourceId,
+    parsed.paused === "true",
+  );
+  if (!changed) {
+    // The source is archived (terminal) or missing; keep the page state honest.
+    revalidatePath("/admin/job-sources");
+    return;
+  }
   revalidatePath("/admin/job-sources");
 }
 

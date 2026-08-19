@@ -139,5 +139,14 @@ export async function updateGroupMockBookingAction(formData: FormData) {
     status: formData.get("status"),
     version: Number(formData.get("version")),
   });
-  redirect(destination(result.outcome === "changed" ? "booking-saved" : "error", "sessions"));
+  redirect(
+    destination(
+      result.outcome === "changed"
+        ? "booking-saved"
+        : result.outcome === "capacity_or_conflict"
+          ? "booking-capacity"
+          : "error",
+      "sessions",
+    ),
+  );
 }

@@ -357,7 +357,7 @@ export default async function JobSourcesPage() {
                   <input name="jobId" type="hidden" value={job.id} />
                   <label>
                     Publication status
-                    <select defaultValue="draft" name="publicationStatus">
+                    <select defaultValue={job.publication_status} name="publicationStatus">
                       <option value="published">Published</option>
                       <option value="draft">Draft</option>
                       <option value="suppressed">Suppressed</option>

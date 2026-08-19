@@ -316,12 +316,16 @@ export async function setJobSourceStatus(
   sourceId: string,
   status: SourceStatus,
 ): Promise<boolean> {
+  // Archived sources are terminal: only an explicit un-archive/restore flow
+  // may reactivate them. This is enforced server-side, not just by the
+  // disabled control in the admin UI.
   const rows = await database<{ id: string }[]>`
     update app.job_source
     set status = ${status},
         automatic_pause_reason = null,
         updated_at = now()
     where id = ${sourceId}::uuid
+      and (${status} <> 'active' or (select s.status from app.job_source s where s.id = ${sourceId}::uuid) <> 'archived')
     returning id
   `;
   return rows.length === 1;

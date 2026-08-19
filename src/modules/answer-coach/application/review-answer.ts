@@ -47,19 +47,21 @@ export async function reviewMemberAnswer(
         ]
       : [];
   });
+  // Reserve a review slot in a short transaction (atomic per-owner capacity),
+  // then run the provider call with no database connection held open.
+  await withApplicationUser(owner, (db) => repo.reserveAnswerCoachReviewUsage(db, owner));
+  const input = {
+    draftAnswer: draft,
+    keyPoints: answer.keyPoints.slice(0, 2000),
+    question: answer.question.slice(0, 1000),
+    questionFamily: answer.questionFamily,
+    stories: linkedStories,
+  };
+  const run = await reviewWithLocalFallback(runtime.provider, input);
+  const selectedProvider = run.provider;
+  const providerResult = run.result;
+  const review = validateProviderReview(providerResult.review, draft);
   return withApplicationUser(owner, async (db) => {
-    await repo.assertUsageAllowed(db, owner);
-    const input = {
-      draftAnswer: draft,
-      keyPoints: answer.keyPoints.slice(0, 2000),
-      question: answer.question.slice(0, 1000),
-      questionFamily: answer.questionFamily,
-      stories: linkedStories,
-    };
-    const run = await reviewWithLocalFallback(runtime.provider, input);
-    const selectedProvider = run.provider;
-    const providerResult = run.result;
-    const review = validateProviderReview(providerResult.review, draft);
     const storedReview = await repo.saveReview(
       db,
       owner,

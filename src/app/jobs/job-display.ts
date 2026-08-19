@@ -31,7 +31,7 @@ export function formatSalary(
   period: string | null,
 ): string | null {
   if (min === null && max === null) return null;
-  const symbol = currency ?? "£";
+  const symbol = currencySymbol(currency);
   const format = (value: number): string =>
     value >= 1000 ? `${Math.round(value / 1000)}k` : String(value);
   let range: string;
@@ -45,6 +45,24 @@ export function formatSalary(
     return null;
   }
   return period && period !== "unknown" ? `${range} per ${period}` : range;
+}
+
+function currencySymbol(currency: string | null): string {
+  if (!currency) return "£";
+  if (currency.length === 3 && currency === currency.toUpperCase()) {
+    try {
+      const parts = new Intl.NumberFormat("en-GB", {
+        currency,
+        style: "currency",
+      }).formatToParts(1);
+      const symbol = parts.find((part) => part.type === "currency")?.value;
+      if (symbol) return symbol;
+    } catch {
+      // Unknown ISO currency code: fall through to the code itself.
+    }
+    return `${currency} `;
+  }
+  return currency;
 }
 
 export function freshSourceLabel(lastSuccessfulCheckAt: Date | string | null): string | null {

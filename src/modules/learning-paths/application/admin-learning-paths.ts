@@ -70,6 +70,11 @@ export async function createPathDraft(adminId: string, form: FormData) {
   const parsed = parse(form);
   if (!parsed.ok) return parsed;
   return withApplicationUser(adminId, async (db) => {
+    const duplicate = await db<
+      { found: boolean }[]
+    >`select exists(select 1 from app.learning_path where slug=${parsed.data.slug}) found`;
+    if (duplicate[0]?.found)
+      return { ok: false as const, error: "That slug is already used by another path." };
     const key = `path_${crypto.randomUUID().replaceAll("-", "")}`;
     const rows = await db<
       { id: string }[]
@@ -127,6 +132,13 @@ export async function updatePath(
       return { ok: false as const, error: "This lifecycle action is not available." };
     if (current.firstPublishedAt && current.slug !== parsed.data.slug)
       return { ok: false as const, error: "The slug cannot change after first publication." };
+    if (parsed.data.slug !== current.slug) {
+      const duplicate = await db<
+        { found: boolean }[]
+      >`select exists(select 1 from app.learning_path where slug=${parsed.data.slug} and id<>${pathId}::uuid) found`;
+      if (duplicate[0]?.found)
+        return { ok: false as const, error: "That slug is already used by another path." };
+    }
     const state =
       intent === "publish"
         ? "published"

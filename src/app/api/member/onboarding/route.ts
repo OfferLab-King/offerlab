@@ -41,8 +41,8 @@ export async function PUT(request: Request): Promise<NextResponse> {
       ok: true,
       outcome: result.outcome,
     });
-  } catch {
-    logger.error({ event: "onboarding_save_failed" }, "Onboarding profile save failed");
+  } catch (error) {
+    logger.error({ err: error, event: "onboarding_save_failed" }, "Onboarding profile save failed");
     return NextResponse.json(generic, { status: 500 });
   }
 }

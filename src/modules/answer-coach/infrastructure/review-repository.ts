@@ -81,31 +81,36 @@ export async function listReviews(db: TransactionSql, owner: string, answerId: s
   const rows = await db<
     ReviewRow[]
   >`select id,answer_version,answer_snapshot,provider_id,provider_mode,model_requested,prompt_version,summary,strengths,suggested_answer,follow_up_questions,unsupported_claims,created_at from app.answer_coach_review where owner_user_id=${owner}::uuid and answer_id=${answerId}::uuid order by created_at desc`;
-  const result: StoredReview[] = [];
-  for (const row of rows) {
-    const comments = await db<
-      CommentRow[]
-    >`select id,category,anchor_start,anchor_end,anchor_quote,observation,coaching_question,optional_revision,state from app.answer_coach_comment where owner_user_id=${owner}::uuid and review_id=${row.id}::uuid order by position`;
-    result.push(mapReview(row, comments));
+  if (rows.length === 0) return [];
+  const commentRows = await db<
+    (CommentRow & { review_id: string })[]
+  >`select c.review_id,c.id,c.category,c.anchor_start,c.anchor_end,c.anchor_quote,c.observation,c.coaching_question,c.optional_revision,c.state
+    from app.answer_coach_comment c
+    where c.owner_user_id=${owner}::uuid and c.review_id=any(${rows.map((row) => row.id)}::uuid[])
+    order by c.review_id,c.position`;
+  const commentsByReview = new Map<string, CommentRow[]>();
+  for (const comment of commentRows) {
+    const { review_id, ...rest } = comment;
+    const list = commentsByReview.get(review_id);
+    if (list) list.push(rest);
+    else commentsByReview.set(review_id, [rest]);
   }
-  return result;
+  return rows.map((row) => mapReview(row, commentsByReview.get(row.id) ?? []));
 }
 
-export async function assertUsageAllowed(db: TransactionSql, owner: string) {
-  await db`select pg_advisory_xact_lock(hashtext(${`answer-coach:${owner}`}))`;
-  const [counts] = await db<
-    { monthly: number; recent: number }[]
-  >`select count(*) filter(where created_at>=date_trunc('month',now()))::int monthly,count(*) filter(where created_at>=now()-interval '10 minutes')::int recent from app.answer_coach_review where owner_user_id=${owner}::uuid`;
-  if ((counts?.recent ?? 0) >= answerCoachUsageLimits.recent)
-    throw new Error("answer_coach_rate_limited");
-  if ((counts?.monthly ?? 0) >= answerCoachUsageLimits.monthly)
-    throw new Error("answer_coach_usage_capped");
+export async function reserveAnswerCoachReviewUsage(db: TransactionSql, owner: string) {
+  const [reservation] = await db<
+    { outcome: string }[]
+  >`select app.reserve_answer_coach_review_usage(${owner}::uuid,${answerCoachUsageLimits.recent}::integer,${answerCoachUsageLimits.monthly}::integer) outcome`;
+  if (reservation?.outcome === "recent") throw new Error("answer_coach_rate_limited");
+  if (reservation?.outcome === "monthly") throw new Error("answer_coach_usage_capped");
+  return reservation?.outcome === "ok";
 }
 
 export async function readUsage(db: TransactionSql, owner: string): Promise<AnswerCoachUsage> {
   const [counts] = await db<
     { monthly: number; recent: number }[]
-  >`select count(*) filter(where created_at>=date_trunc('month',now()))::int monthly,count(*) filter(where created_at>=now()-interval '10 minutes')::int recent from app.answer_coach_review where owner_user_id=${owner}::uuid`;
+  >`select count(*) filter(where created_at>=date_trunc('month',now()))::int monthly,count(*) filter(where created_at>=now()-interval '10 minutes')::int recent from app.answer_coach_review_usage where owner_user_id=${owner}::uuid`;
   return {
     monthlyLimit: answerCoachUsageLimits.monthly,
     monthlyUsed: counts?.monthly ?? 0,

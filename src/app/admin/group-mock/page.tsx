@@ -86,6 +86,12 @@ export default async function GroupMockAdminPage({
           Group Mock update saved.
         </p>
       )}
+      {query.result === "booking-capacity" && (
+        <p className="error-summary" role="alert">
+          The seat could not be confirmed: the room is already at full capacity. Free a seat first
+          or increase the session capacity.
+        </p>
+      )}
       {query.result?.startsWith("invalid-") && (
         <p className="error-summary" role="alert">
           The update was not saved. Check{" "}

@@ -1,6 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteHeader } from "./components/site-header";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  description:
+    "Prepare with evidence for UK graduate recruitment. Build reusable answers and stories, tailor a truthful CV or cover letter, practise each stage and track applications in one private workspace.",
+  openGraph: {
+    description:
+      "Prepare with evidence for UK graduate recruitment. Build reusable answers and stories, tailor a truthful CV or cover letter, practise each stage and track applications in one private workspace.",
+    title: "OfferLab — Prepare with evidence. Practise with purpose.",
+    type: "website",
+  },
+  title: "OfferLab — Prepare with evidence. Practise with purpose.",
+};
 
 const availableTools = [
   {

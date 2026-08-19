@@ -406,8 +406,13 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
 
         <footer className="job-detail-footer">
           <p>
-            Source: <Link href={job.company_careers_url as never}>{job.company_name} Careers</Link>.
-            OfferLab is not the employer and has no partnership with {job.company_name}. Role
+            Source:{" "}
+            {job.company_careers_url ? (
+              <Link href={job.company_careers_url as never}>{job.company_name} Careers</Link>
+            ) : (
+              <Link href={job.application_url as never}>the official posting</Link>
+            )}
+            . OfferLab is not the employer and has no partnership with {job.company_name}. Role
             details are taken from the public posting.
           </p>
           <p>

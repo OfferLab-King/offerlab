@@ -12,6 +12,7 @@ export const publicNavLinks = [
 export const memberNavLinks = [
   { href: "/member", label: "Home" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/member/saved-jobs", label: "Saved jobs" },
   { href: "/employers", label: "Employers" },
   { href: "/member/applications", label: "Applications" },
   { href: "/member/cvs", label: "CVs" },

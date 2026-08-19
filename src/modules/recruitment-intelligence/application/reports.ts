@@ -66,7 +66,7 @@ export const reviewIntelligenceReport = (
   administrator: string,
   id: string,
   version: number,
-  state: "published" | "rejected",
+  state: "pending" | "published" | "rejected",
   confidence: "low" | "medium" | "high",
 ) =>
   withApplicationUser(administrator, (database) =>

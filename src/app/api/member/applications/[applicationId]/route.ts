@@ -41,8 +41,8 @@ export async function PUT(request: Request, context: Context): Promise<NextRespo
     if (result.outcome === "conflict")
       return NextResponse.json({ ok: true, outcome: "conflict" }, { status: 409 });
     return NextResponse.json(result);
-  } catch {
-    logger.error({ event: "application_update_failed" }, "Application update failed");
+  } catch (error) {
+    logger.error({ err: error, event: "application_update_failed" }, "Application update failed");
     return NextResponse.json(genericApplicationError, { status: 500 });
   }
 }

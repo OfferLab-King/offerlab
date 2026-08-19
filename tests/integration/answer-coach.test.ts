@@ -1,8 +1,8 @@
 import postgres, { type TransactionSql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
-  assertUsageAllowed,
   listReviews,
+  reserveAnswerCoachReviewUsage,
   saveReview,
   setCommentState,
 } from "../../src/modules/answer-coach/infrastructure/review-repository";
@@ -42,6 +42,7 @@ const output = {
 };
 
 beforeEach(async () => {
+  await admin`delete from app.answer_coach_review_usage where owner_user_id=any(${[one, two]}::uuid[])`;
   await admin`delete from app.answer_coach_comment`;
   await admin`delete from app.answer_coach_review`;
   await admin`delete from app.member_answer where title='Answer Coach integration fixture'`;
@@ -52,6 +53,7 @@ beforeEach(async () => {
   )[0]!.id;
 });
 afterAll(async () => {
+  await admin`delete from app.answer_coach_review_usage where owner_user_id=any(${[one, two]}::uuid[])`;
   await admin`delete from app.answer_coach_comment`;
   await admin`delete from app.answer_coach_review`;
   await admin`delete from app.member_answer where title='Answer Coach integration fixture'`;
@@ -61,7 +63,7 @@ afterAll(async () => {
 describe("Answer Coach PostgreSQL persistence", () => {
   it("persists recoverable reviews and comment state without mutating the answer", async () => {
     const saved = await as(one, async (db) => {
-      await assertUsageAllowed(db, one);
+      await reserveAnswerCoachReviewUsage(db, one);
       return saveReview(
         db,
         one,

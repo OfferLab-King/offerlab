@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function JobSaveButton({
   jobId,
   initiallySaved = false,
 }: Readonly<{ jobId: string; initiallySaved?: boolean }>) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [saved, setSaved] = useState(initiallySaved);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -23,7 +25,10 @@ export function JobSaveButton({
         method: saved ? "DELETE" : "POST",
       });
       if (response.status === 401) {
-        router.push("/sign-in?next=/jobs");
+        const query = searchParams.toString();
+        router.push(
+          `/sign-in?next=${encodeURIComponent(query ? `${pathname}?${query}` : pathname)}`,
+        );
         return;
       }
       if (!response.ok) {

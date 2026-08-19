@@ -12,11 +12,13 @@ export function ResourceCardControls({
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState(false);
   const router = useRouter();
 
   async function changeSavedState() {
     setBusy(true);
     setMessage("");
+    setError(false);
     try {
       const response = await fetch(`/api/member/resources/${resourceId}/state`, {
         body: JSON.stringify({ action: saved ? "unsave" : "save" }),
@@ -27,6 +29,7 @@ export function ResourceCardControls({
       setMessage(saved ? "Removed from saved resources." : "Resource saved.");
       router.refresh();
     } catch {
+      setError(true);
       setMessage("We could not update this resource.");
     } finally {
       setBusy(false);
@@ -38,7 +41,7 @@ export function ResourceCardControls({
       <button className="button-secondary" disabled={busy} onClick={() => void changeSavedState()}>
         {busy ? "Updating…" : saved ? "Saved" : "Save"}
       </button>
-      <span aria-live="polite" className="visually-hidden">
+      <span aria-live="polite" className={error ? "resource-save-error" : "visually-hidden"}>
         {message}
       </span>
     </div>

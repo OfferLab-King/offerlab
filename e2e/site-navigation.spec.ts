@@ -126,13 +126,14 @@ test("the signed-in member navigation is available on the member home", async ({
     await page.waitForURL(/\/member$/);
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link")).toHaveCount(9);
+    await expect(navigation.getByRole("link")).toHaveCount(10);
     await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
       "aria-current",
       "page",
     );
     for (const label of [
       "Jobs",
+      "Saved jobs",
       "Employers",
       "Applications",
       "CVs",
@@ -141,7 +142,7 @@ test("the signed-in member navigation is available on the member home", async ({
       "Membership",
       "Profile",
     ]) {
-      await expect(navigation.getByRole("link", { name: label })).not.toHaveAttribute(
+      await expect(navigation.getByRole("link", { name: label, exact: true })).not.toHaveAttribute(
         "aria-current",
         "page",
       );
@@ -182,11 +183,11 @@ test("signed-in members keep the workspace navigation while visiting /jobs", asy
     ).toBeVisible();
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link", { name: "Jobs" })).toHaveAttribute(
+    await expect(navigation.getByRole("link", { name: "Jobs", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await expect(navigation.getByRole("link", { name: "Employers" })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Employers", exact: true })).toBeVisible();
     const brand = page.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
@@ -220,11 +221,11 @@ test("signed-in members keep the workspace navigation while visiting /employers"
     await expect(page.getByRole("heading", { name: /Explore UK employers/i })).toBeVisible();
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link", { name: "Employers" })).toHaveAttribute(
+    await expect(navigation.getByRole("link", { name: "Employers", exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await expect(navigation.getByRole("link", { name: "Jobs" })).toBeVisible();
+    await expect(navigation.getByRole("link", { name: "Jobs", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {

@@ -1,4 +1,13 @@
-const ALLOWED_PATHS = ["/member", "/admin", "/reset-password/update"] as const;
+const ALLOWED_PATHS = [
+  "/member",
+  "/admin",
+  "/reset-password/update",
+  "/jobs",
+  "/employers",
+  "/intelligence",
+  "/learn",
+  "/plans",
+] as const;
 
 export function safeRedirectPath(value: string | null | undefined, fallback = "/member"): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;

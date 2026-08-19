@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { MarkdownContent } from "../../../../components/resource-content";
 import { requireMember } from "../../../../../modules/identity-access/application/authorization";
@@ -18,8 +17,29 @@ export default async function GroupMockSessionPage({
   const { userId } = await requireMember();
   const { sessionId } = await params;
   const result = await readGroupMockSession(userId, sessionId);
-  if (!result) notFound();
+  if (!result) {
+    return (
+      <main className="applications-shell">
+        <MemberApplicationsHeader />
+        <LearnNavigation active="practice" />
+        <section className="card empty-state">
+          <h2>This session needs a booking</h2>
+          <p>
+            Session material and meeting access are only shown to members with a confirmed or
+            waitlisted seat. Browse the rooms below to reserve one.
+          </p>
+          <Link className="button-link" href="/member/learn/practice">
+            Browse Group Mock rooms
+          </Link>
+        </section>
+      </main>
+    );
+  }
   const { material, session } = result;
+  const now = new Date();
+  const meetingOpen =
+    session.joinUrl !== null &&
+    (session.startsAt ? now.getTime() >= new Date(session.startsAt).getTime() - 15 * 60_000 : true);
   return (
     <main className="applications-shell">
       <MemberApplicationsHeader />
@@ -41,7 +61,7 @@ export default async function GroupMockSessionPage({
           Back to rooms
         </Link>
       </section>
-      {session.joinUrl ? (
+      {meetingOpen ? (
         <section className="success-summary group-mock-join" aria-label="Meeting access">
           <div>
             <strong>The meeting room is open</strong>
@@ -49,7 +69,7 @@ export default async function GroupMockSessionPage({
           </div>
           <a
             className="button-link"
-            href={session.joinUrl}
+            href={session.joinUrl ?? undefined}
             rel="noopener noreferrer"
             target="_blank"
           >

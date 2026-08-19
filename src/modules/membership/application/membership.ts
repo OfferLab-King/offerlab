@@ -40,11 +40,17 @@ export async function readMembershipBenefits(owner: string): Promise<MembershipB
 }
 
 /**
- * Self-serve activation used by local development (source = test). Production
- * activation goes through the privileged membership CLI so the payment
- * provider decision stays explicit.
+ * Self-serve activation used by local development and tests (source = test).
+ * Production activation goes through the privileged membership CLI so the
+ * payment provider decision stays explicit; the self-serve path is refused in
+ * staging and production so a deployed environment can never grant paid
+ * entitlements through the member-facing form.
  */
 export async function activateTestMembership(owner: string): Promise<MembershipSummary> {
+  const appEnvironment = process.env.APP_ENV;
+  if (appEnvironment === "production" || appEnvironment === "staging") {
+    throw new Error("membership_self_serve_unavailable_in_deployed_environments");
+  }
   return withApplicationUser(owner, async (database) => {
     const record = await upsertMembershipForOwner(database, owner, {
       periodEnd: null,

@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { AuthShell } from "../components/auth-shell";
 import { SignOutButton } from "../components/sign-out-button";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: "Access denied | OfferLab",
+};
 
 export default function AccessDeniedPage() {
   return (

@@ -42,9 +42,11 @@ export default async function Page({
         </a>
       </header>
       {query.error === "conflict" && <ConflictAlert reloadHref={`/admin/content/paths/${id}`} />}{" "}
-      {query.error === "validation" && (
+      {query.error && query.error !== "conflict" && (
         <div className="error-summary" role="alert">
-          The path could not be saved. Check all fields and publication requirements.
+          {query.error === "validation"
+            ? "The path could not be saved. Check all fields and publication requirements."
+            : decodeURIComponent(query.error)}
         </div>
       )}
       {query.status && (

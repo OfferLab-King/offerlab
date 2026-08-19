@@ -4,6 +4,7 @@ import { readIntelligenceReportsForAdmin } from "../../../modules/recruitment-in
 import { readIntelligenceCommentsForAdmin } from "../../../modules/recruitment-intelligence/application/community";
 import { commentFlagReasons } from "../../../modules/recruitment-intelligence/domain/community";
 import { recruitmentStageLabel } from "../../../modules/taxonomy/domain/display-labels";
+import { ConfirmIntentForm } from "../../components/confirm-intent-form";
 import {
   dismissIntelligenceCommentFlagAction,
   moderateIntelligenceAction,
@@ -108,7 +109,23 @@ export default async function AdminIntelligencePage({
                 </div>
               )}
               <div className="cms-discussion-actions">
-                <form action={moderateIntelligenceCommentAction}>
+                <ConfirmIntentForm
+                  action={moderateIntelligenceCommentAction}
+                  confirmations={{
+                    rejected: {
+                      description:
+                        "Rejected comments can be restored to the moderation queue later.",
+                      label: "Reject this comment?",
+                      prompt: "Rejected comments are hidden from members.",
+                    },
+                    removed: {
+                      description:
+                        "Removed comments and their replies are hidden from members and can be restored later.",
+                      label: "Remove this comment?",
+                      prompt: "Removing it also hides any replies.",
+                    },
+                  }}
+                >
                   <input name="id" type="hidden" value={comment.id} />
                   <input name="version" type="hidden" value={comment.version} />
                   {comment.moderationState === "pending" && (
@@ -131,10 +148,20 @@ export default async function AdminIntelligencePage({
                       Remove comment
                     </button>
                   )}
-                </form>
-                <Link href={`/member/learn/intelligence/${comment.slug}#discussion`}>
-                  View report
-                </Link>
+                  {(comment.moderationState === "rejected" ||
+                    comment.moderationState === "removed") && (
+                    <button className="button-secondary" name="state" type="submit" value="pending">
+                      Restore to pending
+                    </button>
+                  )}
+                </ConfirmIntentForm>
+                {comment.reportModerationState === "published" ? (
+                  <Link href={`/member/learn/intelligence/${comment.slug}#discussion`}>
+                    View report
+                  </Link>
+                ) : (
+                  <Link href={`/admin/intelligence/${comment.reportId}`}>Open report</Link>
+                )}
               </div>
             </article>
           ))}
@@ -168,7 +195,18 @@ export default async function AdminIntelligencePage({
               >
                 Edit
               </Link>
-              <form action={moderateIntelligenceAction} className="cms-inline-moderation">
+              <ConfirmIntentForm
+                action={moderateIntelligenceAction}
+                confirmations={{
+                  rejected: {
+                    description:
+                      "Rejected reports can be returned to the moderation queue or re-published later.",
+                    label: "Reject this report?",
+                    prompt: "Rejecting hides it from public pages and member views.",
+                  },
+                }}
+                formClassName="cms-inline-moderation"
+              >
                 <input name="id" type="hidden" value={report.id} />
                 <input name="version" type="hidden" value={report.version} />
                 <select
@@ -180,13 +218,19 @@ export default async function AdminIntelligencePage({
                   <option value="medium">Medium confidence</option>
                   <option value="high">High confidence</option>
                 </select>
-                <button name="state" type="submit" value="published">
-                  Publish
-                </button>
+                {report.moderationState === "rejected" ? (
+                  <button name="state" type="submit" value="pending">
+                    Return to pending
+                  </button>
+                ) : (
+                  <button name="state" type="submit" value="published">
+                    Publish
+                  </button>
+                )}
                 <button className="button-secondary" name="state" type="submit" value="rejected">
                   Reject
                 </button>
-              </form>
+              </ConfirmIntentForm>
               {report.moderationState === "published" && (
                 <Link href={`/intelligence/${report.slug}`}>Public preview</Link>
               )}

@@ -30,8 +30,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await addApplication(access.ownerId, body.value);
     if (!result.ok) return NextResponse.json(result, { status: 422 });
     return NextResponse.json(result, { status: 201 });
-  } catch {
-    logger.error({ event: "application_create_failed" }, "Application creation failed");
+  } catch (error) {
+    logger.error({ err: error, event: "application_create_failed" }, "Application creation failed");
     return NextResponse.json(genericApplicationError, { status: 500 });
   }
 }

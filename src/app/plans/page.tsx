@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { SiteHeader } from "../components/site-header";
@@ -11,6 +12,19 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/plans" },
+  description:
+    "OfferLab is free to use. Membership doubles your review capacity, gives priority queue placement for practice rooms and early access to new capabilities.",
+  openGraph: {
+    description:
+      "OfferLab is free to use. Membership doubles your review capacity, gives priority queue placement for practice rooms and early access to new capabilities.",
+    title: "Plans | OfferLab",
+    type: "website",
+  },
+  title: "Plans | OfferLab",
+};
 
 const freeBenefits = [
   "Private workspace for applications, deadlines and saved roles",

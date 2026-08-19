@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import { AuthShell, StatusMessage } from "../components/auth-shell";
 import { RegistrationForm } from "./registration-form";
 import { RegistrationUrlCleanup } from "./registration-url-cleanup";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  title: "Create your account | OfferLab",
+};
 
 export default async function RegisterPage({
   searchParams,

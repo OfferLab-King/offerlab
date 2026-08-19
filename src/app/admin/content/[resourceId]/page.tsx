@@ -9,6 +9,7 @@ import {
 } from "../../../../modules/preparation-resources/application/admin-content";
 import { ContentFields } from "../content-fields";
 import { runResourceMutationAction } from "../action-boundary";
+import { ConfirmIntentForm } from "../../../components/confirm-intent-form";
 import { ConflictAlert } from "../conflict-alert";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function Page({
       result.outcome === "conflict"
         ? "/admin/content?error=conflict"
         : result.outcome === "validation"
-          ? `/admin/content/${id}?error=validation`
+          ? `/admin/content/${id}?error=${encodeURIComponent(result.errorMessage ?? "validation")}`
           : `/admin/content/${id}?status=${result.outcome}`,
     );
   }
@@ -65,7 +66,9 @@ export default async function Page({
         <ConflictAlert reloadHref="?" />
       ) : query.error ? (
         <div className="error-summary" role="alert">
-          Check the content fields and try again.
+          {query.error === "validation"
+            ? "Check the content fields and try again."
+            : decodeURIComponent(query.error)}
         </div>
       ) : null}
       {query.status && (
@@ -73,7 +76,24 @@ export default async function Page({
           {query.status === "unchanged" ? "No changes were needed." : "Resource updated."}
         </p>
       )}
-      <form action={save} className="application-form cms-resource-form">
+      <ConfirmIntentForm
+        action={save}
+        confirmations={{
+          archive: {
+            description:
+              "Archived content is hidden from members and can be restored to draft later.",
+            label: "Archive this content?",
+            prompt: "Archiving removes it from member and public views.",
+          },
+          unpublish: {
+            description:
+              "Members keep their saved and completed state; the content is no longer visible.",
+            label: "Unpublish this content?",
+            prompt: "Unpublishing immediately hides it from members and search engines.",
+          },
+        }}
+        formClassName="application-form cms-resource-form"
+      >
         <input name="expectedVersion" type="hidden" value={r.version} />
         <ContentFields categories={categories} resource={r} resources={resources} tags={tags} />
         <div className="form-actions cms-sticky-actions">
@@ -108,7 +128,7 @@ export default async function Page({
             )}
           </div>
         </div>
-      </form>
+      </ConfirmIntentForm>
     </main>
   );
 }

@@ -44,6 +44,7 @@ export default async function EmployersDirectoryPage({
 }) {
   const query = await searchParams;
   const filters = parseEmployerDirectoryFilters(query);
+  const legacySector = typeof query.sector === "string" ? query.sector : null;
   const [directory, sectorCounts, options] = await Promise.all([
     readEmployerDirectoryEntries(filters),
     readSectorJobCounts(),
@@ -159,7 +160,10 @@ export default async function EmployersDirectoryPage({
             </Link>
           </section>
         ) : (
-          <ul className="employer-directory-grid">
+          <ul
+            className="employer-directory-grid"
+            id={legacySector ? `sector-${legacySector}` : undefined}
+          >
             {rows.map((entry) => {
               const industry = employerIndustryLabel(entry.employer_industry_key);
               const officialUrl = entry.careers_url ?? entry.website_url;
