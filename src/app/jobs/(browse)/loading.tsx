@@ -1,13 +1,12 @@
 import { SiteHeader } from "../../components/site-header";
+import { PageHeader } from "../../components/page-header";
 
 export default function JobsLoading() {
   return (
     <main className="catalogue-page">
       <SiteHeader />
       <div className="catalogue-shell">
-        <header className="catalogue-header">
-          <h1>Find your next opportunity</h1>
-        </header>
+        <PageHeader eyebrow="Roles from official employer sites" title="Find your next opportunity" />
         <div className="catalogue-layout">
           <div className="catalogue-sidebar-column">
             <div className="catalogue-sidebar-skeleton job-card-skeleton" aria-hidden="true" />

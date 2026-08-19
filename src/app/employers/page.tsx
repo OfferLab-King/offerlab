@@ -14,7 +14,9 @@ import {
   readEmployerDirectoryOptions,
   readSectorJobCounts,
 } from "../../modules/job-catalog/application/catalog";
+import { currentMemberAccess } from "../../modules/identity-access/application/authorization";
 import { SiteHeader } from "../components/site-header";
+import { PageHeader } from "../components/page-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +47,17 @@ export default async function EmployersDirectoryPage({
   const query = await searchParams;
   const filters = parseEmployerDirectoryFilters(query);
   const legacySector = typeof query.sector === "string" ? query.sector : null;
+  const access = await currentMemberAccess();
+  const profile =
+    access.status === "eligible"
+      ? await import("../../modules/member-profile/application/onboarding").then((m) =>
+          m.readOnboardingProfile(access.authorization.userId),
+        )
+      : null;
+  const profileIndustries = profile?.answers?.industries ?? [];
+  const showProfileHint =
+    access.status === "eligible" && profileIndustries.length > 0 && !filters.industry;
+
   const [directory, sectorCounts, options] = await Promise.all([
     readEmployerDirectoryEntries(filters),
     readSectorJobCounts(),
@@ -80,19 +93,33 @@ export default async function EmployersDirectoryPage({
     <main className="employers-page">
       <SiteHeader />
       <div className="employer-directory">
-        <header className="employer-directory-hero">
-          <div>
-            <p className="catalogue-eyebrow">Employer and industry directory</p>
-            <h1>Explore UK employers</h1>
-            <p className="catalogue-subtitle">
-              Researched UK employers by industry. Open their current roles or official careers
-              pages; employers without an open role remain discoverable for research.
-            </p>
-          </div>
-          <p className="employer-directory-summary">
-            <strong>{total}</strong> employers · {visible} hiring now
+        <PageHeader
+          eyebrow="Employer and industry directory"
+          intro={`Researched UK employers by industry — ${total} employers · ${visible} hiring now. Open current roles or official careers pages; employers without an open role remain discoverable.`}
+          title="Explore UK employers"
+        />
+        {showProfileHint ? (
+          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
+            Based on your profile: {profileIndustries.join(", ")} —{" "}
+            <Link href={`/employers?industry=${profileIndustries[0]?.replaceAll("_", "-")}` as never}>
+              filter employers
+            </Link>{" "}
+            or{" "}
+            <Link
+              href={
+                `/jobs?industries=${profileIndustries.map((v) => v.replaceAll("_", "-")).join(",")}` as never
+              }
+            >
+              find jobs
+            </Link>{" "}
+            · <Link href="/member/onboarding">update profile</Link>
           </p>
-        </header>
+        ) : (
+          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
+            Tip: <Link href="/jobs">find jobs</Link> then filter by employer, or{" "}
+            <Link href="/member">track applications</Link> in your workspace.
+          </p>
+        )}
 
         <form className="employer-directory-filters" method="get" action="/employers">
           <label>

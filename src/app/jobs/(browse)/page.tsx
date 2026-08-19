@@ -4,7 +4,10 @@ import { searchJobCatalogFaceted } from "../../../modules/job-catalog/applicatio
 import { parseJobCatalogFilters } from "../../../modules/job-catalog/domain/catalog";
 import { currentMemberAccess } from "../../../modules/identity-access/application/authorization";
 import { listSavedEmployersForMember } from "../../../modules/job-catalog/application/saved-employers";
+import Link from "next/link";
+
 import { SiteHeader } from "../../components/site-header";
+import { PageHeader } from "../../components/page-header";
 import { JobCatalogueView } from "./job-catalogue-view";
 
 export const runtime = "nodejs";
@@ -49,24 +52,46 @@ export default async function PublicJobsPage({
     access.status === "eligible"
       ? await listSavedEmployersForMember(access.authorization.userId)
       : [];
+  const profile =
+    access.status === "eligible"
+      ? await import("../../../modules/member-profile/application/onboarding").then((m) =>
+          m.readOnboardingProfile(access.authorization.userId),
+        )
+      : null;
+  const profileIndustries = profile?.answers?.industries ?? [];
+  const showProfileHint =
+    access.status === "eligible" &&
+    profileIndustries.length > 0 &&
+    filters.industries.length === 0 &&
+    !filters.query;
 
   return (
     <main className="catalogue-page">
       <SiteHeader />
       <div className="catalogue-shell">
-        <header className="catalogue-header">
-          <p className="catalogue-eyebrow">Roles from official employer sites</p>
-          <h1>Find your next opportunity</h1>
-          <p className="catalogue-subtitle">
-            Search current roles across leading employers, compare the details that matter, and
-            apply directly on the employer&apos;s website.
+        <PageHeader
+          eyebrow="Roles from official employer sites"
+          intro="Search current roles across leading employers, compare the details that matter, and apply directly on the employer's website. Official sources only — no recycled aggregator links."
+          title="Find your next opportunity"
+        />
+        {showProfileHint ? (
+          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
+            Based on your profile: {profileIndustries.join(", ")} —{" "}
+            <Link
+              href={
+                `/jobs?industries=${profileIndustries.map((v) => v.replaceAll("_", "-")).join(",")}` as never
+              }
+            >
+              filter jobs
+            </Link>{" "}
+            or <Link href="/employers">explore employers</Link> ·{" "}
+            <Link href="/member/onboarding">update profile</Link>
           </p>
-          <div className="catalogue-trust-row" aria-label="About these listings">
-            <span>Official employer sources</span>
-            <span>Clear sector and role filters</span>
-            <span>No recycled aggregator links</span>
-          </div>
-        </header>
+        ) : (
+          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
+            Tip: <Link href="/employers">explore employers by industry</Link> then filter jobs by employer.
+          </p>
+        )}
         <JobCatalogueView
           initialData={initialData}
           initialUrl={initialUrl}
