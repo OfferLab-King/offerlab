@@ -32,15 +32,17 @@ export default async function LearnPage() {
     <main className="applications-shell learn-overview">
       <MemberApplicationsHeader />
       <LearnNavigation active="overview" />
-      <section className="applications-heading">
+      <section className="workspace-hero compact-hero">
         <div>
           <p className="eyebrow">Prepare</p>
-          <h1>Preparation Hub</h1>
+          <h1>Library</h1>
           <p className="intro">
-            Open the tool that helps today: build evidence, answer a question, follow a plan or find
-            a focused resource.
+            Direct access to questions, cases, resources and intelligence — no required path.
           </p>
         </div>
+        <Link className="button-link button-secondary" href="/member/learn/answer-bank">
+          Open Answer Bank
+        </Link>
       </section>
 
       {continuedPath && nextResource ? (
@@ -114,100 +116,118 @@ export default async function LearnPage() {
         </section>
       )}
 
-      <section aria-labelledby="answer-story-bank" className="learn-section">
-        <p className="eyebrow">My Answer &amp; Story Bank</p>
-        <article className="card hub-panel">
+      <section aria-labelledby="answer-story-bank" className="learn-section card">
+        <div className="workspace-section-header">
           <div>
-            <h2 id="answer-story-bank">Build reusable interview preparation</h2>
-            <p>
-              {bank.stories} evidence stories · {bank.readyAnswers} Ready answers
-            </p>
-            <p>{bank.competenciesCovered} of 10 core competencies covered</p>
-            <p>
-              <strong>Next:</strong> {bank.nextAction}
-            </p>
+            <p className="eyebrow">Your evidence</p>
+            <h2 id="answer-story-bank">Answer &amp; Story Bank</h2>
           </div>
           <Link className="button-link" href="/member/learn/answer-bank">
-            Open my Answer Bank
+            Open
           </Link>
-        </article>
-      </section>
-
-      <section aria-labelledby="structured-preparation" className="card hub-panel learn-section">
-        <div>
-          <h2 id="structured-preparation">Structured Preparation Plans</h2>
-          <p>
-            Follow complete preparation coverage for video interviews, online assessments,
-            assessment centres and final interviews.
-          </p>
         </div>
-        <Link className="button-link" href="/member/learn/paths">
-          View Preparation Plans
-        </Link>
+        <p className="hint">
+          {bank.stories} stories · {bank.readyAnswers} of 14 answers prepared ·{" "}
+          {bank.competenciesCovered}/10 competencies
+        </p>
+        <p>
+          <strong>Next:</strong> {bank.nextAction}
+        </p>
       </section>
 
-      <section aria-labelledby="explore-directly" className="learn-section">
-        <p className="eyebrow">Explore directly</p>
-        <h2 id="explore-directly">Find the preparation you need</h2>
-        <div className="direct-tool-grid">
+      <section aria-labelledby="explore-library" className="learn-section">
+        <h2 id="explore-library">Explore the library</h2>
+        <p className="hint">
+          Two distinctive artefacts, then the full catalogue — all URL-backed and shareable.
+        </p>
+        <div className="distinctive-grid">
+          <article
+            className="distinctive-card"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
+            }}
+          >
+            <p className="eyebrow" style={{ color: "var(--accent)" }}>
+              Annotated coaching case
+            </p>
+            <h3>Before / after with reasoning</h3>
+            <p>
+              Original answer, coach questions, revision and why it’s stronger — not just the final
+              answer.
+            </p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/cases"
+            >
+              Study a case
+            </Link>
+          </article>
+          <article
+            className="distinctive-card"
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
+            }}
+          >
+            <p className="eyebrow" style={{ color: "var(--accent)" }}>
+              Recruitment intelligence
+            </p>
+            <h3>Cycle-dated, moderated</h3>
+            <p>
+              Stage, format, themes and reflections — no confidential material. Discussion is
+              supporting context.
+            </p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/intelligence"
+            >
+              Explore reports
+            </Link>
+          </article>
+        </div>
+        <div className="direct-tool-grid" style={{ marginTop: "var(--space-3)" }}>
           <article className="card compact-card direct-tool-card">
-            <h3>Core Interview Questions</h3>
-            <p>Browse curated questions by family, recruitment stage and preparation status.</p>
-            <Link className="button-link" href="/member/learn/answer-bank/questions">
+            <h3>Questions</h3>
+            <p>Browse curated questions by family and stage.</p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/answer-bank/questions"
+            >
               Browse questions
             </Link>
           </article>
           <article className="card compact-card direct-tool-card">
-            <h3>Resource Library</h3>
-            <p>Find focused guides, exercises and checklists without following a plan.</p>
-            <Link className="button-link" href="/member/learn/resources">
+            <h3>Resources</h3>
+            <p>Guides, checklists and exercises.</p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/resources"
+            >
               Browse resources
             </Link>
           </article>
           <article className="card compact-card direct-tool-card">
-            <h3>Annotated Coaching Cases</h3>
-            <p>
-              See how reasoning, trade-offs and coach annotations turn a scenario into useful
-              practice.
-            </p>
-            <Link className="button-link" href="/member/learn/cases">
-              Study a case
+            <h3>Preparation Plans</h3>
+            <p>Optional, stage-specific — not mandatory.</p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/paths"
+            >
+              View plans
             </Link>
           </article>
           <article className="card compact-card direct-tool-card">
-            <h3>Practice &amp; Feedback</h3>
-            <p>Register interest in a Group Mock, answer review or focused mock-interview pilot.</p>
-            <Link className="button-link" href="/member/learn/practice">
+            <h3>Practice</h3>
+            <p>Group Mock and bounded feedback pilots.</p>
+            <Link
+              className="button-link button-secondary compact-button"
+              href="/member/learn/practice"
+            >
               View pilots
             </Link>
-          </article>
-        </div>
-      </section>
-
-      <section aria-labelledby="distinctive-tools" className="learn-section upcoming-experiences">
-        <p className="eyebrow">OfferLab tools</p>
-        <h2 id="distinctive-tools">Go beyond generic preparation</h2>
-        <div className="upcoming-grid">
-          <article>
-            <span className="availability-label">Local prototype</span>
-            <h3>Answer Coach</h3>
-            <p>
-              Open an answer for an evidence-grounded rubric review. No AI provider receives your
-              content.
-            </p>
-            <Link href="/member/learn/answer-bank/answers">Review an answer</Link>
-          </article>
-          <article>
-            <span className="availability-label">Register interest</span>
-            <h3>Group Mock</h3>
-            <p>Structured group-exercise practice with peer or facilitator feedback.</p>
-            <Link href="/member/learn/practice">View the pilot</Link>
-          </article>
-          <article>
-            <span className="availability-label">Human moderated</span>
-            <h3>Recruitment intelligence</h3>
-            <p>Moderated, cycle-dated candidate reports by stage, format and assessed skill.</p>
-            <Link href="/member/learn/intelligence">Explore reports</Link>
           </article>
         </div>
       </section>

@@ -3,9 +3,15 @@ import { describe, expect, it } from "vitest";
 import { isDestinationCurrent, memberNavLinks, publicNavLinks } from "./site-navigation";
 
 describe("isDestinationCurrent", () => {
-  it("keeps Home current only on exactly /member", () => {
+  it("keeps Workspace current on its private sub-pages", () => {
     expect(isDestinationCurrent("/member", "/member")).toBe(true);
-    expect(isDestinationCurrent("/member/applications", "/member")).toBe(false);
+    expect(isDestinationCurrent("/member/applications", "/member")).toBe(true);
+    expect(isDestinationCurrent("/member/cvs", "/member")).toBe(true);
+    expect(isDestinationCurrent("/member/cover-letters", "/member")).toBe(true);
+    expect(isDestinationCurrent("/member/documents", "/member")).toBe(true);
+    expect(isDestinationCurrent("/member/saved-jobs", "/member")).toBe(true);
+    expect(isDestinationCurrent("/member/learn/answer-bank", "/member")).toBe(false);
+    expect(isDestinationCurrent("/member/learn", "/member")).toBe(false);
     expect(isDestinationCurrent("/member-jobs", "/member")).toBe(false);
   });
 
@@ -23,28 +29,22 @@ describe("isDestinationCurrent", () => {
     expect(isDestinationCurrent("/jobs", "/employers")).toBe(false);
   });
 
-  it("keeps Applications current across the applications workspace", () => {
-    expect(isDestinationCurrent("/member/applications", "/member/applications")).toBe(true);
-    expect(isDestinationCurrent("/member/applications/new", "/member/applications")).toBe(true);
-    expect(isDestinationCurrent("/member/applications/abc-123", "/member/applications")).toBe(true);
-    expect(isDestinationCurrent("/member", "/member/applications")).toBe(false);
-  });
-
-  it("keeps CVs and Cover letters current on their document routes", () => {
-    expect(isDestinationCurrent("/member/cvs", "/member/cvs")).toBe(true);
-    expect(isDestinationCurrent("/member/cvs/abc-123", "/member/cvs")).toBe(true);
-    expect(isDestinationCurrent("/member/cover-letters", "/member/cover-letters")).toBe(true);
-    expect(isDestinationCurrent("/member/cover-letters/abc-123", "/member/cover-letters")).toBe(
+  it("keeps Answer Bank current on its workspace", () => {
+    expect(isDestinationCurrent("/member/learn/answer-bank", "/member/learn/answer-bank")).toBe(
       true,
     );
-    expect(isDestinationCurrent("/member/cvs", "/member/cover-letters")).toBe(false);
+    expect(
+      isDestinationCurrent("/member/learn/answer-bank/stories", "/member/learn/answer-bank"),
+    ).toBe(true);
+    expect(isDestinationCurrent("/member/learn", "/member/learn/answer-bank")).toBe(false);
   });
 
-  it("keeps Prepare current across learning routes", () => {
+  it("keeps Library current across learning routes except Answer Bank", () => {
     expect(isDestinationCurrent("/member/learn", "/member/learn")).toBe(true);
     expect(isDestinationCurrent("/member/learn/resources", "/member/learn")).toBe(true);
     expect(isDestinationCurrent("/member/learn/paths", "/member/learn")).toBe(true);
     expect(isDestinationCurrent("/member/learn/intelligence/report-1", "/member/learn")).toBe(true);
+    expect(isDestinationCurrent("/member/learn/answer-bank", "/member/learn")).toBe(false);
   });
 
   it("keeps Profile current on the onboarding routes", () => {
@@ -55,28 +55,12 @@ describe("isDestinationCurrent", () => {
 
   it("exposes the required member destination list", () => {
     expect(memberNavLinks.map(({ label }) => label)).toEqual([
-      "Home",
+      "Workspace",
       "Jobs",
-      "Saved jobs",
       "Employers",
-      "Applications",
-      "CVs",
-      "Cover letters",
-      "Prepare",
-      "Membership",
-      "Profile",
+      "Answer Bank",
+      "Library",
     ]);
-  });
-
-  it("keeps Saved jobs current on its workspace routes", () => {
-    expect(isDestinationCurrent("/member/saved-jobs", "/member/saved-jobs")).toBe(true);
-    expect(isDestinationCurrent("/member", "/member/saved-jobs")).toBe(false);
-    expect(isDestinationCurrent("/member/saved-jobs", "/member")).toBe(false);
-  });
-
-  it("keeps Membership current on the membership routes", () => {
-    expect(isDestinationCurrent("/member/membership", "/member/membership")).toBe(true);
-    expect(isDestinationCurrent("/member/learn", "/member/membership")).toBe(false);
   });
 
   it("exposes Plans in the public navigation", () => {

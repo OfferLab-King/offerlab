@@ -178,7 +178,7 @@ test("member recommendations remain deterministic and stateful", async ({
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL("**/member");
 
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Recommended next actions" })).toBeVisible();
     await expect(page.locator("article.recommendation-card")).toHaveCount(10);
     await expect(page.getByText("4 active applications")).toBeVisible();

@@ -126,27 +126,20 @@ test("the signed-in member navigation is available on the member home", async ({
     await page.waitForURL(/\/member$/);
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link")).toHaveCount(10);
-    await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
+    await expect(navigation.getByRole("link")).toHaveCount(5);
+    await expect(navigation.getByRole("link", { name: "Workspace" })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    for (const label of [
-      "Jobs",
-      "Saved jobs",
-      "Employers",
-      "Applications",
-      "CVs",
-      "Cover letters",
-      "Prepare",
-      "Membership",
-      "Profile",
-    ]) {
+    for (const label of ["Jobs", "Employers", "Answer Bank", "Library"]) {
       await expect(navigation.getByRole("link", { name: label, exact: true })).not.toHaveAttribute(
         "aria-current",
         "page",
       );
     }
+    const accountNav = page.getByRole("navigation", { name: "Account" });
+    await expect(accountNav.getByRole("link", { name: "Membership" })).toBeVisible();
+    await expect(accountNav.getByRole("link", { name: "Profile" })).toBeVisible();
 
     const brand = page.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");

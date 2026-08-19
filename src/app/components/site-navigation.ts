@@ -10,14 +10,14 @@ export const publicNavLinks = [
 ] as const satisfies readonly SiteNavigationLink[];
 
 export const memberNavLinks = [
-  { href: "/member", label: "Home" },
+  { href: "/member", label: "Workspace" },
   { href: "/jobs", label: "Jobs" },
-  { href: "/member/saved-jobs", label: "Saved jobs" },
   { href: "/employers", label: "Employers" },
-  { href: "/member/applications", label: "Applications" },
-  { href: "/member/cvs", label: "CVs" },
-  { href: "/member/cover-letters", label: "Cover letters" },
-  { href: "/member/learn", label: "Prepare" },
+  { href: "/member/learn/answer-bank", label: "Answer Bank" },
+  { href: "/member/learn", label: "Library" },
+] as const satisfies readonly SiteNavigationLink[];
+
+export const memberAccountLinks = [
   { href: "/member/membership", label: "Membership" },
   { href: "/member/onboarding", label: "Profile" },
 ] as const satisfies readonly SiteNavigationLink[];
@@ -25,8 +25,29 @@ export const memberNavLinks = [
 /**
  * Home matches exactly its route; every other destination matches itself and
  * its descendants so nested pages keep the same active link.
+ * Workspace covers its private sub-pages (applications, documents, saved-jobs)
+ * but not the distinct Answer Bank or Library areas.
  */
 export function isDestinationCurrent(pathname: string, href: string): boolean {
-  if (href === "/member") return pathname === href;
+  if (href === "/member") {
+    return (
+      pathname === "/member" ||
+      pathname.startsWith("/member/applications") ||
+      pathname.startsWith("/member/cvs") ||
+      pathname.startsWith("/member/cover-letters") ||
+      pathname.startsWith("/member/documents") ||
+      pathname.startsWith("/member/saved-jobs")
+    );
+  }
+  if (href === "/member/learn") {
+    return (
+      pathname === "/member/learn" ||
+      (pathname.startsWith("/member/learn/") && !pathname.startsWith("/member/learn/answer-bank"))
+    );
+  }
+  if (href === "/member/learn/answer-bank") {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+  if (href === "/") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }

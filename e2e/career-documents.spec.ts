@@ -77,7 +77,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await page.waitForURL(/\/member$/);
 
     await page.goto("/member/cvs");
-    await expect(page.getByRole("heading", { name: "CV workspace" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "CVs" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Application documents" })).toContainText(
       "Cover letters",
     );
@@ -123,7 +123,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await expect(page.locator("main")).not.toContainText(/\b\d{1,3}%\s*(?:ATS|match|interview)/i);
 
     await page.goto("/member/cover-letters");
-    await expect(page.getByRole("heading", { name: "Cover-letter workspace" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cover letters" })).toBeVisible();
     await page.getByLabel("Document name").fill(coverLetterTitle);
     await page.getByLabel("Cover-letter file").setInputFiles({
       buffer: syntheticPdf(
@@ -181,7 +181,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await page.waitForLoadState("networkidle");
     const memberNavigation = page.getByRole("navigation", { name: "Member navigation" });
     await memberNavigation.getByRole("button", { name: /Menu|Close/ }).click();
-    await expect(memberNavigation.getByRole("link")).toHaveCount(10);
+    await expect(memberNavigation.getByRole("link")).toHaveCount(5);
     for (const responsiveUrl of [jobsUrl, cvDetailUrl, coverLetterDetailUrl].filter(
       (url): url is string => url !== null,
     )) {

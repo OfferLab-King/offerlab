@@ -23,19 +23,22 @@ export default async function ApplicationsPage({ searchParams }: Props) {
   const applications = await readApplications(authorization.userId, archived);
 
   return (
-    <main className="applications-shell">
+    <main className="applications-shell workspace-shell">
       <MemberApplicationsHeader />
-      <section className="applications-heading">
+      <section className="workspace-hero compact-hero">
         <div>
           <p className="eyebrow">Application tracker</p>
-          <h1>{archived ? "Archived applications" : "Your applications"}</h1>
-          <p className="intro">
-            Keep each graduate opportunity and its next step in one private place.
-          </p>
+          <h1>{archived ? "Archived" : "Your applications"}</h1>
+          <p className="intro">Keep each opportunity and its next step private.</p>
         </div>
-        <Link className="button-link" href="/member/applications/new">
-          Add application
-        </Link>
+        <div className="workspace-hero-actions">
+          <Link className="button-link" href="/member/applications/new">
+            Add application
+          </Link>
+          <Link className="button-link button-secondary" href="/member">
+            Back to workspace
+          </Link>
+        </div>
       </section>
       <nav aria-label="Application view" className="view-tabs">
         <Link aria-current={!archived ? "page" : undefined} href="/member/applications">
@@ -50,11 +53,11 @@ export default async function ApplicationsPage({ searchParams }: Props) {
       </nav>
       {applications.length === 0 ? (
         <section className="card empty-state">
-          <h2>{archived ? "No archived applications" : "Add your first application"}</h2>
+          <h2>{archived ? "No archived applications" : "No active applications"}</h2>
           <p>
             {archived
               ? "Applications you archive will remain available here."
-              : "Track an application now to receive stage-based preparation recommendations."}
+              : "Add its company, role and stage — no deadline required."}
           </p>
           {!archived && (
             <Link className="button-link" href="/member/applications/new">
@@ -63,33 +66,33 @@ export default async function ApplicationsPage({ searchParams }: Props) {
           )}
         </section>
       ) : (
-        <ul className="application-list">
+        <ul className="workspace-application-list">
           {applications.map((application) => {
             const relevantDate = application.nextStageDeadline ?? application.applicationDeadline;
             return (
-              <li className="application-card" key={application.id}>
-                <div>
-                  <p className="application-company">{application.company}</p>
-                  <h2>{application.role}</h2>
-                  <p className="application-meta">
+              <li className="workspace-application-row" key={application.id}>
+                <div className="workspace-application-meta">
+                  <p className="workspace-application-company">{application.company}</p>
+                  <h3 className="workspace-application-role">
+                    <Link href={`/member/applications/${application.id}`}>{application.role}</Link>
+                  </h3>
+                  <p className="hint">
                     {opportunityTypes[application.opportunityType]} ·{" "}
                     {recruitmentStages[application.stage]}
                     {application.industry ? ` · ${industries[application.industry]}` : ""}
+                    {relevantDate ? ` · ${formatDate(relevantDate)}` : ""}
                   </p>
-                  {relevantDate && (
-                    <p className="application-date">
-                      {application.nextStageDeadline ? "Next-stage deadline" : "Deadline"}:{" "}
-                      {formatDate(relevantDate)}
-                    </p>
-                  )}
                 </div>
-                <a
+                <span className="status-badge workspace-stage-badge">
+                  {recruitmentStages[application.stage]}
+                </span>
+                <Link
                   aria-label={`Open ${application.company} ${application.role}`}
-                  className="button-link button-secondary"
+                  className="workspace-row-action"
                   href={`/member/applications/${application.id}`}
                 >
-                  Open
-                </a>
+                  Open →
+                </Link>
               </li>
             );
           })}
