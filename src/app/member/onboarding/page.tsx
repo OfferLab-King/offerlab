@@ -2,6 +2,7 @@ import { requireMember } from "../../../modules/identity-access/application/auth
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
 import type { OnboardingAnswers } from "../../../modules/member-profile/domain/onboarding";
 import { MemberApplicationsHeader } from "../applications/member-applications-header";
+import { PageHeader } from "../../components/page-header";
 import { OnboardingForm } from "./onboarding-form";
 
 export const runtime = "nodejs";
@@ -26,13 +27,12 @@ export default async function OnboardingPage() {
   return (
     <main className="onboarding-shell">
       <MemberApplicationsHeader />
-      <section className="card onboarding-card">
-        <p className="eyebrow">Member onboarding</p>
-        <h1>{profile?.completedAt ? "Update your profile" : "Tell us where you’re heading"}</h1>
-        <p className="intro">
-          A short, structured profile helps OfferLab understand your graduate recruitment goals.
-          Required answers are marked clearly.
-        </p>
+      <PageHeader
+        eyebrow="Profile"
+        intro="A short, structured profile helps OfferLab understand your goals. Required answers are marked clearly."
+        title={profile?.completedAt ? "Update your profile" : "Tell us where you’re heading"}
+      />
+      <section className="card">
         <OnboardingForm
           initial={profile?.answers ?? empty}
           initiallyCompleted={Boolean(profile?.completedAt)}
