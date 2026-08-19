@@ -1699,34 +1699,48 @@ textarea[aria-invalid="true"] {
 
 /* Question-first Answer Bank */
 
-.simple-answer-bank-header {
-  border-bottom: 1px solid var(--border);
+.simple-answer-bank-header,
+.workspace-hero,
+.applications-heading {
+  align-items: end;
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
   justify-content: space-between;
-  align-items: end;
-  padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(1.25rem, 3vw, 2rem);
+  padding: var(--space-4) 0 var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
-.simple-answer-bank-header > div:first-child {
+.simple-answer-bank-header > div:first-child,
+.workspace-hero > div:first-child,
+.applications-heading > div:first-child {
   min-width: min(100%, 32rem);
   flex: 1;
 }
 
-.simple-answer-bank-header h1 {
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  margin: 0.2rem 0 0.5rem;
-  max-width: 52rem;
+.simple-answer-bank-header h1,
+.workspace-hero h1,
+.applications-heading h1 {
+  color: var(--text);
+  font-size: clamp(2rem, 4vw, 2.85rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1.05;
+  margin: 0.3rem 0 0.4rem;
+  max-width: 52rem;
 }
 
-.simple-answer-bank-header > div:first-child > p:not(.eyebrow) {
-  color: var(--muted);
-  font-size: 1.05rem;
+.simple-answer-bank-header > div:first-child > p:not(.eyebrow),
+.workspace-hero > div:first-child > p:not(.eyebrow),
+.workspace-hero .intro,
+.applications-heading > div:first-child > p:not(.eyebrow),
+.applications-heading .intro {
+  color: #475569;
+  font-size: 1.07rem;
+  line-height: 1.6;
   margin: 0;
   max-width: 48rem;
-  line-height: 1.5;
 }
 
 .answer-bank-progress {
@@ -4076,27 +4090,11 @@ progress {
   margin: 0.5rem 0 0;
 }
 
-.applications-heading,
 .application-card {
   align-items: center;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
-}
-
-.applications-shell h1,
-.onboarding-shell h1 {
-  font-size: clamp(2rem, 4vw, 3rem);
-}
-
-.applications-heading {
-  align-items: flex-end;
-  margin: var(--space-5) 0 var(--space-3);
-}
-
-.applications-heading h1 {
-  margin-bottom: 0.5rem;
-  overflow-wrap: anywhere;
 }
 
 .heading-actions {
