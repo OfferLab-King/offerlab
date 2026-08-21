@@ -1728,6 +1728,7 @@ textarea[aria-invalid="true"] {
   line-height: 1.05;
   margin: 0.3rem 0 0.4rem;
   max-width: 52rem;
+  overflow-wrap: anywhere;
 }
 
 .simple-answer-bank-header > div:first-child > p:not(.eyebrow),
