@@ -150,7 +150,7 @@ test("administrator publishes a path and member progress follows resource comple
     await expect(
       page.getByRole("heading", { name: "Before / after with reasoning" }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Recruitment intelligence" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cycle-dated, moderated" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();

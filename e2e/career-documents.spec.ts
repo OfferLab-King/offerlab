@@ -123,7 +123,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await expect(page.locator("main")).not.toContainText(/\b\d{1,3}%\s*(?:ATS|match|interview)/i);
 
     await page.goto("/member/cover-letters");
-    await expect(page.getByRole("heading", { name: "Cover letters" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Cover letters", exact: true })).toBeVisible();
     await page.getByLabel("Document name").fill(coverLetterTitle);
     await page.getByLabel("Cover-letter file").setInputFiles({
       buffer: syntheticPdf(
