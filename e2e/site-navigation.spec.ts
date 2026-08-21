@@ -68,17 +68,18 @@ test("the signed-out public navigation lists Jobs, Employers and account actions
     "/intelligence",
   );
 
-  const brand = page.getByRole("link", { name: "OfferLab" }).first();
+  const banner = page.getByRole("banner");
+  const brand = banner.getByRole("link", { name: "OfferLab" }).first();
   await expect(brand).toHaveAttribute("href", "/");
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute(
+  await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute(
     "href",
     "/sign-in",
   );
-  await expect(page.getByRole("link", { name: "Create free account" })).toHaveAttribute(
+  await expect(banner.getByRole("link", { name: "Create free account" })).toHaveAttribute(
     "href",
     "/register",
   );
-  await expect(page.getByRole("button", { name: /sign out/i })).toHaveCount(0);
+  await expect(banner.getByRole("button", { name: /sign out/i })).toHaveCount(0);
 });
 
 test("the homepage communicates the connected application journey", async ({ page }) => {
@@ -133,10 +134,11 @@ test("the signed-in member navigation is available on the member home", async ({
     await expect(accountNav.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "/plans");
     await expect(accountNav.getByRole("link", { name: "Profile" })).toBeVisible();
 
-    const brand = page.getByRole("link", { name: "OfferLab" }).first();
+    const banner = page.getByRole("banner");
+    const brand = banner.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -173,10 +175,11 @@ test("signed-in members keep the workspace navigation while visiting /jobs", asy
       "page",
     );
     await expect(navigation.getByRole("link", { name: "Employers", exact: true })).toBeVisible();
-    const brand = page.getByRole("link", { name: "OfferLab" }).first();
+    const banner = page.getByRole("banner");
+    const brand = banner.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -211,8 +214,9 @@ test("signed-in members keep the workspace navigation while visiting /employers"
       "page",
     );
     await expect(navigation.getByRole("link", { name: "Jobs", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    const banner = page.getByRole("banner");
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -268,7 +272,9 @@ test("the responsive menu is keyboard accessible, navigates and avoids overflow"
   const jobsLink = navigation.getByRole("link", { name: "Jobs" });
   await expect(jobsLink).toBeVisible();
   await expect(jobsLink).toBeFocused();
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("banner").getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
