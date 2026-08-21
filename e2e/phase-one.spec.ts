@@ -88,9 +88,8 @@ test("member explores the bounded Phase 1 preparation tools at 390px", async ({
 
     await database`update app."user" set role='member' where id=${ownerId}::uuid`;
     await page.goto("/member/learn");
-    await expect(
-      page.getByRole("heading", { name: "Go beyond generic preparation" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Explore the library" })).toBeVisible();
 
     await page
       .getByRole("navigation", { name: "Prepare" })

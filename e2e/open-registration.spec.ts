@@ -45,7 +45,7 @@ async function confirmationLink(email: string) {
   if (!link) throw new Error("Confirmation link missing");
   return link;
 }
-test("a member registers openly, verifies, onboards and opens Prepare", async ({
+test("a member registers openly, verifies, onboards and opens the Library", async ({
   page,
 }, testInfo) => {
   const db = postgres(databaseUrl, { prepare: false }),
@@ -81,8 +81,8 @@ test("a member registers openly, verifies, onboards and opens Prepare", async ({
     await page.getByRole("button", { name: "Complete onboarding" }).click();
     await page.waitForURL("**/member");
     await openMemberNavigationIfNarrow(page);
-    await page.getByRole("link", { name: "Prepare" }).click();
-    await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
+    await page.getByRole("link", { name: "Library", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
     const state = await db<
       {
         auth_user_id: string;

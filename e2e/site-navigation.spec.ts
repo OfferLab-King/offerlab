@@ -53,7 +53,9 @@ test("the signed-out public navigation lists Jobs, Employers and account actions
 }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Prepare with evidence/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Build the proof behind every application/i }),
+  ).toBeVisible();
 
   const navigation = page.getByRole("navigation", { name: "Public navigation" });
   await expect(navigation.getByRole("link", { name: "Jobs" })).toHaveAttribute("href", "/jobs");
@@ -79,30 +81,20 @@ test("the signed-out public navigation lists Jobs, Employers and account actions
   await expect(page.getByRole("button", { name: /sign out/i })).toHaveCount(0);
 });
 
-test("the homepage communicates the job-discovery journey", async ({ page }) => {
+test("the homepage communicates the connected application journey", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: /Discover a real role, then prepare/i }),
-  ).toBeVisible();
-  await expect(page.getByText(/official public career sources/i)).toBeVisible();
-  await expect(page.getByText(/employer's official website/i)).toBeVisible();
-
-  const searchForm = page.locator('form[action="/jobs"][method="get"]');
-  await expect(searchForm).toBeVisible();
-  await searchForm.getByLabel("Search current roles").fill("graduate analyst");
-  await searchForm.getByRole("button", { name: "Search jobs" }).click();
-  await expect(page).toHaveURL(/\/jobs\?q=graduate\+analyst/);
-  await expect(
-    page.getByRole("heading", { name: /Find your next opportunity/i }).first(),
-  ).toBeVisible();
-
-  await page.goto("/");
-  await expect(page.getByRole("link", { name: /Explore employers by sector/ })).toHaveAttribute(
+  await expect(page.getByRole("heading", { name: "Find the right opportunity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build from real evidence" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tailor without inventing" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Browse current roles/ })).toHaveAttribute(
     "href",
-    "/employers",
+    "/jobs",
   );
-  await expect(page.getByText(/save the role, tailor a truthful CV/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Search live roles" })).toHaveAttribute(
+    "href",
+    "/jobs",
+  );
 });
 
 test("the signed-in member navigation is available on the member home", async ({

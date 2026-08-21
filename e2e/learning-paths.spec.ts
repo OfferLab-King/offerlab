@@ -140,24 +140,20 @@ test("administrator publishes a path and member progress follows resource comple
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByText("Preparation paths · published", { exact: true })).toBeVisible();
     await page.goto("/member/learn");
-    await expect(page.getByRole("heading", { name: "Preparation Hub" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "What are you preparing for?" })).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Find the preparation you need" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Explore the library" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Browse questions" })).toHaveAttribute(
       "href",
       "/member/learn/answer-bank/questions",
     );
     await expect(
-      page.getByRole("heading", { name: "Go beyond generic preparation" }),
+      page.getByRole("heading", { name: "Before / after with reasoning" }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Answer Coach" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Recruitment intelligence" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Continue your preparation" })).toHaveCount(0);
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(
-      page.getByRole("heading", { name: "Build reusable interview preparation" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Library", exact: true })).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

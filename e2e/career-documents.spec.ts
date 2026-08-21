@@ -77,7 +77,7 @@ test("member uploads, versions and reviews career documents and saves a job targ
     await page.waitForURL(/\/member$/);
 
     await page.goto("/member/cvs");
-    await expect(page.getByRole("heading", { name: "CVs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "CVs", exact: true })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Application documents" })).toContainText(
       "Cover letters",
     );
