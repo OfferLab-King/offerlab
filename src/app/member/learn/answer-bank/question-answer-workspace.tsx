@@ -367,9 +367,13 @@ export function QuestionAnswerWorkspace({
           <span className="simple-question-number">{index}</span>
           <span>
             <strong>{question.prompt}</strong>
-            <small>{status}</small>
+            <span className={`simple-status-pill is-${status.toLowerCase().replace(" ", "-")}`}>
+              {status}
+            </span>
           </span>
-          <span aria-hidden="true">{open ? "−" : "+"}</span>
+          <span aria-hidden="true" className="simple-toggle">
+            {open ? "−" : "+"}
+          </span>
         </button>
         {open && (
           <div className="simple-answer-editor">
@@ -400,25 +404,31 @@ export function QuestionAnswerWorkspace({
                   : "Aim for a focused answer you can say naturally."}
               </span>
             </div>
-            {configuration.modelAvailable && (
-              <label className="simple-ai-consent">
-                <input
-                  checked={consents[question.id] === true}
-                  onChange={(event) =>
-                    setConsents((current) => ({
-                      ...current,
-                      [question.id]: event.target.checked,
-                    }))
-                  }
-                  type="checkbox"
-                />
-                <span>
-                  I agree to send this question, answer and any saved supporting evidence to
-                  OfferLab’s AI provider for this review. I have removed confidential or identifying
-                  information.
-                  <small>Your answer is never changed automatically.</small>
-                </span>
-              </label>
+            {configuration.modelAvailable ? (
+              <details className="simple-ai-consent-details">
+                <summary>Use AI review — requires consent</summary>
+                <label className="simple-ai-consent">
+                  <input
+                    checked={consents[question.id] === true}
+                    onChange={(event) =>
+                      setConsents((current) => ({
+                        ...current,
+                        [question.id]: event.target.checked,
+                      }))
+                    }
+                    type="checkbox"
+                  />
+                  <span>
+                    I agree to send this question, answer and any supporting evidence to OfferLab’s
+                    provider for this review. I have removed confidential information.
+                    <small>Nothing is changed without your explicit accept.</small>
+                  </span>
+                </label>
+              </details>
+            ) : (
+              <p className="hint">
+                AI review is not configured in this environment — local checks still run.
+              </p>
             )}
             <div className="simple-answer-actions">
               <button
@@ -676,15 +686,27 @@ export function QuestionAnswerWorkspace({
   return (
     <>
       <header className="simple-answer-bank-header">
-        <p className="eyebrow">Answer Bank</p>
-        <h1>Prepare your interview answers</h1>
-        <p>
-          Choose a question, write your answer and improve it. Nothing is changed unless you accept
-          it.
-        </p>
-        <strong>
-          {prepared} of {questions.length} prepared
-        </strong>
+        <div>
+          <p className="eyebrow">Answer Bank — private, owner-scoped</p>
+          <h1>Prepare your interview answers</h1>
+          <p>
+            Choose a question, write in your own words, then review. Nothing changes unless you
+            accept it.
+          </p>
+        </div>
+        <div className="answer-bank-progress">
+          <div className="answer-bank-progress-bar">
+            <progress
+              max={questions.length}
+              value={prepared}
+              aria-label={`${prepared} of ${questions.length} prepared`}
+            />
+          </div>
+          <span>
+            {prepared} of {questions.length} prepared ·{" "}
+            {Math.max(0, usage.monthlyLimit - usage.monthlyUsed)} reviews left this month
+          </span>
+        </div>
       </header>
       <section className="simple-question-section" aria-labelledby="start-questions">
         <div>

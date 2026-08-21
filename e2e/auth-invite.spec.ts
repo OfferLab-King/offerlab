@@ -271,7 +271,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await page.getByLabel("Target companies").fill(" Example Plc, example plc\nAcme UK ");
     await page.getByRole("button", { name: "Complete onboarding" }).click();
     await page.waitForURL("**/member");
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Add your first application" })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -362,7 +362,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
       },
     ]);
     const refreshedResponse = await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     expect(refreshedResponse?.headers()["cache-control"]).not.toContain("public");
     expect(refreshedResponse?.headers()["vercel-cdn-cache-control"]).toContain("no-store");
     const rotatedCookies = (await page.context().cookies(page.url())).filter(
@@ -390,7 +390,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     `;
     await database`update app."user" set role = 'administrator' where id = ${internalUserId}::uuid`;
     await page.goto("/member");
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     await page.goto("/admin");
     await expect(
       page.getByRole("heading", { name: "What would you like to manage?" }),
@@ -416,7 +416,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     await signOutAndVerify(page);
 
     await page.getByRole("link", { name: "Forgot your password?" }).click();
@@ -451,7 +451,7 @@ test("open registration authentication and recovery journey", async ({ page }, t
     await page.getByLabel("Email").fill(email);
     await page.getByLabel("Password").fill(newPassword);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByRole("heading", { name: "Your next actions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your preparation workspace" })).toBeVisible();
     await signOutAndVerify(page);
 
     await page.goto("/register");

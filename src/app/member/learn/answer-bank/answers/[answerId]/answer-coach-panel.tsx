@@ -145,7 +145,7 @@ export function AnswerCoachPanel({
       <header className="coach-toolbar">
         <div>
           <p className="eyebrow">
-            Answer Coach · {configuration.modelAvailable ? "AI review pilot" : "local rubric pilot"}
+            Answer Coach · {configuration.modelAvailable ? "AI review" : "local rubric"}
           </p>
           <h2 id="answer-coach-title">Review mode</h2>
         </div>
@@ -219,7 +219,7 @@ export function AnswerCoachPanel({
         <p>
           This is automated coaching, not a human review. Reviews are saved; your answer is never
           edited automatically. {usage.monthlyLimit - usage.monthlyUsed} of {usage.monthlyLimit}{" "}
-          pilot reviews remain this month.
+          reviews remain this month.
         </p>
       </div>
       {error && <p role="alert">{error}</p>}

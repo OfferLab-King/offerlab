@@ -1,8 +1,9 @@
-import type { TransactionSql } from "postgres";
+import type { Sql, TransactionSql } from "postgres";
 
 import { jsonParameter } from "../../job-catalog/infrastructure/crawler-database";
 import { platformLabel, sourceTypeForPlatform, type AtsPlatform } from "../domain/ats-fingerprint";
 import { slugifyEmployerName } from "../domain/identity-match";
+import type { SourceAutomationPlan } from "../domain/source-automation";
 
 export type DiscoveryCandidate = Readonly<{
   candidateId: string;
@@ -205,6 +206,8 @@ export async function markCandidateVerified(
   database: TransactionSql,
   candidateId: string,
   evidenceNote: string,
+  verificationStatus = "verified",
+  candidateEndpoint: string | null = null,
 ): Promise<"updated" | "unchanged"> {
   const existing = await database<{ atsVerificationStatus: string | null; status: string }[]>`
     select ats_verification_status as "atsVerificationStatus", status
@@ -213,16 +216,19 @@ export async function markCandidateVerified(
   `;
   const row = existing[0];
   if (!row) return "unchanged";
-  if (row.atsVerificationStatus === "verified" && row.status === "verified") return "unchanged";
+  if (row.atsVerificationStatus === verificationStatus && row.status === "verified") {
+    return "unchanged";
+  }
   await database`
     update app.job_source_candidate
-    set ats_verification_status = 'verified',
+    set ats_verification_status = ${verificationStatus},
         status = case when status = 'promoted' then status else 'verified' end,
         verified_at = now(),
         evidence = case
           when evidence is null or evidence = '' then ${evidenceNote}
           else evidence || E'\\n' || ${evidenceNote}
         end,
+        candidate_endpoint = coalesce(${candidateEndpoint}, candidate_endpoint),
         updated_at = now()
     where id = ${candidateId}::uuid
   `;
@@ -233,9 +239,12 @@ export async function findJobSourceByCompanyAndUrl(
   database: TransactionSql,
   companyId: string,
   url: string,
-): Promise<{ id: string; slug: string } | null> {
-  const rows = await database<{ id: string; slug: string }[]>`
-    select id, slug from app.job_source
+): Promise<{ id: string; slug: string; status: string; manuallyOverridden: boolean } | null> {
+  const rows = await database<
+    { id: string; slug: string; status: string; manuallyOverridden: boolean }[]
+  >`
+    select id, slug, status, manually_overridden as "manuallyOverridden"
+    from app.job_source
     where company_id = ${companyId}::uuid
       and (lower(careers_url) = lower(${url}) or lower(crawl_endpoint_url) = lower(${url}))
     limit 1
@@ -301,6 +310,7 @@ export async function listEmployersMissingCandidates(
 export type DiscoveryCandidateWrite = Readonly<{
   companyId: string;
   url: string;
+  channel?: "early_careers" | "professional" | "apprenticeships" | "general" | "other";
   platformHint: string | null;
   status: string;
   discoveryMethod: string;
@@ -314,9 +324,9 @@ export async function upsertDiscoveryCandidate(
 ): Promise<"inserted" | "unchanged"> {
   const rows = await database<{ id: string }[]>`
     insert into app.job_source_candidate (
-      company_id, candidate_url, platform_hint, status, discovery_method, evidence, notes
+      company_id, candidate_url, channel, platform_hint, status, discovery_method, evidence, notes
     ) values (
-      ${write.companyId}::uuid, ${write.url}, ${write.platformHint}, ${write.status},
+      ${write.companyId}::uuid, ${write.url}, ${write.channel ?? "general"}, ${write.platformHint}, ${write.status},
       ${write.discoveryMethod}, ${write.evidence.join("\n")}, ${write.notes}
     )
     on conflict (company_id, candidate_url) do nothing
@@ -325,12 +335,130 @@ export async function upsertDiscoveryCandidate(
   return rows.length === 1 ? "inserted" : "unchanged";
 }
 
+export type SponsorEmployerDiscoveryTarget = Readonly<{
+  companyId: string;
+  companyName: string;
+  legalName: string;
+  townCity: string | null;
+  websiteUrl: string | null;
+}>;
+
+export async function countSponsorEmployersMissingWebPresence(
+  database: Sql,
+  discoveryVersion: string,
+  provider: "brave_search" | "dns_https" = "brave_search",
+): Promise<number> {
+  const rows = await database<{ count: number }[]>`
+    select count(distinct c.id)::int as count
+    from app.company c
+    join app.employer_sponsor_entity se on se.company_id = c.id
+      and se.active_in_snapshot = true
+      and se.source_snapshot_date = (select max(source_snapshot_date) from app.employer_sponsor_entity)
+    where not exists (select 1 from app.job_source_candidate jc where jc.company_id = c.id)
+      and not exists (select 1 from app.job_source js where js.company_id = c.id)
+      and not exists (
+        select 1 from app.employer_web_discovery_attempt wa
+        where wa.company_id = c.id and wa.discovery_version = ${discoveryVersion}
+          and wa.provider = ${provider} and wa.status in ('matched', 'no_safe_match')
+      )
+  `;
+  return rows[0]?.count ?? 0;
+}
+
+export async function listSponsorEmployersMissingWebPresence(
+  database: Sql,
+  filters: Readonly<{
+    limit: number;
+    discoveryVersion: string;
+    provider?: "brave_search" | "dns_https";
+  }>,
+): Promise<SponsorEmployerDiscoveryTarget[]> {
+  return database<SponsorEmployerDiscoveryTarget[]>`
+    with targets as (
+      select c.id, c.name, c.website_url,
+        min(se.legal_name) as legal_name, min(se.town_city) as town_city,
+        coalesce(max(ers.crawler_priority_score), 0) as priority
+      from app.company c
+      join app.employer_sponsor_entity se on se.company_id = c.id
+        and se.active_in_snapshot = true
+        and se.source_snapshot_date = (select max(source_snapshot_date) from app.employer_sponsor_entity)
+      left join app.employer_research_snapshot ers on ers.company_id = c.id
+      where not exists (select 1 from app.job_source_candidate jc where jc.company_id = c.id)
+        and not exists (select 1 from app.job_source js where js.company_id = c.id)
+        and not exists (
+          select 1 from app.employer_web_discovery_attempt wa
+          where wa.company_id = c.id and wa.discovery_version = ${filters.discoveryVersion}
+            and wa.provider = ${filters.provider ?? "brave_search"}
+            and wa.status in ('matched', 'no_safe_match')
+        )
+      group by c.id, c.name, c.website_url
+    )
+    select id as "companyId", name as "companyName", legal_name as "legalName",
+      town_city as "townCity", website_url as "websiteUrl"
+    from targets
+    order by priority desc, legal_name asc
+    limit ${filters.limit}
+  `;
+}
+
+export async function fillOfficialCompanyWebsite(
+  database: Sql,
+  companyId: string,
+  websiteUrl: string,
+): Promise<"updated" | "unchanged"> {
+  const rows = await database<{ id: string }[]>`
+    update app.company set website_url = ${websiteUrl}, updated_at = now()
+    where id = ${companyId}::uuid and website_url is null
+    returning id
+  `;
+  return rows.length === 1 ? "updated" : "unchanged";
+}
+
+export type EmployerWebDiscoveryAttemptWrite = Readonly<{
+  companyId: string;
+  discoveryVersion: string;
+  provider?: "brave_search" | "dns_https";
+  status: "matched" | "no_safe_match" | "failed";
+  resultCount: number;
+  safeCandidateCount: number;
+}>;
+
+export async function recordEmployerWebDiscoveryAttempts(
+  database: Sql,
+  inputs: readonly EmployerWebDiscoveryAttemptWrite[],
+): Promise<void> {
+  if (inputs.length === 0) return;
+  const rows = inputs.map((input) => ({
+    checked_at: new Date(),
+    company_id: input.companyId,
+    discovery_version: input.discoveryVersion,
+    provider: input.provider ?? "brave_search",
+    result_count: input.resultCount,
+    safe_candidate_count: input.safeCandidateCount,
+    status: input.status,
+  }));
+  await database`
+    insert into app.employer_web_discovery_attempt ${database(rows)}
+    on conflict (company_id, discovery_version, provider) do update set
+      status = excluded.status, result_count = excluded.result_count,
+      safe_candidate_count = excluded.safe_candidate_count, checked_at = excluded.checked_at
+  `;
+}
+
+export async function recordEmployerWebDiscoveryAttempt(
+  database: Sql,
+  input: EmployerWebDiscoveryAttemptWrite,
+): Promise<void> {
+  await recordEmployerWebDiscoveryAttempts(database, [input]);
+}
+
 export type PromotionWrite = Readonly<{
   candidateId: string;
   companyId: string;
   companyName: string;
   candidateUrl: string;
   platform: AtsPlatform;
+  automation: SourceAutomationPlan;
   channel: string;
   notes: string;
 }>;
@@ -338,13 +466,42 @@ export type PromotionWrite = Readonly<{
 export async function promoteCandidateToSource(
   database: TransactionSql,
   write: PromotionWrite,
-): Promise<"created" | "already_present" | "skipped"> {
+): Promise<"created" | "activated" | "already_present" | "skipped"> {
   const existing = await findJobSourceByCompanyAndUrl(
     database,
     write.companyId,
     write.candidateUrl,
   );
-  if (existing) return "already_present";
+  if (existing) {
+    if (
+      existing.status === "active" ||
+      existing.status === "archived" ||
+      existing.manuallyOverridden
+    ) {
+      return "already_present";
+    }
+    const updated = await database<{ id: string }[]>`
+      update app.job_source
+      set source_type = ${write.automation.sourceType},
+          ats_provider = ${platformLabel(write.platform)},
+          configuration = ${jsonParameter(database, write.automation.configuration)},
+          crawl_endpoint_url = ${write.automation.crawlEndpointUrl},
+          status = 'active', automatic_pause_reason = null,
+          consecutive_failures = 0, run_requested_at = now(), next_check_at = now(),
+          verification_date = now()::date,
+          verification_evidence_url = ${write.automation.probe.url},
+          notes = ${write.notes.slice(0, 2000)}, updated_at = now()
+      where id = ${existing.id}::uuid
+      returning id
+    `;
+    if (updated.length === 0) return "already_present";
+    await database`
+      update app.job_source_candidate
+      set status = 'promoted', verified_at = now(), updated_at = now()
+      where id = ${write.candidateId}::uuid
+    `;
+    return "activated";
+  }
 
   const candidate = await database<{ id: string }[]>`
     select id from app.job_source_candidate
@@ -358,14 +515,15 @@ export async function promoteCandidateToSource(
   const sourceId = await database<{ id: string }[]>`
     insert into app.job_source (
       company_id, slug, name, channel, careers_url, ats_provider, source_type,
-      status, configuration, notes, verification_date, verification_evidence_url,
-      manually_overridden, needs_browser
+      status, configuration, crawl_endpoint_url, notes, verification_date,
+      verification_evidence_url, manually_overridden, needs_browser,
+      run_requested_at, next_check_at
     ) values (
       ${write.companyId}::uuid, ${slug}, ${`${platformLabel(write.platform)} careers`},
       ${write.channel}, ${write.candidateUrl}, ${platformLabel(write.platform)},
-      ${sourceType}, 'paused', ${jsonParameter(database, {})},
-      ${write.notes.slice(0, 2000)}, now()::date, ${write.candidateUrl},
-      false, false
+      ${sourceType}, 'active', ${jsonParameter(database, write.automation.configuration)},
+      ${write.automation.crawlEndpointUrl}, ${write.notes.slice(0, 2000)}, now()::date,
+      ${write.candidateUrl}, false, false, now(), now()
     )
     on conflict (company_id, slug) do nothing
     returning id

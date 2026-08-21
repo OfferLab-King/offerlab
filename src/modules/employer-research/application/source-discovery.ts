@@ -8,6 +8,7 @@ import {
   type UrlFingerprint,
 } from "../domain/ats-fingerprint";
 import { planHomepageCareersUrl } from "../domain/careers-url-discovery";
+import { deriveSourceAutomationPlan } from "../domain/source-automation";
 import type {
   DiscoveryCandidate,
   EmployerMissingCandidate,
@@ -249,6 +250,7 @@ export type PromotionPlan = Readonly<{
   companyName: string;
   url: string;
   platform: AtsPlatform;
+  automation: ReturnType<typeof deriveSourceAutomationPlan>;
   channel: string;
   promotable: boolean;
   reason: string;
@@ -256,8 +258,12 @@ export type PromotionPlan = Readonly<{
 
 export function planCandidatePromotion(candidate: DiscoveryCandidate): PromotionPlan {
   const fingerprint = fingerprintCareersUrl(candidate.candidateUrl);
-  const verified = candidate.status === "verified" || candidate.verifiedAt !== null;
+  const verified = candidate.atsVerificationStatus === "typed_api_verified";
   const platform = fingerprint.platform;
+  const automation = deriveSourceAutomationPlan(
+    candidate.candidateUrl,
+    candidate.candidateEndpoint,
+  );
   if (!verified) {
     return {
       candidateId: candidate.candidateId,
@@ -265,6 +271,7 @@ export function planCandidatePromotion(candidate: DiscoveryCandidate): Promotion
       companyName: candidate.companyName,
       url: candidate.candidateUrl,
       platform,
+      automation,
       channel: candidate.channel,
       promotable: false,
       reason: "candidate is not verified",
@@ -277,9 +284,23 @@ export function planCandidatePromotion(candidate: DiscoveryCandidate): Promotion
       companyName: candidate.companyName,
       url: candidate.candidateUrl,
       platform,
+      automation,
       channel: candidate.channel,
       promotable: false,
       reason: `platform fingerprint not high confidence (${platform})`,
+    };
+  }
+  if (!automation) {
+    return {
+      candidateId: candidate.candidateId,
+      companyId: candidate.companyId,
+      companyName: candidate.companyName,
+      url: candidate.candidateUrl,
+      platform,
+      automation,
+      channel: candidate.channel,
+      promotable: false,
+      reason: "typed connector configuration could not be derived",
     };
   }
   return {
@@ -288,6 +309,7 @@ export function planCandidatePromotion(candidate: DiscoveryCandidate): Promotion
     companyName: candidate.companyName,
     url: candidate.candidateUrl,
     platform,
+    automation,
     channel: candidate.channel,
     promotable: true,
     reason: `verified ${platformLabel(platform)} candidate`,
@@ -309,10 +331,12 @@ export async function applyCandidatePromotions(
 ): Promise<{
   planned: number;
   created: number;
+  activated: number;
   alreadyPresent: number;
   skipped: number;
 }> {
   let created = 0;
+  let activated = 0;
   let alreadyPresent = 0;
   let skipped = 0;
   for (const plan of plans) {
@@ -327,22 +351,30 @@ export async function applyCandidatePromotions(
       companyName: plan.companyName,
       candidateUrl: plan.url,
       platform: plan.platform,
+      automation: plan.automation!,
       channel: plan.channel,
       notes: `Promoted from source discovery; verified ${platformLabel(plan.platform)} candidate (${plan.reason}).`,
     };
     const outcome = await promoteCandidateToSource(database, write);
     if (outcome === "created") created += 1;
+    else if (outcome === "activated") activated += 1;
     else if (outcome === "already_present") alreadyPresent += 1;
     else skipped += 1;
   }
-  return { planned: plans.length, created, alreadyPresent, skipped };
+  return { planned: plans.length, created, activated, alreadyPresent, skipped };
 }
 
 export function formatDiscoveryReport(
   fingerprints: readonly CandidateFingerprintPlan[],
   fingerprintOutcome: { planned: number; applied: number; unchanged: number },
   promotions: readonly PromotionPlan[],
-  promotionOutcome: { planned: number; created: number; alreadyPresent: number; skipped: number },
+  promotionOutcome: {
+    planned: number;
+    created: number;
+    activated: number;
+    alreadyPresent: number;
+    skipped: number;
+  },
   dryRun: boolean,
 ): string {
   const platformCounts = new Map<string, number>();
@@ -358,7 +390,7 @@ export function formatDiscoveryReport(
       .sort((a, b) => b[1] - a[1])
       .map(([platform, count]) => `  ${platform}: ${count}`),
     `fingerprint changes: ${fingerprintOutcome.applied} applied / ${fingerprintOutcome.unchanged} unchanged / ${fingerprintOutcome.planned} planned`,
-    `promotions: ${promotionOutcome.created} created / ${promotionOutcome.alreadyPresent} already present / ${promotionOutcome.skipped} skipped / ${promotionOutcome.planned} planned`,
+    `promotions: ${promotionOutcome.created} created / ${promotionOutcome.activated} repaired / ${promotionOutcome.alreadyPresent} preserved / ${promotionOutcome.skipped} review required / ${promotionOutcome.planned} planned`,
   ];
   const changed = fingerprints.filter((plan) => plan.changed);
   if (changed.length > 0) {
@@ -372,7 +404,7 @@ export function formatDiscoveryReport(
   }
   const promotable = promotions.filter((plan) => plan.promotable);
   if (promotable.length > 0) {
-    lines.push("", "promotable candidates (create paused sources):");
+    lines.push("", "automatable candidates (activate and queue first crawl):");
     for (const plan of promotable) {
       lines.push(`  ${plan.companyName}: ${platformLabel(plan.platform)} @ ${plan.url}`);
     }

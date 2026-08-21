@@ -8,7 +8,6 @@ import { requireMember } from "../../../../modules/identity-access/application/a
 import { readMembershipSummary } from "../../../../modules/membership/application/membership";
 import { isActiveMembership } from "../../../../modules/membership/domain/membership";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { CareerDocumentNavigation } from "../../career-document-navigation";
 import { CareerDocumentWorkspace } from "../../career-document-workspace";
 
@@ -42,7 +41,6 @@ export default async function CvWorkspacePage({
   if (!workspace || workspace.document.kind !== "cv") notFound();
   return (
     <main className="applications-shell career-document-detail-shell">
-      <MemberApplicationsHeader />
       <CareerDocumentNavigation active="cv" />
       <section className="applications-heading">
         <div>

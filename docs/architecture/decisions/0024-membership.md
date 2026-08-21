@@ -1,6 +1,6 @@
 # ADR 0024: Paid membership entitlements
 
-**Status:** Accepted (founder direction 2026-08-15)
+**Status:** Accepted; payment boundary amended by ADR 0025 (founder direction 2026-08-20)
 **Date:** 2026-08-15
 
 ## Context
@@ -34,8 +34,10 @@ clearly labelled free/premium split:
   (£9/month, £39/recruitment season) and surfaced on `/plans`.
 - **Activation paths:** privileged CLI (`pnpm membership:grant`, migration
   role, mirroring `admin:promote`), owner self-serve test activation in
-  local development (`source = test`), and future provider-backed checkout.
-- **UI:** public `/plans`, member `/member/membership` management, an
+  local development (`source = test`), and the bounded Stripe-hosted production
+  checkout approved later in ADR 0025.
+- **UI:** one `/plans` surface for public pricing and signed-in member management; legacy
+  `/member/membership` links redirect to it. An
   administrator read-only membership screen, and honest upgrade prompts at
   the review capacity point in the career-document workspace.
 
@@ -47,9 +49,11 @@ clearly labelled free/premium split:
 - RLS isolation is tested with two-user horizontal-access tests; the
   owner-scoped application API never accepts another member's id from
   routes (session-derived only).
-- The payment provider (Stripe or otherwise), pricing records, refunds,
-  tax/accounting boundaries and operational ownership remain a recorded
-  open decision; production checkout is not wired and activation is
-  honestly labelled as founder-managed until that decision is recorded.
+- ADR 0025 resolves the provider, offer, checkout, renewal, cancellation and
+  provisioning boundary for the two approved membership offers. Other payments
+  remain outside this ADR.
 - Pricing constants are product constants, not environment configuration:
   changing them is a product decision with a single edit point.
+- Membership does not alter Group Mock waitlist order. Any interface or metadata
+  claiming priority queue placement is incorrect until a later founder decision
+  explicitly changes that policy.

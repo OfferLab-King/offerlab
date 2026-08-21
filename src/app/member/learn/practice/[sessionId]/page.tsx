@@ -3,7 +3,6 @@ import Link from "next/link";
 import { MarkdownContent } from "../../../../components/resource-content";
 import { requireMember } from "../../../../../modules/identity-access/application/authorization";
 import { readGroupMockSession } from "../../../../../modules/practice-services/application/group-mock";
-import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
 import { LearnNavigation } from "../../learn-navigation";
 
 export const runtime = "nodejs";
@@ -20,7 +19,6 @@ export default async function GroupMockSessionPage({
   if (!result) {
     return (
       <main className="applications-shell">
-        <MemberApplicationsHeader />
         <LearnNavigation active="practice" />
         <section className="card empty-state">
           <h2>This session needs a booking</h2>
@@ -42,7 +40,6 @@ export default async function GroupMockSessionPage({
     (session.startsAt ? now.getTime() >= new Date(session.startsAt).getTime() - 15 * 60_000 : true);
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="practice" />
       <section className="applications-heading group-mock-detail-heading">
         <div>

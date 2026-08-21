@@ -77,356 +77,360 @@ export default async function JobDetailPage({ params }: { params: JobDetailParam
   const structuredData = indexable ? buildJobStructuredData(job, now, base) : null;
 
   return (
-    <main className="public-jobs-page job-detail-page">
+    <>
       <SiteHeader />
+      <main className="public-jobs-page job-detail-page">
+        {structuredData && (
+          <script
+            dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}
+            type="application/ld+json"
+          />
+        )}
 
-      {structuredData && (
-        <script
-          dangerouslySetInnerHTML={{ __html: escapeJsonLd(structuredData) }}
-          type="application/ld+json"
-        />
-      )}
+        <article className="job-detail">
+          <nav aria-label="Breadcrumb" className="seo-breadcrumb">
+            <ol>
+              <li>
+                <Link href="/jobs">Jobs</Link>
+              </li>
+              <li aria-current="page">{job.normalized_title ?? job.title}</li>
+            </ol>
+          </nav>
 
-      <article className="job-detail">
-        <nav aria-label="Breadcrumb" className="seo-breadcrumb">
-          <ol>
-            <li>
-              <Link href="/jobs">Jobs</Link>
-            </li>
-            <li aria-current="page">{job.normalized_title ?? job.title}</li>
-          </ol>
-        </nav>
+          <header className="job-detail-header">
+            <div className="job-detail-heading-row">
+              <EmployerMark companyName={job.company_name} logoUrl={job.company_logo_url} />
+              <div className="job-detail-heading-text">
+                <p className="eyebrow">Source: {job.company_name} Careers</p>
+                <h1>{job.normalized_title ?? job.title}</h1>
+              </div>
+            </div>
+            <p className="job-detail-location">{job.location_text || "Location not specified"}</p>
+            <div className="job-detail-actions">
+              <ApplyTrackingLink applicationUrl={job.application_url} />
+              <SaveJobButton initiallySaved={memberSaved} jobId={job.id} />
+            </div>
+            <p className="job-detail-apply-note">
+              Application is completed on the employer&apos;s official website.
+            </p>
+            <p className="job-detail-employer-profile-link">
+              <Link href={`/employers/${job.company_slug}` as never}>
+                {job.company_name} employer profile on OfferLab
+              </Link>
+            </p>
+          </header>
 
-        <header className="job-detail-header">
-          <div className="job-detail-heading-row">
-            <EmployerMark companyName={job.company_name} logoUrl={job.company_logo_url} />
-            <div className="job-detail-heading-text">
-              <p className="eyebrow">Source: {job.company_name} Careers</p>
-              <h1>{job.normalized_title ?? job.title}</h1>
-            </div>
-          </div>
-          <p className="job-detail-location">{job.location_text || "Location not specified"}</p>
-          <div className="job-detail-actions">
-            <ApplyTrackingLink applicationUrl={job.application_url} />
-            <SaveJobButton initiallySaved={memberSaved} jobId={job.id} />
-          </div>
-          <p className="job-detail-apply-note">
-            Application is completed on the employer&apos;s official website.
-          </p>
-          <p className="job-detail-employer-profile-link">
-            <Link href={`/employers/${job.company_slug}` as never}>
-              {job.company_name} employer profile on OfferLab
-            </Link>
-          </p>
-        </header>
-
-        <dl className="job-detail-facts">
-          {levelLabel && (
-            <div>
-              <dt>Career level</dt>
-              <dd>{levelLabel}</dd>
-            </div>
-          )}
-          {functionLabel && (
-            <div>
-              <dt>Job function</dt>
-              <dd>
-                {functionLabel}
-                {subfunctionLabel ? ` · ${subfunctionLabel}` : ""}
-              </dd>
-            </div>
-          )}
-          {job.opportunity_type && job.opportunity_type !== "unknown" && (
-            <div>
-              <dt>Opportunity type</dt>
-              <dd>
-                {opportunityTypeLabels[
-                  job.opportunity_type as keyof typeof opportunityTypeLabels
-                ] ?? job.opportunity_type}
-              </dd>
-            </div>
-          )}
-          {sectorLabel && job.sector_key && (
-            <div>
-              <dt>Sector</dt>
-              <dd>
-                <Link
-                  href={`/employers?sector=${job.sector_key}#sector-${job.sector_key}` as never}
-                >
-                  {sectorLabel}
-                </Link>
-              </dd>
-            </div>
-          )}
-          {subsectorLabel && job.sector_key && (
-            <div>
-              <dt>Subsector</dt>
-              <dd>
-                <Link
-                  href={
-                    `/employers?sector=${job.sector_key}&subsector=${job.subsector_key}#sector-${job.sector_key}` as never
-                  }
-                >
-                  {subsectorLabel}
-                </Link>
-              </dd>
-            </div>
-          )}
-          {job.employment_type && (
-            <div>
-              <dt>Employment type</dt>
-              <dd>
-                {employmentTypeLabels[job.employment_type as keyof typeof employmentTypeLabels] ??
-                  job.employment_type}
-              </dd>
-            </div>
-          )}
-          {job.remote_type && job.remote_type !== "unknown" && (
-            <div>
-              <dt>Work mode</dt>
-              <dd>
-                {remoteTypeLabels[job.remote_type as keyof typeof remoteTypeLabels] ??
-                  job.remote_type}
-              </dd>
-            </div>
-          )}
-          {salary && (
-            <div>
-              <dt>Salary</dt>
-              <dd>{salary}</dd>
-            </div>
-          )}
-          {job.application_deadline && (
-            <div>
-              <dt>Application deadline</dt>
-              <dd className={deadlinePassed ? "job-deadline-passed" : undefined}>
-                {deadlinePassed ? "Closed" : formatDate(job.application_deadline)}
-              </dd>
-            </div>
-          )}
-          {job.posted_at && (
-            <div>
-              <dt>Posted</dt>
-              <dd>{formatDate(job.posted_at)}</dd>
-            </div>
-          )}
-          <div>
-            <dt>First seen</dt>
-            <dd>{formatDate(job.first_seen_at)}</dd>
-          </div>
-          <div>
-            <dt>Last checked</dt>
-            <dd>{formatRelativeTime(job.last_seen_at, now)}</dd>
-          </div>
-          <div>
-            <dt>Freshness</dt>
-            <dd>
-              {fresh
-                ? "Verified from employer careers site today"
-                : "Source check is older than 24 hours"}
-            </dd>
-          </div>
-        </dl>
-
-        <section className="job-detail-section job-detail-employer" aria-labelledby="job-employer">
-          <h2 id="job-employer">About {job.company_name}</h2>
-          <dl className="job-detail-employer-facts">
-            {industryLabel && (
+          <dl className="job-detail-facts">
+            {levelLabel && (
               <div>
-                <dt>Industry</dt>
-                <dd>{industryLabel}</dd>
+                <dt>Career level</dt>
+                <dd>{levelLabel}</dd>
               </div>
             )}
-            {job.company_employee_band && (
+            {functionLabel && (
               <div>
-                <dt>Company size</dt>
-                <dd>{job.company_employee_band}</dd>
-              </div>
-            )}
-            {job.company_ownership_type && (
-              <div>
-                <dt>Ownership</dt>
-                <dd>{job.company_ownership_type}</dd>
-              </div>
-            )}
-            {job.company_has_sponsor && (
-              <div>
-                <dt>UK licensed sponsor</dt>
+                <dt>Job function</dt>
                 <dd>
-                  On the Home Office sponsor register
-                  {job.company_sponsor_snapshot_date
-                    ? ` · ${job.company_sponsor_snapshot_date.toISOString().slice(0, 10)}`
-                    : ""}
+                  {functionLabel}
+                  {subfunctionLabel ? ` · ${subfunctionLabel}` : ""}
                 </dd>
               </div>
             )}
+            {job.opportunity_type && job.opportunity_type !== "unknown" && (
+              <div>
+                <dt>Opportunity type</dt>
+                <dd>
+                  {opportunityTypeLabels[
+                    job.opportunity_type as keyof typeof opportunityTypeLabels
+                  ] ?? job.opportunity_type}
+                </dd>
+              </div>
+            )}
+            {sectorLabel && job.sector_key && (
+              <div>
+                <dt>Sector</dt>
+                <dd>
+                  <Link
+                    href={`/employers?sector=${job.sector_key}#sector-${job.sector_key}` as never}
+                  >
+                    {sectorLabel}
+                  </Link>
+                </dd>
+              </div>
+            )}
+            {subsectorLabel && job.sector_key && (
+              <div>
+                <dt>Subsector</dt>
+                <dd>
+                  <Link
+                    href={
+                      `/employers?sector=${job.sector_key}&subsector=${job.subsector_key}#sector-${job.sector_key}` as never
+                    }
+                  >
+                    {subsectorLabel}
+                  </Link>
+                </dd>
+              </div>
+            )}
+            {job.employment_type && (
+              <div>
+                <dt>Employment type</dt>
+                <dd>
+                  {employmentTypeLabels[job.employment_type as keyof typeof employmentTypeLabels] ??
+                    job.employment_type}
+                </dd>
+              </div>
+            )}
+            {job.remote_type && job.remote_type !== "unknown" && (
+              <div>
+                <dt>Work mode</dt>
+                <dd>
+                  {remoteTypeLabels[job.remote_type as keyof typeof remoteTypeLabels] ??
+                    job.remote_type}
+                </dd>
+              </div>
+            )}
+            {salary && (
+              <div>
+                <dt>Salary</dt>
+                <dd>{salary}</dd>
+              </div>
+            )}
+            {job.application_deadline && (
+              <div>
+                <dt>Application deadline</dt>
+                <dd className={deadlinePassed ? "job-deadline-passed" : undefined}>
+                  {deadlinePassed ? "Closed" : formatDate(job.application_deadline)}
+                </dd>
+              </div>
+            )}
+            {job.posted_at && (
+              <div>
+                <dt>Posted</dt>
+                <dd>{formatDate(job.posted_at)}</dd>
+              </div>
+            )}
+            <div>
+              <dt>First seen</dt>
+              <dd>{formatDate(job.first_seen_at)}</dd>
+            </div>
+            <div>
+              <dt>Last checked</dt>
+              <dd>{formatRelativeTime(job.last_seen_at, now)}</dd>
+            </div>
+            <div>
+              <dt>Freshness</dt>
+              <dd>
+                {fresh
+                  ? "Verified from employer careers site today"
+                  : "Source check is older than 24 hours"}
+              </dd>
+            </div>
           </dl>
-          <p className="job-detail-employer-link">
-            <Link href={`/employers/${job.company_slug}` as never}>
-              View {job.company_name} employer profile and current roles
-            </Link>
-            {job.company_careers_url && (
+
+          <section
+            className="job-detail-section job-detail-employer"
+            aria-labelledby="job-employer"
+          >
+            <h2 id="job-employer">About {job.company_name}</h2>
+            <dl className="job-detail-employer-facts">
+              {industryLabel && (
+                <div>
+                  <dt>Industry</dt>
+                  <dd>{industryLabel}</dd>
+                </div>
+              )}
+              {job.company_employee_band && (
+                <div>
+                  <dt>Company size</dt>
+                  <dd>{job.company_employee_band}</dd>
+                </div>
+              )}
+              {job.company_ownership_type && (
+                <div>
+                  <dt>Ownership</dt>
+                  <dd>{job.company_ownership_type}</dd>
+                </div>
+              )}
+              {job.company_has_sponsor && (
+                <div>
+                  <dt>UK licensed sponsor</dt>
+                  <dd>
+                    On the Home Office sponsor register
+                    {job.company_sponsor_snapshot_date
+                      ? ` · ${job.company_sponsor_snapshot_date.toISOString().slice(0, 10)}`
+                      : ""}
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <p className="job-detail-employer-link">
+              <Link href={`/employers/${job.company_slug}` as never}>
+                View {job.company_name} employer profile and current roles
+              </Link>
+              {job.company_careers_url && (
+                <>
+                  {" · "}
+                  <a href={job.company_careers_url} rel="noreferrer" target="_blank">
+                    Official careers page
+                  </a>
+                </>
+              )}
+            </p>
+          </section>
+
+          {job.description_summary && (
+            <section
+              className="job-detail-section job-detail-summary"
+              aria-labelledby="offerlab-summary"
+            >
+              <h2 id="offerlab-summary">OfferLab summary</h2>
+              <p>{job.description_summary}</p>
+              {enriched && (
+                <p className="job-detail-ai-note">
+                  AI-generated summary from the employer&apos;s posting. Facts such as location and
+                  deadline come from the posting itself, not from OfferLab.
+                </p>
+              )}
+            </section>
+          )}
+
+          {job.responsibilities.length > 0 && (
+            <section className="job-detail-section" aria-labelledby="responsibilities">
+              <h2 id="responsibilities">Key responsibilities</h2>
+              <ul>
+                {job.responsibilities.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {job.requirements.length > 0 && (
+            <section className="job-detail-section" aria-labelledby="requirements">
+              <h2 id="requirements">Essential requirements</h2>
+              <ul>
+                {job.requirements.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {job.preferred_skills.length > 0 && (
+            <section className="job-detail-section" aria-labelledby="preferred">
+              <h2 id="preferred">Preferred requirements</h2>
+              <ul>
+                {job.preferred_skills.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {job.skills.length > 0 && (
+            <section className="job-detail-section" aria-labelledby="skills">
+              <h2 id="skills">Skills</h2>
+              <ul className="job-detail-tags">
+                {job.skills.map((skill) => (
+                  <li key={skill}>{skill}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {job.degree_requirements.length > 0 && (
+            <section className="job-detail-section" aria-labelledby="qualifications">
+              <h2 id="qualifications">Qualifications</h2>
+              <ul>
+                {job.degree_requirements.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {job.experience_requirements && (
+            <section className="job-detail-section" aria-labelledby="experience">
+              <h2 id="experience">Experience required</h2>
+              <p>{job.experience_requirements}</p>
+            </section>
+          )}
+
+          <section className="job-detail-section" aria-labelledby="sponsorship">
+            <h2 id="sponsorship">Visa sponsorship</h2>
+            {job.visa_sponsorship_status === "unknown" ? (
+              <p>Not specified in the posting.</p>
+            ) : (
               <>
-                {" · "}
-                <a href={job.company_careers_url} rel="noreferrer" target="_blank">
-                  Official careers page
-                </a>
+                <p>
+                  {
+                    visaSponsorshipLabels[
+                      job.visa_sponsorship_status as keyof typeof visaSponsorshipLabels
+                    ]
+                  }
+                </p>
+                {job.visa_sponsorship_evidence && (
+                  <blockquote className="job-detail-evidence">
+                    &ldquo;{job.visa_sponsorship_evidence}&rdquo;
+                  </blockquote>
+                )}
               </>
             )}
-          </p>
-        </section>
-
-        {job.description_summary && (
-          <section
-            className="job-detail-section job-detail-summary"
-            aria-labelledby="offerlab-summary"
-          >
-            <h2 id="offerlab-summary">OfferLab summary</h2>
-            <p>{job.description_summary}</p>
-            {enriched && (
-              <p className="job-detail-ai-note">
-                AI-generated summary from the employer&apos;s posting. Facts such as location and
-                deadline come from the posting itself, not from OfferLab.
-              </p>
-            )}
           </section>
-        )}
 
-        {job.responsibilities.length > 0 && (
-          <section className="job-detail-section" aria-labelledby="responsibilities">
-            <h2 id="responsibilities">Key responsibilities</h2>
-            <ul>
-              {job.responsibilities.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.requirements.length > 0 && (
-          <section className="job-detail-section" aria-labelledby="requirements">
-            <h2 id="requirements">Essential requirements</h2>
-            <ul>
-              {job.requirements.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.preferred_skills.length > 0 && (
-          <section className="job-detail-section" aria-labelledby="preferred">
-            <h2 id="preferred">Preferred requirements</h2>
-            <ul>
-              {job.preferred_skills.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.skills.length > 0 && (
-          <section className="job-detail-section" aria-labelledby="skills">
-            <h2 id="skills">Skills</h2>
-            <ul className="job-detail-tags">
-              {job.skills.map((skill) => (
-                <li key={skill}>{skill}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.degree_requirements.length > 0 && (
-          <section className="job-detail-section" aria-labelledby="qualifications">
-            <h2 id="qualifications">Qualifications</h2>
-            <ul>
-              {job.degree_requirements.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {job.experience_requirements && (
-          <section className="job-detail-section" aria-labelledby="experience">
-            <h2 id="experience">Experience required</h2>
-            <p>{job.experience_requirements}</p>
-          </section>
-        )}
-
-        <section className="job-detail-section" aria-labelledby="sponsorship">
-          <h2 id="sponsorship">Visa sponsorship</h2>
-          {job.visa_sponsorship_status === "unknown" ? (
-            <p>Not specified in the posting.</p>
-          ) : (
-            <>
-              <p>
-                {
-                  visaSponsorshipLabels[
-                    job.visa_sponsorship_status as keyof typeof visaSponsorshipLabels
-                  ]
-                }
-              </p>
-              {job.visa_sponsorship_evidence && (
-                <blockquote className="job-detail-evidence">
-                  &ldquo;{job.visa_sponsorship_evidence}&rdquo;
-                </blockquote>
-              )}
-            </>
+          {related.sameEmployer.length > 0 && (
+            <section
+              className="job-detail-section job-detail-related"
+              aria-labelledby="related-employer"
+            >
+              <h2 id="related-employer">More roles at {job.company_name}</h2>
+              <div className="public-jobs-results">
+                {related.sameEmployer.map((item) => (
+                  <JobCard job={item} key={item.id} now={now} showSave={false} />
+                ))}
+              </div>
+            </section>
           )}
-        </section>
 
-        {related.sameEmployer.length > 0 && (
-          <section
-            className="job-detail-section job-detail-related"
-            aria-labelledby="related-employer"
-          >
-            <h2 id="related-employer">More roles at {job.company_name}</h2>
-            <div className="public-jobs-results">
-              {related.sameEmployer.map((item) => (
-                <JobCard job={item} key={item.id} now={now} showSave={false} />
-              ))}
-            </div>
-          </section>
-        )}
+          {related.similar.length > 0 && (
+            <section
+              className="job-detail-section job-detail-related"
+              aria-labelledby="related-similar"
+            >
+              <h2 id="related-similar">Similar current roles</h2>
+              <div className="public-jobs-results">
+                {related.similar.map((item) => (
+                  <JobCard job={item} key={item.id} now={now} showSave={false} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        {related.similar.length > 0 && (
-          <section
-            className="job-detail-section job-detail-related"
-            aria-labelledby="related-similar"
-          >
-            <h2 id="related-similar">Similar current roles</h2>
-            <div className="public-jobs-results">
-              {related.similar.map((item) => (
-                <JobCard job={item} key={item.id} now={now} showSave={false} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <footer className="job-detail-footer">
-          <p>
-            Source:{" "}
-            {job.company_careers_url ? (
-              <Link href={job.company_careers_url as never}>{job.company_name} Careers</Link>
-            ) : (
-              <Link href={job.application_url as never}>the official posting</Link>
-            )}
-            . OfferLab is not the employer and has no partnership with {job.company_name}. Role
-            details are taken from the public posting.
-          </p>
-          <p>
-            First seen {formatDate(job.first_seen_at)} · Last verified{" "}
-            {formatRelativeTime(job.last_seen_at, now)}
-          </p>
-          <p>
-            <ApplyTrackingLink
-              applicationUrl={job.application_url}
-              label="Apply on employer website"
-            />
-          </p>
-        </footer>
-      </article>
-    </main>
+          <footer className="job-detail-footer">
+            <p>
+              Source:{" "}
+              {job.company_careers_url ? (
+                <Link href={job.company_careers_url as never}>{job.company_name} Careers</Link>
+              ) : (
+                <Link href={job.application_url as never}>the official posting</Link>
+              )}
+              . OfferLab is not the employer and has no partnership with {job.company_name}. Role
+              details are taken from the public posting.
+            </p>
+            <p>
+              First seen {formatDate(job.first_seen_at)} · Last verified{" "}
+              {formatRelativeTime(job.last_seen_at, now)}
+            </p>
+            <p>
+              <ApplyTrackingLink
+                applicationUrl={job.application_url}
+                label="Apply on employer website"
+              />
+            </p>
+          </footer>
+        </article>
+      </main>
+    </>
   );
 }

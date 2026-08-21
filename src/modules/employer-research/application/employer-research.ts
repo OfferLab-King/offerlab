@@ -124,7 +124,9 @@ export async function readSourceDiscovery(
 export async function promoteCandidateForAdmin(
   administratorUserId: string,
   candidateId: string,
-): Promise<{ outcome: "created" | "already_present" | "not_promotable" | "not_found" }> {
+): Promise<{
+  outcome: "created" | "activated" | "already_present" | "not_promotable" | "not_found";
+}> {
   return withApplicationUser(administratorUserId, async (database) => {
     const candidates = await listDiscoveryCandidates(database, {
       candidateId,
@@ -141,6 +143,7 @@ export async function promoteCandidateForAdmin(
     if (!plan.promotable) return { outcome: "not_promotable" };
     const applied = await applyCandidatePromotions(database, [plan], true);
     if (applied.created === 1) return { outcome: "created" };
+    if (applied.activated === 1) return { outcome: "activated" };
     if (applied.alreadyPresent === 1) return { outcome: "already_present" };
     return { outcome: "not_promotable" };
   });

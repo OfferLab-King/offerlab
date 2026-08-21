@@ -31,7 +31,9 @@ Build a `job-catalog` module inside the modular monolith with these properties:
    have early-career, professional, apprenticeship and general sources. Each source
    records operational state, crawl frequency, URLs, connector configuration,
    health and failure counters. Active sources run without a separate permission
-   approval field.
+   approval field. A supported ATS candidate may be configured, activated and
+   queued automatically only after a bounded probe validates the typed provider
+   response; unsupported or ambiguous candidates remain inactive.
 2. **Reusable ATS connectors before bespoke scrapers.** Greenhouse, Lever, Ashby
    and SmartRecruiters connectors use the official public job-board APIs over
    plain HTTP. Workday is a documented scaffold (per-tenant RaaS endpoint). A
@@ -77,7 +79,8 @@ Build a `job-catalog` module inside the modular monolith with these properties:
   pause another source's jobs.
 - Member saves (`app.user_saved_job`) are owner-scoped with forced RLS; the
   crawler role cannot touch them.
-- Employer research (Top 1,000 universe, aliases, sponsor entities, snapshots,
+- Employer research (full sponsor-register identity universe, curated Top 1,000
+  priority overlay, aliases, sponsor entities, snapshots,
   source candidates; founder decision 2026-08-13) is a separate administrator-only
   layer that feeds but never auto-activates `app.job_source`.
 - This capability extends the current product contract's job-discovery boundary
@@ -86,7 +89,10 @@ Build a `job-catalog` module inside the modular monolith with these properties:
   before production crawling starts.
 - Deterministic location admission publishes only UK-confirmed vacancies. Explicit
   non-UK roles are suppressed and ambiguous locations remain unpublished for
-  administrator review. Career level is a filter, not an admission gate.
+  administrator review. Supported foreign-place evidence may suppress a record
+  only when no UK place is present; mixed evidence remains ambiguous. Malformed
+  individual records are quarantined without failing a healthy source. Career
+  level is a filter, not an admission gate.
 
 ## Notes for operators
 

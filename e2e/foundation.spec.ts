@@ -4,19 +4,14 @@ test("serves the application foundation", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: "Prepare with evidence. Practise with purpose." }),
+    page.getByRole("heading", { name: "Build the proof behind every application." }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Start building your evidence" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Build your free workspace" })).toHaveAttribute(
     "href",
     "/register",
   );
-  await expect(page.getByText("Evidence-grounded AI Answer Coach")).toBeVisible();
-  await expect(
-    page
-      .locator("article.distinctive-card")
-      .filter({ hasText: "Evidence-grounded AI Answer Coach" })
-      .getByText("In development", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find the right opportunity" })).toBeVisible();
+  await expect(page.getByText("In development", { exact: true })).toHaveCount(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole("navigation", { name: "Public navigation" })).toBeVisible();

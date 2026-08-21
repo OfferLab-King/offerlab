@@ -24,7 +24,7 @@ export default async function OperationsPage({
       <header className="cms-page-header">
         <div>
           <p className="eyebrow">Administrator operations</p>
-          <h1>Moderation and pilot requests</h1>
+          <h1>Moderation and service requests</h1>
           <p>Review submissions and manage the availability of manually operated services.</p>
         </div>
       </header>
@@ -92,7 +92,7 @@ export default async function OperationsPage({
               </form>
             </article>
           ))}
-          {!requests.length && <p className="cms-empty-inline">No pilot requests yet.</p>}
+          {!requests.length && <p className="cms-empty-inline">No service requests yet.</p>}
         </div>
       </section>
     </main>

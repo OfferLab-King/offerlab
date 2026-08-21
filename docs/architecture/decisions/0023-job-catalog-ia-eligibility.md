@@ -41,6 +41,8 @@ only, never a data source.
    identity while `app.job_source` records independently scheduled official
    early-career, professional, apprenticeship or general sources. Active,
    unauthenticated public employer sources require no separate permission gate.
+   High-confidence typed ATS sources may activate automatically after live API
+   shape verification, complete connector derivation and audit provenance.
 4. **Multiple locations.** New `app.job_location` table (city, region, country,
    source text, remote/hybrid/on-site flags, position) so one requisition can
    appear in several locations without duplicate job records.
@@ -48,7 +50,11 @@ only, never a data source.
    worker), response-size limits, bounded manual redirects, SSRF/private-network
    rejection for every fetched URL, no database fallback in production,
    nonzero CLI exit on failed runs, stale-run recovery, and duplicate-source
-   coalescing via a `careers_url` uniqueness rule.
+   coalescing via a `careers_url` uniqueness rule. Supported deterministic
+   follow-up resolution (currently Workday detail JSON-LD locations) runs before
+   ambiguous jobs enter administrator review. Workday's official external path
+   may supply an additive UK-place hint when detail resolution is unavailable;
+   it cannot alone suppress an aggregate multi-location vacancy.
 6. **Feature gate.** `JOB_CATALOG_ENABLED=false` default: public catalogue
    routes, catalogue APIs and member catalogue integration return 404;
    catalogue URLs are absent from the sitemap; crawling and enrichment do not
@@ -80,7 +86,8 @@ only, never a data source.
 - Administrator overrides are explicit, owner-attributed, versioned and
   audited.
 - Incomplete sources stay inactive; the verified cohort manifest bootstraps the
-  catalogue and the researched Top 1,000 employer universe (founder decision
+  catalogue and the full sponsor-register employer identity universe with its
+  curated Top 1,000 research overlay (founder decision
   2026-08-13) scales the registry beyond the historical 500-employer ceiling.
 - The combined directory may be broader than the current job catalogue, but it
   labels zero-role employers and never manufactures vacancy counts.

@@ -1,5 +1,4 @@
 import { requireAdministrator } from "../../modules/identity-access/application/authorization";
-import { SignOutButton } from "../components/sign-out-button";
 import Link from "next/link";
 
 export const runtime = "nodejs";
@@ -13,9 +12,8 @@ export default async function AdministratorPage() {
         <div>
           <p className="eyebrow">OfferLab administration</p>
           <h1>What would you like to manage?</h1>
-          <p>Publish learning content or review operational submissions.</p>
+          <p>Go directly to the operational area that needs attention.</p>
         </div>
-        <SignOutButton />
       </header>
       <section className="admin-home-grid">
         <Link className="admin-home-card" href="/admin/content">
@@ -44,8 +42,31 @@ export default async function AdministratorPage() {
             <strong>Open operations →</strong>
           </div>
         </Link>
+        <Link className="admin-home-card" href="/admin/job-sources">
+          <span className="admin-home-icon">J</span>
+          <div>
+            <h2>Job catalogue</h2>
+            <p>Monitor sources, review eligibility and publication decisions, and inspect runs.</p>
+            <strong>Manage sources →</strong>
+          </div>
+        </Link>
+        <Link className="admin-home-card" href="/admin/employers">
+          <span className="admin-home-icon">E</span>
+          <div>
+            <h2>Employer research</h2>
+            <p>Review employer coverage, sponsor evidence, aliases and source readiness.</p>
+            <strong>Open research →</strong>
+          </div>
+        </Link>
+        <Link className="admin-home-card" href="/admin/membership">
+          <span className="admin-home-icon">M</span>
+          <div>
+            <h2>Memberships</h2>
+            <p>Inspect active and historical paid entitlements in one read-only view.</p>
+            <strong>View memberships →</strong>
+          </div>
+        </Link>
       </section>
-      <Link href="/member/learn">View the member workspace</Link>
     </main>
   );
 }

@@ -12,7 +12,6 @@ import { RecommendationList } from "../../recommendation-list";
 import { readAnswers } from "../../../../modules/answer-bank/application/answer-bank";
 import Link from "next/link";
 import { ApplicationForm } from "../application-form";
-import { MemberApplicationsHeader } from "../member-applications-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +36,6 @@ export default async function ApplicationDetailPage({ params }: Props) {
   const relatedAnswers = answers.filter((answer) => answer.applicationId === application.id);
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <section aria-labelledby="application-recommendations-title" className="dashboard-section">
         <div className="section-heading">
           <div>

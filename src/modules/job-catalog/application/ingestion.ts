@@ -164,6 +164,7 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
   }
 
   let discovered: DiscoveredJob[] = [];
+  let rejectedInvalidRecords = 0;
   let fetchError: Error | null = null;
   try {
     const connectorJobs = await connector.discoverJobs({
@@ -173,7 +174,12 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
       maxJobs: configuration.maxJobsPerSource,
       robotsGate,
     });
-    discovered = connectorJobs.map(validateDiscoveredJob);
+    const validated = validateDiscoveredJobs(connectorJobs);
+    discovered = validated.jobs;
+    rejectedInvalidRecords = validated.rejected;
+    if (connectorJobs.length > 0 && discovered.length === 0) {
+      throw new JobFetchError("parser_changed", "connector returned no valid job records");
+    }
   } catch (error) {
     fetchError = error instanceof Error ? error : new Error("unknown_crawl_error");
   }
@@ -342,6 +348,7 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
           metadata: {
             deactivatedIds: plan.deactivate.map((job) => job.id),
             newIds,
+            rejectedInvalidRecords,
             reactivatedIds,
             updatedIds,
             zeroResultAnomaly: zeroTracking.anomaly,
@@ -416,6 +423,7 @@ async function runLockedSourceCrawl(options: CrawlOptions): Promise<CrawlOutcome
       jobsNew: plan.insert.length,
       jobsUnchanged: plan.touch.length,
       jobsUpdated: plan.update.length,
+      rejectedInvalidRecords,
       source: sourceKey(source),
     });
 
@@ -543,4 +551,23 @@ function validateDiscoveredJob(job: DiscoveredJob): DiscoveredJob {
     throw new JobFetchError("parser_changed", "connector returned an invalid job record");
   }
   return { ...job, applicationUrl, externalJobId, sourceUrl, title };
+}
+
+export function validateDiscoveredJobs(
+  jobs: readonly DiscoveredJob[],
+): Readonly<{ jobs: DiscoveredJob[]; rejected: number }> {
+  const valid: DiscoveredJob[] = [];
+  let rejected = 0;
+  for (const job of jobs) {
+    try {
+      valid.push(validateDiscoveredJob(job));
+    } catch (error) {
+      if (error instanceof JobFetchError && error.code === "parser_changed") {
+        rejected += 1;
+        continue;
+      }
+      throw error;
+    }
+  }
+  return { jobs: valid, rejected };
 }

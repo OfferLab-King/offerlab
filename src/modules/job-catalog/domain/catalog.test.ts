@@ -154,6 +154,26 @@ describe("faceted filter clause semantics", () => {
     expect(conditions.some((c) => c.includes("application_deadline"))).toBe(true);
     expect(conditions.some((c) => c.includes("first_seen_at"))).toBe(true);
   });
+
+  it("parameterises a malicious query instead of interpolating it", () => {
+    const injection = "analyst'; drop table app.job; --";
+    const { conditions, values } = buildFor({ query: injection });
+    const joined = conditions.join(" ");
+    expect(joined).toContain("websearch_to_tsquery");
+    expect(joined).not.toContain(injection);
+    expect(joined).toContain("$1");
+    expect(values[0]).toBe(injection);
+    // No condition should contain unescaped single quotes from user input
+    expect(conditions.every((condition) => !condition.includes("drop table"))).toBe(true);
+  });
+
+  it("never emits raw user input in conditions for location injection", () => {
+    const injection = "london'; delete from app.job --";
+    const { conditions, values } = buildFor({ locations: [injection, "remote"] });
+    const joined = conditions.join(" ");
+    expect(joined).not.toContain("delete from");
+    expect(values.some((value) => Array.isArray(value) && value.includes(injection))).toBe(true);
+  });
 });
 
 describe("Phase F dimension filters", () => {

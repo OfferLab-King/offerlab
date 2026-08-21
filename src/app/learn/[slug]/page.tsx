@@ -28,15 +28,22 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const resource = await readPublicResource((await params).slug);
   if (!resource) {
-    return { robots: { index: false, follow: false }, title: "Resource not available | OfferLab" };
+    const title = "Resource not available | OfferLab";
+    return {
+      openGraph: { images: [], title },
+      robots: { index: false, follow: false },
+      title,
+      twitter: { images: [], title },
+    };
   }
   const title = pageTitle(resource);
   const description = pageDescription(resource);
   return {
     alternates: { canonical: `/learn/${resource.slug}` },
     description,
-    openGraph: { description, title, type: "article" },
+    openGraph: { description, images: [], title, type: "article" },
     title,
+    twitter: { description, images: [], title },
   };
 }
 

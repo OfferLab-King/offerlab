@@ -10,7 +10,6 @@ import {
 } from "../../../../modules/preparation-resources/application/resources";
 import { resourceTypeLabels } from "../../../../modules/preparation-resources/domain/resource";
 import { opportunityTypes } from "../../../../modules/taxonomy/domain/opportunity-types";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 import { ResourceCard } from "../resource-card";
 
@@ -59,7 +58,6 @@ export default async function ResourceLibraryPage({
 
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="resources" />
       <section className="applications-heading">
         <div>

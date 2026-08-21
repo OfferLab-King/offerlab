@@ -1,15 +1,22 @@
 import { htmlToPlainText, truncateText } from "../../domain/html-text";
 import { canonicalizeJobUrl } from "../../domain/urls";
+import { evaluateUkLocation } from "../../domain/uk-location";
+import {
+  hasAggregateWorkdayLocation,
+  workdayLocationTextWithPathHint,
+} from "../../domain/workday-location";
 import { JobFetchError } from "./errors";
 import { fetchText } from "./http-client";
 import {
   connectorToken,
   limited,
+  mapWithConcurrency,
   parseOptionalDate,
   type ConnectorContext,
   type DiscoveredJob,
   type JobSourceConnector,
 } from "./types";
+import { resolveWorkdayDetailLocations } from "./workday-detail";
 
 export const workdaySourceType = "workday" as const;
 
@@ -151,7 +158,37 @@ async function discoverWorkdayCxsJobs(
       break;
     }
   }
-  return discovered;
+  return resolveAmbiguousWorkdayLocations(discovered, context);
+}
+
+async function resolveAmbiguousWorkdayLocations(
+  jobs: readonly DiscoveredJob[],
+  context: ConnectorContext,
+): Promise<DiscoveredJob[]> {
+  let remainingDetails = context.maxDetailPages;
+  return mapWithConcurrency(jobs, 4, async (job) => {
+    const needsDetail =
+      hasAggregateWorkdayLocation(job.locationText) ||
+      evaluateUkLocation(job).status === "ambiguous";
+    if (!needsDetail || remainingDetails <= 0) return job;
+    remainingDetails -= 1;
+    try {
+      const resolved = await resolveWorkdayDetailLocations(job.applicationUrl, {
+        httpClient: context.httpClient,
+        robotsGate: context.robotsGate,
+      });
+      if (resolved.locations.length === 0) return job;
+      return {
+        ...job,
+        locationText: resolved.sourceText,
+        locations: resolved.locations,
+      };
+    } catch {
+      // A detail-page failure must not fail or empty the whole official feed.
+      // The unresolved posting remains safely unpublished for review.
+      return job;
+    }
+  });
 }
 
 function workdayCxsJobsUrl(cxsEndpoint: string): URL {
@@ -198,7 +235,10 @@ function normalizeWorkdayCxsPosting(
     descriptionText: "",
     employmentType: mapEmploymentType(posting.timeType ?? null),
     externalJobId: posting.bulletFields?.[0] ?? null,
-    locationText: posting.locationsText?.trim() ?? "",
+    locationText: workdayLocationTextWithPathHint(
+      posting.locationsText ?? "",
+      posting.externalPath,
+    ),
     postedAt: null,
     remoteType: null,
     salaryCurrency: null,

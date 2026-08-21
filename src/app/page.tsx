@@ -6,62 +6,78 @@ import { SiteHeader } from "./components/site-header";
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
   description:
-    "Prepare with evidence for UK graduate recruitment. Build reusable answers and stories, tailor a truthful CV or cover letter, practise each stage and track applications in one private workspace.",
+    "Turn real experience into stronger applications, truthful documents and interview answers in one private workspace for UK graduate recruitment.",
   openGraph: {
     description:
-      "Prepare with evidence for UK graduate recruitment. Build reusable answers and stories, tailor a truthful CV or cover letter, practise each stage and track applications in one private workspace.",
-    title: "OfferLab — Prepare with evidence. Practise with purpose.",
+      "Turn real experience into stronger applications, truthful documents and interview answers in one private workspace for UK graduate recruitment.",
+    title: "OfferLab — Build the proof behind every application",
     type: "website",
   },
-  title: "OfferLab — Prepare with evidence. Practise with purpose.",
+  title: "OfferLab — Build the proof behind every application",
 };
 
-const availableTools = [
+const workflow = [
   {
-    eyebrow: "Build",
-    title: "Your Answer & Story Bank",
+    number: "01",
+    title: "Find the right opportunity",
     description:
-      "Turn university, work, volunteering and project experience into evidence you can reuse across interview questions.",
+      "Search current roles from official employer career sources and save the ones worth your time.",
   },
   {
-    eyebrow: "Prepare",
-    title: "Core interview questions",
+    number: "02",
+    title: "Build from real evidence",
     description:
-      "Focus on a curated question set by family and recruitment stage, then draft directly from your real examples.",
+      "Turn projects, work, volunteering and university experience into stories you can reuse.",
   },
   {
-    eyebrow: "Learn",
-    title: "Stage-specific preparation",
+    number: "03",
+    title: "Tailor without inventing",
     description:
-      "Use concise plans and resources for video interviews, online tests, assessment centres and final interviews.",
+      "Create role-specific CV and cover-letter versions while keeping every claim grounded in your work.",
+  },
+  {
+    number: "04",
+    title: "Practise the hard parts",
+    description:
+      "Prepare answers, study current intelligence and rehearse the moments that matter before selection day.",
   },
 ] as const;
 
-const distinctiveExperiences = [
+const productAreas = [
   {
-    availability: "In development",
-    title: "Evidence-grounded AI Answer Coach",
+    className: "home-bento-card home-bento-card--wide home-bento-card--ink",
+    eyebrow: "Answer Bank",
+    title: "Fourteen questions. Your strongest evidence. Ready when the interview arrives.",
     description:
-      "Feedback based on your question, your linked stories and OfferLab's coaching rubric—not a generic answer written from nothing.",
+      "Prepare introductions, motivation and competency answers in one focused workspace. Save drafts, link evidence and keep your own voice.",
+    href: "/register",
+    linkLabel: "Start your Answer Bank",
   },
   {
-    availability: "Collection in development",
-    title: "Annotated coaching cases",
+    className: "home-bento-card home-bento-card--tall home-bento-card--sage",
+    eyebrow: "Document review",
+    title: "See the evidence your CV proves—and the gaps it does not.",
     description:
-      "See the original answer, precise coach comments, the revision and why the stronger version works.",
+      "Requirement-by-requirement feedback shows what is represented, what is missing and what truthful evidence would strengthen the document.",
+    href: "/plans",
+    linkLabel: "Explore document feedback",
   },
   {
-    availability: "Pilot planned",
-    title: "Group Mock",
-    description:
-      "Practise the group exercises you cannot rehearse alone, with a clear format and structured feedback.",
-  },
-  {
-    availability: "Available",
+    className: "home-bento-card home-bento-card--paper",
+    eyebrow: "Recruitment Intelligence",
+    title: "Current context, without leaked questions.",
+    description: "Search moderated, cycle-dated reports about formats, themes and assessed skills.",
     href: "/intelligence",
-    title: "Current recruitment intelligence",
+    linkLabel: "Browse intelligence",
+  },
+  {
+    className: "home-bento-card home-bento-card--paper",
+    eyebrow: "Official opportunities",
+    title: "Start from a role that is actually open.",
     description:
-      "Search moderated, cycle-dated candidate reports by stage, format and assessed skill without sharing restricted questions.",
+      "Browse roles collected from official employer career pages and apply at the source.",
+    href: "/jobs",
+    linkLabel: "Search live roles",
   },
 ] as const;
 
@@ -69,159 +85,205 @@ export default function FoundationPage() {
   return (
     <>
       <SiteHeader />
-      <main className="marketing-main">
-        <section className="marketing-hero">
-          <div className="marketing-hero-copy">
-            <p className="eyebrow">Graduate recruitment, made practicable</p>
-            <h1>Prepare with evidence. Practise with purpose.</h1>
-            <p className="marketing-lead">
-              OfferLab helps you turn your real experience into stronger answers, prepare for each
-              recruitment stage and access the practice and feedback that generic advice cannot give
-              you.
+      <main className="marketing-main home-page">
+        <section className="home-hero">
+          <div className="home-hero-copy">
+            <p className="eyebrow home-kicker">The evidence-led graduate career workspace</p>
+            <h1>
+              Build the proof behind <span>every application.</span>
+            </h1>
+            <p className="home-hero-lead">
+              Find real opportunities, turn your experience into compelling evidence and prepare
+              every answer and document in one private workspace built for UK graduate recruitment.
             </p>
-            <div className="marketing-actions">
-              <Link className="button-link marketing-primary-action" href="/register">
-                Start building your evidence
+            <div className="marketing-actions home-hero-actions">
+              <Link className="button-link home-primary-action" href="/register">
+                Build your free workspace
               </Link>
-              <a href="#how-it-helps">See how OfferLab helps</a>
+              <Link className="home-text-action" href="/jobs">
+                Browse current roles <span aria-hidden="true">↗</span>
+              </Link>
             </div>
-            <p className="marketing-note">
-              Free account · No invitation required ·{" "}
-              <Link href="/plans">Membership available</Link>
-            </p>
+            <ul aria-label="OfferLab product assurances" className="home-trust-list">
+              <li>Free to start</li>
+              <li>Private by design</li>
+              <li>Your evidence stays yours</li>
+            </ul>
           </div>
 
-          <aside aria-label="Example OfferLab coaching" className="coaching-preview">
-            <div className="preview-toolbar">
-              <span className="preview-label">Answer Coach preview</span>
-              <span className="status-badge">In development</span>
+          <aside aria-label="OfferLab workspace example" className="home-workspace-preview">
+            <div className="home-preview-topbar">
+              <div>
+                <span className="home-preview-dot" />
+                <strong>Application workspace</strong>
+              </div>
+              <span className="home-preview-status">Interview</span>
             </div>
-            <p className="preview-question">Tell me about a time you influenced a team.</p>
-            <div className="preview-evidence">
-              <span>Linked evidence</span>
-              <strong>Student society event turnaround</strong>
+            <div className="home-preview-role">
+              <span>Consumer strategy graduate</span>
+              <strong>Northstar Foods</strong>
+              <small>Final interview · 24 September</small>
             </div>
-            <blockquote>
+            <div className="home-preview-grid">
+              <div className="home-preview-panel">
+                <span className="home-preview-label">Evidence selected</span>
+                <strong>Society event turnaround</strong>
+                <p>Influencing · Judgement · Ownership</p>
+              </div>
+              <div className="home-preview-panel home-preview-panel--accent">
+                <span className="home-preview-label">Answer status</span>
+                <strong>Draft saved</strong>
+                <p>Why this organisation?</p>
+              </div>
+            </div>
+            <blockquote className="home-coach-note">
+              <span>Coach note</span>
               <strong>Make your judgement visible.</strong>
-              <span>
-                You explain what the team did, but not why you chose to speak to the venue first.
-                What risk were you trying to remove?
-              </span>
+              <p>
+                What risk were you trying to remove when you spoke to the venue first? That decision
+                is the strongest part of your example.
+              </p>
             </blockquote>
-            <p className="preview-footnote">Grounded in your story. You remain the editor.</p>
+            <div className="home-preview-footer">
+              <span>Grounded in your evidence</span>
+              <span>You remain the editor</span>
+            </div>
           </aside>
         </section>
 
-        <section className="marketing-section homepage-jobs" aria-labelledby="homepage-jobs">
-          <div className="section-introduction">
-            <p className="eyebrow">Start from a real role</p>
-            <h2 id="homepage-jobs">Discover a real role, then prepare for it properly</h2>
-            <p>
-              Jobs and Employers are built from employers&apos; official public career sources. Find
-              a current role, understand what it asks for and apply on the employer&apos;s official
-              website.
-            </p>
-          </div>
-          <form action="/jobs" className="homepage-jobs-search" method="get">
-            <label htmlFor="homepage-jobs-query">Search current roles</label>
-            <div className="homepage-jobs-search-row">
-              <input
-                id="homepage-jobs-query"
-                name="q"
-                placeholder="Role, skill or keyword"
-                type="search"
-              />
-              <button className="button-link" type="submit">
-                Search jobs
-              </button>
+        <section aria-label="OfferLab workflow" className="home-workflow">
+          <div className="home-section-heading home-section-heading--split">
+            <div>
+              <p className="eyebrow">One connected workflow</p>
+              <h2>From finding the role to walking into the room.</h2>
             </div>
-          </form>
-          <p className="homepage-jobs-link">
-            <Link href="/employers">Explore employers by sector →</Link>
-          </p>
-          <p className="homepage-jobs-value">
-            Save the role, tailor a truthful CV or cover letter, prepare your answers and track the
-            application from one private workspace.
-          </p>
-        </section>
-
-        <section className="marketing-section" id="how-it-helps">
-          <div className="section-introduction">
-            <p className="eyebrow">Useful from your first application</p>
-            <h2>Build preparation you can reuse</h2>
             <p>
-              Stop starting from a blank document for every application. Keep your evidence,
-              questions and preparation together, then choose exactly what helps today.
+              No generic course. No forced journey. Just the right structure around the application
+              you are working on now.
             </p>
           </div>
-          <div className="marketing-card-grid">
-            {availableTools.map((tool) => (
-              <article className="marketing-feature-card" key={tool.title}>
-                <p className="eyebrow">{tool.eyebrow}</p>
-                <h3>{tool.title}</h3>
-                <p>{tool.description}</p>
+          <ol className="home-workflow-grid">
+            {workflow.map((step) => (
+              <li key={step.number}>
+                <span>{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="home-proof-section">
+          <div className="home-section-heading">
+            <p className="eyebrow">Built for the work between applications</p>
+            <h2>A serious workspace for becoming a stronger candidate.</h2>
+            <p>
+              OfferLab connects opportunity discovery, truthful evidence, preparation and current
+              recruitment context—so every application makes the next one easier.
+            </p>
+          </div>
+          <div className="home-bento-grid">
+            {productAreas.map((area) => (
+              <article className={area.className} key={area.title}>
+                <p className="eyebrow">{area.eyebrow}</p>
+                <h3>{area.title}</h3>
+                <p>{area.description}</p>
+                <Link href={area.href}>{area.linkLabel} →</Link>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="marketing-section distinctive-section">
-          <div className="section-introduction">
-            <p className="eyebrow">More than another content library</p>
-            <h2>Practice, judgement and current intelligence</h2>
+        <section className="home-coaching-section">
+          <div className="home-coaching-copy">
+            <p className="eyebrow">OfferLab coaching method</p>
+            <h2>Feedback that strengthens your thinking—not just your phrasing.</h2>
             <p>
-              These are the experiences OfferLab is developing and validating. Availability is
-              labelled plainly so you always know what you can use now and what is being piloted.
+              Generic tools polish sentences. OfferLab helps you expose the decision, evidence and
+              reasoning that make an answer credible, while every edit remains yours to accept.
             </p>
+            <Link className="home-text-action" href="/register">
+              Prepare your first answer <span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <div className="distinctive-grid">
-            {distinctiveExperiences.map((experience) => (
-              <article className="distinctive-card" key={experience.title}>
-                <span className="availability-label">{experience.availability}</span>
-                <h3>{experience.title}</h3>
-                <p>{experience.description}</p>
-                {"href" in experience && experience.href && (
-                  <Link href={experience.href as never}>Browse current reports →</Link>
-                )}
-              </article>
-            ))}
+          <div className="home-coaching-comparison">
+            <div>
+              <span className="home-preview-label">Before</span>
+              <p>
+                “I worked with the team to solve the problem and make sure the event went ahead.”
+              </p>
+            </div>
+            <div className="home-coaching-annotation">
+              <span>01</span>
+              <p>Name the decision only you made.</p>
+            </div>
+            <div className="home-coaching-annotation">
+              <span>02</span>
+              <p>Show the risk you saw and why your action came first.</p>
+            </div>
+            <div className="home-coaching-after">
+              <span className="home-preview-label">What the stronger answer reveals</span>
+              <p>Judgement, personal ownership and reasoning—not inflated language.</p>
+            </div>
           </div>
         </section>
 
-        <section className="marketing-section membership-preview-section">
-          <div className="section-introduction">
-            <p className="eyebrow">OfferLab Membership</p>
-            <h2>Stay free, upgrade when capacity matters</h2>
-            <p>
-              Every preparation capability stays free. Membership doubles your review capacity and
-              gives you early access to new capabilities — clearly labelled, never hiding what was
-              already free.
-            </p>
-          </div>
-          <Link className="button-link marketing-primary-action" href="/plans">
-            Compare plans
-          </Link>
-        </section>
-
-        <section className="marketing-cta">
+        <section className="home-membership-section">
           <div>
-            <p className="eyebrow">Start with what you already have</p>
-            <h2>Your experience is more useful when you can find and explain it.</h2>
-            <p>Create your first evidence story and use it to build a stronger interview answer.</p>
+            <p className="eyebrow">OfferLab Membership</p>
+            <h2>Start free. Add capacity when applications get serious.</h2>
+            <p>
+              Every core preparation capability remains available for free. Membership doubles your
+              document-review capacity and includes selected new capabilities as they become
+              available.
+            </p>
           </div>
-          <Link className="button-link marketing-primary-action" href="/register">
-            Create your free account
-          </Link>
+          <div className="home-membership-action">
+            <span>From £9 / month</span>
+            <Link className="button-link home-light-action" href="/plans">
+              Compare membership options
+            </Link>
+          </div>
         </section>
 
-        <footer className="marketing-footer">
-          <Link className="brand" href="/">
-            OfferLab
-          </Link>
-          <p>Practical preparation for UK graduate recruitment.</p>
-          <Link href="/intelligence">Recruitment Intelligence</Link>
-          <Link href="/plans">Plans</Link>
-          <Link href="/member">Open workspace</Link>
+        <section className="home-final-cta">
+          <p className="eyebrow">Your experience is already there</p>
+          <h2>Make it easier to find, explain and use.</h2>
+          <p>
+            Build your first evidence story and turn it into an answer you can say with confidence.
+          </p>
+          <div className="marketing-actions">
+            <Link className="button-link home-primary-action" href="/register">
+              Create your free account
+            </Link>
+            <Link className="home-text-action" href="/employers">
+              Explore employers
+            </Link>
+          </div>
+        </section>
+
+        <footer className="home-footer">
+          <div>
+            <Link className="brand" href="/">
+              <span aria-hidden="true" className="brand__mark" />
+              <span className="brand__word">OfferLab</span>
+            </Link>
+            <p>Evidence-led preparation for UK graduate recruitment.</p>
+          </div>
+          <nav aria-label="Explore OfferLab">
+            <Link href="/jobs">Jobs</Link>
+            <Link href="/employers">Employers</Link>
+            <Link href="/intelligence">Intelligence</Link>
+            <Link href="/plans">Plans</Link>
+          </nav>
+          <nav aria-label="Your OfferLab account">
+            <Link href="/register">Create account</Link>
+            <Link href="/sign-in">Sign in</Link>
+            <Link href="/member">Workspace</Link>
+          </nav>
+          <p className="home-footer-note">
+            Official sources. Honest provenance. Private member work.
+          </p>
         </footer>
       </main>
     </>

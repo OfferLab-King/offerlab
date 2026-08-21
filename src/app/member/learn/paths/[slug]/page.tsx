@@ -8,7 +8,6 @@ import {
 } from "../../../../../modules/learning-paths/application/learning-paths";
 import { MarkdownContent } from "../../../../components/resource-content";
 import { PathFollowControls } from "../path-follow-controls";
-import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
 import { LearnNavigation } from "../../learn-navigation";
 import {
   nextPreparationArea,
@@ -37,7 +36,6 @@ export default async function Page({
   const progressText = `${readyAreaCount(path)} of ${path.sections.length} preparation areas ready · ${path.completedCount} of ${path.totalCount} activities complete`;
   return (
     <main className="applications-shell path-detail">
-      <MemberApplicationsHeader />
       <LearnNavigation active="paths" />
       <Link href="/member/learn/paths">← All Preparation Plans</Link>
       <header className="path-detail-header">

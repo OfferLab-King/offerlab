@@ -257,7 +257,8 @@ The administrator job-source workspace provides:
   status, and validated configuration;
 - run-now, pause, resume, and archive actions;
 - source health, overdue state, detected redirects, recent runs, and events;
-- invalid-URL and ambiguous-UK-location queues;
+- exception queues for invalid URLs and locations still ambiguous after
+  deterministic detail resolution;
 - manual URL correction and redirect acceptance;
 - existing eligibility, classification, and publication review controls;
 - visible audit attribution for administrator actions.
@@ -282,8 +283,10 @@ have the minimum connector configuration.
 
 Imports are idempotent and update only manifest-managed fields whose row has not
 been manually overridden. Expansion from 100 to 500 uses the same format and
-command. No aggregator descriptions, jobs, logos, rankings, or private identifiers
-are copied.
+command. A candidate can become active automatically only after a typed connector
+is derived and its real official API response shape is verified; fingerprinting
+or workbook evidence alone never activates it. No aggregator descriptions, jobs,
+logos, rankings, or private identifiers are copied.
 
 ## SEO contract
 

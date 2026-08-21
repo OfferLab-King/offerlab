@@ -114,10 +114,15 @@ describe("planCandidatePromotion", () => {
         candidateUrl: "https://jobs.smartrecruiters.com/Acme",
         status: "verified",
         verifiedAt: new Date(),
+        atsVerificationStatus: "typed_api_verified",
       }),
     );
     expect(plan.promotable).toBe(true);
     expect(plan.platform).toBe("smartrecruiters");
+    expect(plan.automation).toMatchObject({
+      configuration: { smartRecruitersCompany: "Acme" },
+      sourceType: "smartrecruiters",
+    });
   });
 
   it("refuses to promote unverified candidates", () => {
@@ -133,7 +138,11 @@ describe("planCandidatePromotion", () => {
 
   it("refuses to promote unknown or low-confidence platforms", () => {
     const plan = planCandidatePromotion(
-      candidate({ candidateUrl: "https://careers.acme.com", status: "verified" }),
+      candidate({
+        atsVerificationStatus: "typed_api_verified",
+        candidateUrl: "https://careers.acme.com",
+        status: "verified",
+      }),
     );
     expect(plan.promotable).toBe(false);
     expect(plan.reason).toContain("not high confidence");

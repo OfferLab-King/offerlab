@@ -2,7 +2,7 @@
 
 **Status:** Approved  
 **Date:** 2026-07-19  
-**Last reviewed:** 2026-08-12
+**Last reviewed:** 2026-08-20
 **Authority:** Highest product authority. These decisions govern current implementation; references to Vertical Slice 01 describe the original foundation unless a paragraph explicitly limits itself to that slice.
 
 ## Product experience
@@ -214,6 +214,67 @@ experience and records the rules for the OfferLab job catalogue.
 This is the product-authority record for the implementation described in
 ADR 0023.
 
+### Verified job-source automation
+
+**Approved:** 21 August 2026
+
+Reduce crawler administration to exception handling. A high-confidence ATS
+candidate may become an active source without a separate promotion,
+configuration, resume or run-now action only when OfferLab can deterministically
+derive a supported typed connector and a bounded live probe confirms the expected
+official public API response shape. The source is created with complete connector
+configuration, its machine endpoint, verification evidence and a queued first
+crawl. The same path may repair a previously promoted but incomplete source when
+it has not been manually overridden or archived.
+
+URL fingerprinting, a successful generic landing-page request, spreadsheet
+research or AI output alone are never sufficient to activate crawling. Unknown,
+unsupported, weakly fingerprinted, blocked or response-shape-mismatched candidates
+remain inactive for administrator review. Administrator URL/configuration
+overrides and archived sources are preserved. Automatic crawling retains the
+least-privilege worker, official-source restriction, SSRF/robots/request bounds,
+UK admission, deterministic publication rules, failure pauses and kill switch.
+
+Resolve deterministic exceptions within ingestion where official structured
+evidence is available. In particular, Workday aggregate location labels may be
+resolved from bounded public job-detail JSON-LD before publication, with the
+official job path used as a conservative UK-location fallback when the detail
+budget is exhausted. Clear foreign-country or region evidence with no UK place
+signal is sufficient to suppress a vacancy; mixed or same-named-place evidence
+remains ambiguous. One malformed vacancy is quarantined and counted rather than
+failing an otherwise healthy source run. Human review is reserved for records
+that remain genuinely ambiguous after supported deterministic resolution.
+
+### Full licensed-sponsor employer universe
+
+**Approved:** 21 August 2026
+
+Expand the canonical employer identity universe from the curated Top 1,000 to
+every unique legal organisation in the dated Home Office Worker and Temporary
+Worker sponsor register. Aggregate duplicate branch and route rows under an
+exact case-insensitive legal-name identity. Reuse an existing company only from
+an exact company name, exact alias or previous sponsor mapping; never collapse
+distinct legal entities through fuzzy or legal-suffix matching.
+
+The Top 1,000 remains the curated research, prioritisation and crawler-discovery
+overlay. Register presence alone does not establish an official website,
+careers URL, open vacancy, job-level sponsorship or permission to crawl. New
+sponsor-only identities expose no placeholder link and stay outside the
+unfiltered employer directory, but are available to explicit employer search,
+the licensed-sponsor filter and member employer selection. Each refresh is a
+full dated snapshot: current rows become active, older rows remain historical,
+and sources, administrator overrides and member records are preserved.
+
+Official web-presence discovery may cover the full current sponsor universe as
+a bounded operations batch. It must use exact legal-name searches, reject
+directories, aggregators and social profiles, and retain separate general,
+early-careers, apprenticeship and professional-career candidates. Search
+results may fill a corporate website only with strong employer-identity
+evidence. They remain inactive administrator-only candidates until an official
+domain or typed ATS endpoint is verified; search ranking or an HTTP 200 alone
+never establishes an official source. Every paid run requires an explicit query
+ceiling, reports its maximum provider cost before execution, and is resumable.
+
 ### Recruitment Intelligence discussion pilot
 
 **Approved:** 27 July 2026
@@ -263,7 +324,7 @@ Display labels are never identifiers.
 
 ## Authentication and member access
 
-Include open member registration, email verification when enabled by Supabase, and password reset. A verified registration creates one internal member identity with active member access. Registration never grants administrator privileges. Stripe remains excluded.
+Include open member registration, email verification when enabled by Supabase, and password reset. A verified registration creates one internal member identity with active member access. Registration never grants administrator privileges and never requires payment. Stripe is permitted only for the bounded, optional membership checkout approved on 20 August 2026 below.
 
 The initial administrator is promoted by explicit command from an existing verified internal user. The command must fail safely, use no user-editable authorization metadata, refuse silent additional administrators, and create a durable audit event.
 
@@ -301,7 +362,8 @@ should arrive and be willing to pay, with a clearly labelled offer.
   membership adds capacity and early access and never hides previously free
   functionality.
 - Implemented: `app.membership` entitlements (owner-scoped, forced RLS),
-  public `/plans` pricing page, member `/member/membership` management,
+  unified `/plans` pricing and member-management page, with legacy
+  `/member/membership` links redirected there,
   administrator membership view, privileged grant CLI
   (`pnpm membership:grant`), and a first real premium benefit: active
   membership doubles the member daily and monthly career-document review
@@ -309,7 +371,73 @@ should arrive and be willing to pay, with a clearly labelled offer.
 - Prices are founder-set constants in
   `src/modules/membership/domain/membership.ts` (currently £9/month and
   £39/recruitment season).
-- In-product payment provider wiring remains a recorded open decision
-  (see ADR 0024); local and founder-managed activation is the current
-  activation path, honestly labelled. No Stripe account or production
-  payment infrastructure was provisioned.
+- Provider-backed activation was subsequently approved on 20 August 2026 under
+  the self-serve membership checkout decision below and ADR 0025. Manual and
+  local test activation remain supported operational fallbacks, not the normal
+  member upgrade journey.
+
+## Self-serve membership checkout (2026-08-20)
+
+Approve Stripe-hosted Checkout and the Stripe-hosted Customer Portal for
+self-serve OfferLab membership. Use hosted surfaces so OfferLab does not collect,
+render or persist raw card details. This approval is limited to the existing
+membership entitlement and the two founder-set GBP offers below; it does not
+approve a general commerce platform, marketplace payouts, coach payments,
+credits, coupons, trials or usage-based billing.
+
+- **Monthly membership:** £9 including any applicable consumer-facing tax,
+  renewing monthly until cancelled. Cancellation takes effect at the end of the
+  current paid period; access and benefits remain active until that date.
+- **Recruitment-season membership:** £39 including any applicable
+  consumer-facing tax for six months from successful payment. It is a one-time,
+  non-renewing purchase and expires at the recorded period end.
+- **Benefits:** both offers grant the same membership entitlement. The current
+  guaranteed paid benefit is double the member daily and monthly career-document
+  review ceilings. Early access may be advertised only for a specifically named,
+  currently available capability with an honest pilot label and availability
+  terms. “Support OfferLab” may be supporting copy, never the principal benefit.
+- **Group Mock:** membership does not change waitlist order. The earliest
+  waitlisted eligible member remains first to be promoted. Do not advertise
+  priority queue placement unless a later founder decision changes the booking
+  policy and its fairness implications.
+- **Checkout:** authenticated eligible members choose one offer on OfferLab and
+  continue to a newly created Stripe-hosted Checkout Session. Price identifiers
+  are server-side allow-listed configuration. The browser never supplies an
+  amount, currency, entitlement period, Stripe customer identifier or owner ID.
+- **Provisioning:** only verified, signature-checked and idempotently processed
+  Stripe webhook events may activate, extend, cancel or expire a provider-backed
+  entitlement. A success redirect is confirmation of payment flow completion,
+  not authority to grant access. The success page may briefly show “Confirming
+  membership” while webhook state converges and must offer a safe retry/status
+  refresh without creating another purchase.
+- **Management:** recurring members use the Stripe-hosted Customer Portal to
+  update payment details, view invoices and schedule period-end cancellation.
+  Season-pass members can view their OfferLab period and payment receipt but are
+  not presented with subscription-management language. OfferLab must show the
+  current offer, status, paid-through date and renewal or expiry behaviour in
+  plain language.
+- **Failure and recovery:** abandoned or failed checkout changes no entitlement.
+  Duplicate and out-of-order webhook delivery must be harmless. A monthly
+  membership remains active through its paid-through timestamp when renewal
+  payment fails; Stripe recovery attempts and verified terminal subscription
+  state determine whether it later expires. OfferLab never grants access from a
+  query-string result or client assertion.
+- **Refunds and support:** publish concise cancellation, refund, contact and
+  statutory-rights information before production activation. Refund decisions
+  are handled by an authorised operator in Stripe and reconciled by webhook; the
+  application must not promise an automatic refund it cannot perform. Refunds do
+  not reduce or waive a member's statutory rights.
+- **Tax and receipts:** configure Stripe Tax and consumer-facing tax-inclusive GBP
+  prices before launch. Stripe supplies receipts/invoices and the billing portal;
+  OfferLab stores only the minimum provider identifiers and entitlement state
+  needed for reconciliation. Tax registration, filing and accounting ownership
+  remain founder/finance operational responsibilities, not application logic.
+- **Privacy and operations:** secrets remain server-only. Logs, analytics and
+  audit metadata exclude email, payment method, billing address, invoice content
+  and private member content. Record only controlled payment lifecycle event
+  names and opaque internal/provider identifiers where operationally required.
+  Production activation requires live-mode webhook verification, an operator
+  runbook, support contact, refund policy, end-to-end test purchase and refund,
+  monitoring and a checkout kill switch.
+
+The member-facing flow and technical consequences are specified in ADR 0025.

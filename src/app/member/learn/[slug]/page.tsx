@@ -3,7 +3,6 @@ import { ResourceContent } from "../../../components/resource-content";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import { readMemberResource } from "../../../../modules/preparation-resources/application/resources";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { ResourceStateControls } from "./resource-state-controls";
 import Link from "next/link";
 import {
@@ -41,7 +40,6 @@ export default async function Page({
       : undefined;
   return (
     <main className="applications-shell resource-detail-page">
-      <MemberApplicationsHeader />
       <LearnNavigation active={context ? "paths" : "resources"} />
       {context && (
         <nav aria-label="Current Preparation Plan" className="resource-plan-context">

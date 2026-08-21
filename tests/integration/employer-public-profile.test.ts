@@ -40,13 +40,18 @@ async function setupEmployer(
     careersUrl: string;
     industry?: string | null;
     employeeBand?: string | null;
+    directoryVisible?: boolean;
     hasSponsor?: boolean;
     jobPublished?: boolean;
   }>,
 ): Promise<{ companyId: string }> {
   const company = await migrationDatabase<{ id: string }[]>`
-    insert into app.company (name, slug, careers_url, source_type, employer_industry_key)
-    values (${input.name}, ${uniqueSlug("pub")}, ${input.careersUrl}, 'unknown', ${input.industry ?? null})
+    insert into app.company (
+      name, slug, careers_url, source_type, employer_industry_key, directory_visible
+    ) values (
+      ${input.name}, ${uniqueSlug("pub")}, ${input.careersUrl}, 'unknown',
+      ${input.industry ?? null}, ${input.directoryVisible ?? false}
+    )
     returning id
   `;
   const companyId = company[0]!.id;
@@ -198,6 +203,7 @@ describe("employer public profile view", () => {
       careersUrl: `https://credible-${uniqueSlug("u")}.example.com/careers`,
       industry: "financial_services",
       employeeBand: "1,000–4,999",
+      directoryVisible: true,
     });
     await setupEmployer({
       name: "Thin Employer Co",
@@ -247,6 +253,7 @@ describe("employer public profile view", () => {
       careersUrl: `https://sitemap-credible-${uniqueSlug("u")}.example.com/careers`,
       industry: "financial_services",
       employeeBand: "10,000–49,999",
+      directoryVisible: true,
     });
     const rows = await migrationDatabase.begin((t) => listIndexableEmployersForSitemap(t, 10_000));
     const slugs = new Set(rows.map((row) => row.slug));

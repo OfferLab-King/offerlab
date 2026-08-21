@@ -10,7 +10,6 @@ import {
   groupMockProblemTypes,
   groupMockSectors,
 } from "../../../../../../modules/practice-services/domain/group-mock";
-import { MemberApplicationsHeader } from "../../../../applications/member-applications-header";
 import { LearnNavigation } from "../../../learn-navigation";
 
 export const runtime = "nodejs";
@@ -26,7 +25,6 @@ export default async function GroupMockCasePage({
   if (!material) notFound();
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="practice" />
       <section className="applications-heading">
         <div>

@@ -53,7 +53,9 @@ test("the signed-out public navigation lists Jobs, Employers and account actions
 }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Prepare with evidence/i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /Build the proof behind every application/i }),
+  ).toBeVisible();
 
   const navigation = page.getByRole("navigation", { name: "Public navigation" });
   await expect(navigation.getByRole("link", { name: "Jobs" })).toHaveAttribute("href", "/jobs");
@@ -66,43 +68,34 @@ test("the signed-out public navigation lists Jobs, Employers and account actions
     "/intelligence",
   );
 
-  const brand = page.getByRole("link", { name: "OfferLab" }).first();
+  const banner = page.getByRole("banner");
+  const brand = banner.getByRole("link", { name: "OfferLab" }).first();
   await expect(brand).toHaveAttribute("href", "/");
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute(
+  await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveAttribute(
     "href",
     "/sign-in",
   );
-  await expect(page.getByRole("link", { name: "Create free account" })).toHaveAttribute(
+  await expect(banner.getByRole("link", { name: "Create free account" })).toHaveAttribute(
     "href",
     "/register",
   );
-  await expect(page.getByRole("button", { name: /sign out/i })).toHaveCount(0);
+  await expect(banner.getByRole("button", { name: /sign out/i })).toHaveCount(0);
 });
 
-test("the homepage communicates the job-discovery journey", async ({ page }) => {
+test("the homepage communicates the connected application journey", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto("/");
-  await expect(
-    page.getByRole("heading", { name: /Discover a real role, then prepare/i }),
-  ).toBeVisible();
-  await expect(page.getByText(/official public career sources/i)).toBeVisible();
-  await expect(page.getByText(/employer's official website/i)).toBeVisible();
-
-  const searchForm = page.locator('form[action="/jobs"][method="get"]');
-  await expect(searchForm).toBeVisible();
-  await searchForm.getByLabel("Search current roles").fill("graduate analyst");
-  await searchForm.getByRole("button", { name: "Search jobs" }).click();
-  await expect(page).toHaveURL(/\/jobs\?q=graduate\+analyst/);
-  await expect(
-    page.getByRole("heading", { name: /Find your next opportunity/i }).first(),
-  ).toBeVisible();
-
-  await page.goto("/");
-  await expect(page.getByRole("link", { name: /Explore employers by sector/ })).toHaveAttribute(
+  await expect(page.getByRole("heading", { name: "Find the right opportunity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build from real evidence" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tailor without inventing" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Browse current roles/ })).toHaveAttribute(
     "href",
-    "/employers",
+    "/jobs",
   );
-  await expect(page.getByText(/save the role, tailor a truthful CV/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Search live roles" })).toHaveAttribute(
+    "href",
+    "/jobs",
+  );
 });
 
 test("the signed-in member navigation is available on the member home", async ({
@@ -126,32 +119,26 @@ test("the signed-in member navigation is available on the member home", async ({
     await page.waitForURL(/\/member$/);
 
     const navigation = page.getByRole("navigation", { name: "Member navigation" });
-    await expect(navigation.getByRole("link")).toHaveCount(10);
-    await expect(navigation.getByRole("link", { name: "Home" })).toHaveAttribute(
+    await expect(navigation.getByRole("link")).toHaveCount(5);
+    await expect(navigation.getByRole("link", { name: "Workspace" })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    for (const label of [
-      "Jobs",
-      "Saved jobs",
-      "Employers",
-      "Applications",
-      "CVs",
-      "Cover letters",
-      "Prepare",
-      "Membership",
-      "Profile",
-    ]) {
+    for (const label of ["Jobs", "Employers", "Answer Bank", "Library"]) {
       await expect(navigation.getByRole("link", { name: label, exact: true })).not.toHaveAttribute(
         "aria-current",
         "page",
       );
     }
+    const accountNav = page.getByRole("navigation", { name: "Account" });
+    await expect(accountNav.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "/plans");
+    await expect(accountNav.getByRole("link", { name: "Profile" })).toBeVisible();
 
-    const brand = page.getByRole("link", { name: "OfferLab" }).first();
+    const banner = page.getByRole("banner");
+    const brand = banner.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -188,10 +175,11 @@ test("signed-in members keep the workspace navigation while visiting /jobs", asy
       "page",
     );
     await expect(navigation.getByRole("link", { name: "Employers", exact: true })).toBeVisible();
-    const brand = page.getByRole("link", { name: "OfferLab" }).first();
+    const banner = page.getByRole("banner");
+    const brand = banner.getByRole("link", { name: "OfferLab" }).first();
     await expect(brand).toHaveAttribute("href", "/member");
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -226,8 +214,9 @@ test("signed-in members keep the workspace navigation while visiting /employers"
       "page",
     );
     await expect(navigation.getByRole("link", { name: "Jobs", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
+    const banner = page.getByRole("banner");
+    await expect(banner.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(banner.getByRole("link", { name: "Sign in", exact: true })).toHaveCount(0);
   } finally {
     await cleanupMember(database, ownerId, authId);
   }
@@ -283,7 +272,9 @@ test("the responsive menu is keyboard accessible, navigates and avoids overflow"
   const jobsLink = navigation.getByRole("link", { name: "Jobs" });
   await expect(jobsLink).toBeVisible();
   await expect(jobsLink).toBeFocused();
-  await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("banner").getByRole("link", { name: "Sign in", exact: true }),
+  ).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

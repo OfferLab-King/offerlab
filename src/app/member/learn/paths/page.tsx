@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import { readLearningPaths } from "../../../../modules/learning-paths/application/learning-paths";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 import { PreparationPlanCard } from "../preparation-plan-card";
 import { planKind } from "../learn-presenters";
@@ -24,7 +23,6 @@ export default async function Page({
   const stagePaths = paths.filter((path) => planKind(path) === "stage");
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="paths" />
       <section className="applications-heading">
         <div>
