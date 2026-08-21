@@ -5,7 +5,6 @@ import { requireMember } from "../../../modules/identity-access/application/auth
 import { isJobCatalogEnabled } from "../../../modules/job-catalog/application/config";
 import { listSavedJobsForMember } from "../../../modules/job-catalog/application/saved-jobs";
 import { formatDate, isDeadlinePassed } from "../../jobs/job-display";
-import { MemberApplicationsHeader } from "../applications/member-applications-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +17,6 @@ export default async function SavedJobsPage() {
 
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <header className="applications-heading">
         <div>
           <p className="eyebrow">Member workspace</p>

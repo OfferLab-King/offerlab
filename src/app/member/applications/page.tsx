@@ -8,7 +8,6 @@ import { readOnboardingProfile } from "../../../modules/member-profile/applicati
 import { opportunityTypes } from "../../../modules/taxonomy/domain/opportunity-types";
 import { industries } from "../../../modules/taxonomy/domain/industries";
 import { formatDate } from "../../jobs/job-display";
-import { MemberApplicationsHeader } from "./member-applications-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +23,6 @@ export default async function ApplicationsPage({ searchParams }: Props) {
 
   return (
     <main className="applications-shell workspace-shell">
-      <MemberApplicationsHeader />
       <section className="workspace-hero compact-hero">
         <div>
           <p className="eyebrow">Application tracker</p>

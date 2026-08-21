@@ -8,7 +8,6 @@ import {
 import { parseReportFilters } from "../../../../modules/recruitment-intelligence/domain/report";
 import { industries } from "../../../../modules/taxonomy/domain/industries";
 import { IntelligenceReportCard } from "../../../components/intelligence-report";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 
 export const runtime = "nodejs";
@@ -32,7 +31,6 @@ export default async function IntelligencePage({
   const hasFilters = Boolean(filters.query || filters.stage || filters.industry || filters.cycle);
   return (
     <main className="applications-shell intelligence-library-page">
-      <MemberApplicationsHeader />
       <LearnNavigation active="intelligence" />
       <section className="applications-heading intelligence-heading">
         <div>

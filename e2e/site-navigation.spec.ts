@@ -138,7 +138,7 @@ test("the signed-in member navigation is available on the member home", async ({
       );
     }
     const accountNav = page.getByRole("navigation", { name: "Account" });
-    await expect(accountNav.getByRole("link", { name: "Membership" })).toBeVisible();
+    await expect(accountNav.getByRole("link", { name: "Plans" })).toHaveAttribute("href", "/plans");
     await expect(accountNav.getByRole("link", { name: "Profile" })).toBeVisible();
 
     const brand = page.getByRole("link", { name: "OfferLab" }).first();

@@ -9,6 +9,10 @@
 > **Current UX authority:** `experience-principles.md` governs implementation. This draft inventory describes possible capabilities, not a requirement for large instructional screens, fixed progression, central next-action panels or progress displays without practical decision value.
 >
 > `product-strategy-and-roadmap.md` governs which capabilities deserve attention and delivery priority. This inventory must not be treated as a requirement to build every listed screen.
+>
+> **Membership checkout:** The current authoritative member upgrade and billing
+> flow is ADR 0025. Historical checkout, premium-content gating, billing and
+> cancellation language in this file must not override it.
 
 ---
 

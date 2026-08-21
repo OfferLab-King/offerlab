@@ -70,12 +70,52 @@ describe("Workday CXS connector", () => {
     );
   });
 
+  it("resolves ambiguous listing locations from Workday detail JSON-LD before ingestion", async () => {
+    const listing = cxsPage(1, [
+      {
+        title: "Programme Analyst",
+        externalPath: "/job/London/Programme-Analyst_42",
+        locationsText: "2 Locations",
+      },
+    ]);
+    const detail = `<script type="application/ld+json">${JSON.stringify({
+      "@type": "JobPosting",
+      jobLocation: {
+        address: {
+          "@type": "PostalAddress",
+          addressCountry: "GB",
+          addressLocality: "London",
+        },
+        "@type": "Place",
+      },
+    })}</script>`;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => ({
+        headers: new Headers({
+          "content-type": init?.method === "POST" ? "application/json" : "text/html",
+        }),
+        ok: true,
+        status: 200,
+        text: async () => (init?.method === "POST" ? listing : detail),
+      })),
+    );
+
+    const jobs = await createWorkdayConnector().discoverJobs(context());
+
+    expect(jobs[0]).toMatchObject({
+      locationText: "London, GB",
+      locations: [{ city: "London", country: "GB" }],
+    });
+  });
+
   it("pages through the listing with offset and stops on an empty page", async () => {
     const pageOne = cxsPage(
       40,
       Array.from({ length: 20 }, (_, i) => ({
         title: `Role ${i}`,
         externalPath: `/job/X/Role-${i}_${i + 1}`,
+        locationsText: "London",
       })),
     );
     const pageTwo = cxsPage(
@@ -83,6 +123,7 @@ describe("Workday CXS connector", () => {
       Array.from({ length: 20 }, (_, i) => ({
         title: `Role ${i + 20}`,
         externalPath: `/job/X/Role-${i + 20}_${i + 21}`,
+        locationsText: "London",
       })),
     );
     const emptyPage = cxsPage(40, []);
@@ -117,6 +158,7 @@ describe("Workday CXS connector", () => {
       Array.from({ length: 100 }, (_, i) => ({
         title: `Role ${i}`,
         externalPath: `/job/X/Role-${i}_${i}`,
+        locationsText: "London",
       })),
     );
     const fetchImplementation = stubFetchResponses([{ body }, { body }, { body }]);

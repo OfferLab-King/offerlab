@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "./styles.css";
+import "./design-refresh.css";
 
 const defaultDescription =
   "OfferLab helps UK graduate applicants organise applications, tailor truthful CVs and cover letters, and prepare with evidence for each recruitment stage.";
@@ -15,6 +16,14 @@ export const metadata: Metadata = {
   ),
   openGraph: {
     description: defaultDescription,
+    images: [
+      {
+        alt: "OfferLab — Build the proof behind every application",
+        height: 909,
+        url: "/og.png",
+        width: 1731,
+      },
+    ],
     locale: "en_GB",
     siteName: "OfferLab",
     title: "OfferLab",
@@ -22,8 +31,9 @@ export const metadata: Metadata = {
   },
   title: "OfferLab",
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     description: defaultDescription,
+    images: ["/og.png"],
     title: "OfferLab",
   },
 };

@@ -103,7 +103,7 @@ describe("UK location admission", () => {
 
   it("does not treat parenthetical remote in another country as UK", () => {
     expect(evaluateUkLocation({ locationText: "Remote (Ireland)", remoteType: null }).status).toBe(
-      "ambiguous",
+      "non_uk",
     );
   });
 
@@ -193,7 +193,20 @@ describe("UK location admission", () => {
     ).toBe("uk_confirmed");
     expect(
       evaluateUkLocation({ locationText: "Frankfurt, Deutschland", remoteType: null }).status,
-    ).toBe("ambiguous");
+    ).toBe("non_uk");
+  });
+
+  it.each(["Japan - Tokyo", "Mumbai, India", "Seattle, Washington", "Dubai, UAE"])(
+    "suppresses an unstructured location with clear foreign evidence: %s",
+    (locationText) => {
+      expect(evaluateUkLocation({ locationText, remoteType: null }).status).toBe("non_uk");
+    },
+  );
+
+  it("keeps a same-named UK city with foreign evidence ambiguous", () => {
+    expect(evaluateUkLocation({ locationText: "London, Canada", remoteType: null }).status).toBe(
+      "ambiguous",
+    );
   });
 });
 

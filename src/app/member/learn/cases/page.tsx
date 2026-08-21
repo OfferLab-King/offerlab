@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { requireMember } from "../../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../../modules/member-profile/application/onboarding";
 import { readLibraryPage } from "../../../../modules/preparation-resources/application/resources";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 import { ResourceCard } from "../resource-card";
 
@@ -22,7 +21,6 @@ export default async function CoachingCasesPage() {
   });
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="cases" />
       <section className="applications-heading">
         <div>

@@ -755,6 +755,13 @@ export async function listEmployerPublicDirectory(
     values.push(value);
     return `$${values.length}`;
   };
+  // Keep the unfiltered directory curated. The full legal sponsor universe is
+  // included only for an explicit name search or licensed-sponsor filter.
+  conditions.push(
+    query.query || query.sponsor
+      ? "(p.directory_visible or p.current_jobs > 0 or p.has_sponsor)"
+      : "(p.directory_visible or p.current_jobs > 0)",
+  );
   if (query.query) {
     conditions.push(
       `(p.name ilike ${parameter(`%${query.query}%`)} or p.slug ilike ${parameter(`%${query.query}%`)})`,

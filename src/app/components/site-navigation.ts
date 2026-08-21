@@ -18,7 +18,7 @@ export const memberNavLinks = [
 ] as const satisfies readonly SiteNavigationLink[];
 
 export const memberAccountLinks = [
-  { href: "/member/membership", label: "Membership" },
+  { href: "/plans", label: "Plans" },
   { href: "/member/onboarding", label: "Profile" },
 ] as const satisfies readonly SiteNavigationLink[];
 

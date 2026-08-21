@@ -264,9 +264,9 @@ export default async function JobSourcesPage() {
               Eligibility review queue ({view.eligibilityQueue.length})
             </h2>
             <p>
-              Jobs awaiting an eligibility decision. Needs-review and ineligible roles are never
-              published automatically. Use the filters, quick decisions and bulk actions to clear
-              the queue; opening the listing link shows the employer page.
+              Only jobs whose UK location or listing evidence remains genuinely ambiguous appear
+              here. Deterministically confirmed UK vacancies publish automatically; clearly non-UK
+              or expired records are suppressed automatically.
             </p>
           </div>
         </div>

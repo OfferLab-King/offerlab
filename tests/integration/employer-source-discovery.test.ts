@@ -115,7 +115,7 @@ describe("source discovery pipeline", () => {
     expect(secondPlans[0]!.changed).toBe(false);
   });
 
-  it("promotes a verified candidate to a paused source and is idempotent", async () => {
+  it("activates a verified typed source with complete configuration and is idempotent", async () => {
     const { companyId, candidateId } = await setupCompanyAndCandidate({
       candidateUrl: `https://jobs.smartrecruiters.com/AcmeDiscovery-${uniqueSlug("sr")}`,
       status: "verified",
@@ -132,22 +132,42 @@ describe("source discovery pipeline", () => {
       }),
     );
     const target = candidates.find((candidate) => candidate.candidateId === candidateId)!;
-    const plans = planCandidatePromotions([target]);
+    await migrationDatabase`
+      update app.job_source_candidate
+      set ats_verification_status = 'typed_api_verified'
+      where id = ${candidateId}::uuid
+    `;
+    const verifiedTarget = { ...target, atsVerificationStatus: "typed_api_verified" };
+    const plans = planCandidatePromotions([verifiedTarget]);
     expect(plans[0]!.promotable).toBe(true);
 
     const outcome = await migrationDatabase.begin((t) => applyCandidatePromotions(t, plans, true));
     expect(outcome.created).toBe(1);
 
     const sources = await migrationDatabase<
-      { status: string; source_type: string; ats_provider: string; careers_url: string }[]
+      {
+        status: string;
+        source_type: string;
+        ats_provider: string;
+        careers_url: string;
+        crawl_endpoint_url: string | null;
+        configuration: Readonly<Record<string, unknown>>;
+        run_requested_at: Date | null;
+      }[]
     >`
-      select status, source_type, ats_provider, careers_url
+      select status, source_type, ats_provider, careers_url, crawl_endpoint_url,
+        configuration, run_requested_at
       from app.job_source where company_id = ${companyId}::uuid
     `;
     expect(sources).toHaveLength(1);
-    expect(sources[0]!.status).toBe("paused");
+    expect(sources[0]!.status).toBe("active");
     expect(sources[0]!.source_type).toBe("smartrecruiters");
     expect(sources[0]!.ats_provider).toBe("SmartRecruiters");
+    expect(sources[0]!.configuration).toMatchObject({
+      smartRecruitersCompany: expect.stringContaining("AcmeDiscovery-"),
+    });
+    expect(sources[0]!.crawl_endpoint_url).toContain("api.smartrecruiters.com");
+    expect(sources[0]!.run_requested_at).toBeInstanceOf(Date);
 
     const candidateRow = await migrationDatabase<{ status: string }[]>`
       select status from app.job_source_candidate where id = ${candidateId}::uuid
@@ -165,8 +185,8 @@ describe("source discovery pipeline", () => {
         limit: 1,
       }),
     );
-    expect(promotedCandidates[0]!.liveSources).toBe(0);
-    expect(promotedCandidates[0]!.atsProviders).toBeNull();
+    expect(promotedCandidates[0]!.liveSources).toBe(1);
+    expect(promotedCandidates[0]!.atsProviders).toBe("SmartRecruiters");
 
     await migrationDatabase.begin((transaction) =>
       markCandidateVerified(transaction, candidateId, "https://verified.example.com/careers"),
@@ -297,6 +317,19 @@ describe("promoteCandidateToSource guards", () => {
         companyName: "No Candidate Co",
         candidateUrl: `https://nocand-${uniqueSlug("n2")}.example.com/careers`,
         platform: "workday",
+        automation: {
+          configuration: {
+            cxsEndpoint: "https://nocand.wd1.myworkdayjobs.com/wday/cxs/nocand/Careers/jobs",
+          },
+          crawlEndpointUrl: "https://nocand.wd1.myworkdayjobs.com/wday/cxs/nocand/Careers/jobs",
+          platform: "workday",
+          probe: {
+            body: "{}",
+            method: "POST",
+            url: "https://nocand.wd1.myworkdayjobs.com/wday/cxs/nocand/Careers/jobs",
+          },
+          sourceType: "workday",
+        },
         channel: "general",
         notes: "test",
       }),

@@ -66,38 +66,41 @@ export default async function PublicJobsPage({
     !filters.query;
 
   return (
-    <main className="catalogue-page">
+    <>
       <SiteHeader />
-      <div className="catalogue-shell">
-        <PageHeader
-          eyebrow="Roles from official employer sites"
-          intro="Search current roles across leading employers, compare the details that matter, and apply directly on the employer's website. Official sources only — no recycled aggregator links."
-          title="Find your next opportunity"
-        />
-        {showProfileHint ? (
-          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
-            Based on your profile: {profileIndustries.join(", ")} —{" "}
-            <Link
-              href={
-                `/jobs?industries=${profileIndustries.map((v) => v.replaceAll("_", "-")).join(",")}` as never
-              }
-            >
-              filter jobs
-            </Link>{" "}
-            or <Link href="/employers">explore employers</Link> ·{" "}
-            <Link href="/member/onboarding">update profile</Link>
-          </p>
-        ) : (
-          <p className="hint" style={{ marginTop: "-0.75rem", marginBottom: "1rem" }}>
-            Tip: <Link href="/employers">explore employers by industry</Link> then filter jobs by employer.
-          </p>
-        )}
-        <JobCatalogueView
-          initialData={initialData}
-          initialUrl={initialUrl}
-          savedEmployers={savedEmployers}
-        />
-      </div>
-    </main>
+      <main className="catalogue-page">
+        <div className="catalogue-shell">
+          <PageHeader
+            eyebrow="Roles from official employer sites"
+            intro="Search current roles across leading employers, compare the details that matter, and apply directly on the employer's website. Official sources only — no recycled aggregator links."
+            title="Find your next opportunity"
+          />
+          {showProfileHint ? (
+            <p className="hint catalogue-profile-hint">
+              Based on your profile: {profileIndustries.join(", ")} —{" "}
+              <Link
+                href={
+                  `/jobs?industries=${profileIndustries.map((v) => v.replaceAll("_", "-")).join(",")}` as never
+                }
+              >
+                filter jobs
+              </Link>{" "}
+              or <Link href="/employers">explore employers</Link> ·{" "}
+              <Link href="/member/onboarding">update profile</Link>
+            </p>
+          ) : (
+            <p className="hint catalogue-profile-hint">
+              Tip: <Link href="/employers">explore employers by industry</Link> then filter jobs by
+              employer.
+            </p>
+          )}
+          <JobCatalogueView
+            initialData={initialData}
+            initialUrl={initialUrl}
+            savedEmployers={savedEmployers}
+          />
+        </div>
+      </main>
+    </>
   );
 }

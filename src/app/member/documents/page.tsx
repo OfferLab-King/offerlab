@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { readCareerDocuments } from "../../../modules/career-documents/application/career-documents";
 import { requireMember } from "../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
-import { MemberApplicationsHeader } from "../applications/member-applications-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +17,6 @@ export default async function DocumentsOverviewPage() {
   ]);
   return (
     <main className="applications-shell workspace-shell">
-      <MemberApplicationsHeader />
       <section className="workspace-hero compact-hero">
         <div>
           <p className="eyebrow">Documents</p>

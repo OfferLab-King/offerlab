@@ -3170,7 +3170,7 @@ textarea[aria-invalid="true"] {
 .public-intelligence-page,
 .public-intelligence-detail-page {
   margin: 0 auto;
-  max-width: 76rem;
+  max-width: 84rem;
   padding: 0 clamp(1rem, 4vw, 3rem) 4rem;
 }
 

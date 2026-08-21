@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isDestinationCurrent, memberNavLinks, publicNavLinks } from "./site-navigation";
+import {
+  isDestinationCurrent,
+  memberAccountLinks,
+  memberNavLinks,
+  publicNavLinks,
+} from "./site-navigation";
 
 describe("isDestinationCurrent", () => {
   it("keeps Workspace current on its private sub-pages", () => {
@@ -70,5 +75,10 @@ describe("isDestinationCurrent", () => {
       "Recruitment Intelligence",
       "Plans",
     ]);
+  });
+
+  it("uses the unified Plans page for member plan management", () => {
+    expect(memberAccountLinks).toContainEqual({ href: "/plans", label: "Plans" });
+    expect(memberAccountLinks.map(({ href }) => href)).not.toContain("/member/membership");
   });
 });

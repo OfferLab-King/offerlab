@@ -7,7 +7,6 @@ import {
   groupMockSectors,
 } from "../../../../modules/practice-services/domain/group-mock";
 import { readServiceOfferings } from "../../../../modules/practice-services/application/services";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 import {
   cancelGroupMockAction,
@@ -38,7 +37,6 @@ export default async function PracticePage({
   };
   return (
     <main className="applications-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="practice" />
       <section className="applications-heading">
         <div>
@@ -206,7 +204,7 @@ export default async function PracticePage({
           {!sessions.length && (
             <div className="card empty-state">
               <h3>No rooms are scheduled yet</h3>
-              <p>New pilot dates will appear here after OfferLab publishes them.</p>
+              <p>New session dates will appear here after OfferLab publishes them.</p>
             </div>
           )}
         </div>
@@ -215,7 +213,7 @@ export default async function PracticePage({
         <div className="section-heading-row">
           <div>
             <p className="eyebrow">Additional support</p>
-            <h2 id="feedback-pilots-heading">Feedback pilots</h2>
+            <h2 id="feedback-pilots-heading">Feedback services</h2>
           </div>
         </div>
         <div className="resource-grid service-grid">
@@ -224,7 +222,9 @@ export default async function PracticePage({
             .map((offering) => (
               <article className="card direct-tool-card" key={offering.id}>
                 <span className="availability-label">
-                  {offering.availability === "interest" ? "Pilot interest" : offering.availability}
+                  {offering.availability === "interest"
+                    ? "Register interest"
+                    : offering.availability}
                 </span>
                 <h2>{offering.title}</h2>
                 <p>{offering.summary}</p>
@@ -259,7 +259,7 @@ export default async function PracticePage({
                     <button type="submit">
                       {offering.offeringType === "group_mock"
                         ? "Register interest"
-                        : "Request this pilot"}
+                        : "Request this service"}
                     </button>
                   </form>
                 )}

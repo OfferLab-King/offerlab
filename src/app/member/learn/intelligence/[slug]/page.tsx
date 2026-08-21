@@ -4,7 +4,6 @@ import { IntelligenceReportDetail } from "../../../../components/intelligence-re
 import { requireMember } from "../../../../../modules/identity-access/application/authorization";
 import { readIntelligenceReport } from "../../../../../modules/recruitment-intelligence/application/reports";
 import { readIntelligenceDiscussion } from "../../../../../modules/recruitment-intelligence/application/community";
-import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
 import { LearnNavigation } from "../../learn-navigation";
 import { IntelligenceDiscussion } from "./intelligence-discussion";
 
@@ -28,7 +27,6 @@ export default async function MemberIntelligenceReportPage({
   ]);
   return (
     <main className="applications-shell intelligence-report-page">
-      <MemberApplicationsHeader />
       <LearnNavigation active="intelligence" />
       <div className="intelligence-back-link">
         <Link href="/member/learn/intelligence">← All intelligence reports</Link>

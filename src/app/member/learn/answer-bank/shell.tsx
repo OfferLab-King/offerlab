@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { MemberApplicationsHeader } from "../../applications/member-applications-header";
 import { LearnNavigation } from "../learn-navigation";
 export function AnswerBankShell({
   children,
@@ -9,7 +8,6 @@ export function AnswerBankShell({
 }) {
   return (
     <main className="applications-shell answer-bank-shell">
-      <MemberApplicationsHeader />
       <LearnNavigation active="answer-bank" />
       {children}
     </main>

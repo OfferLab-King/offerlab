@@ -6,7 +6,6 @@ import {
 } from "../../../modules/learning-paths/application/learning-paths";
 import { requireMember } from "../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
-import { MemberApplicationsHeader } from "../applications/member-applications-header";
 import { LearnNavigation } from "./learn-navigation";
 import { nextPreparationArea, readyAreaCount, selectContinuePreparation } from "./learn-presenters";
 import { readAnswerBankSummary } from "../../../modules/answer-bank/application/answer-bank";
@@ -30,7 +29,6 @@ export default async function LearnPage() {
 
   return (
     <main className="applications-shell learn-overview">
-      <MemberApplicationsHeader />
       <LearnNavigation active="overview" />
       <section className="workspace-hero compact-hero">
         <div>
@@ -221,12 +219,12 @@ export default async function LearnPage() {
           </article>
           <article className="card compact-card direct-tool-card">
             <h3>Practice</h3>
-            <p>Group Mock and bounded feedback pilots.</p>
+            <p>Group Mock and bounded feedback services.</p>
             <Link
               className="button-link button-secondary compact-button"
               href="/member/learn/practice"
             >
-              View pilots
+              View practice and feedback
             </Link>
           </article>
         </div>

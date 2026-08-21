@@ -7,6 +7,10 @@ import {
 } from "../../src/modules/job-catalog/infrastructure/connectors/http-client";
 import { RobotsGate } from "../../src/modules/job-catalog/infrastructure/connectors/robots";
 import {
+  deriveSourceAutomationCandidates,
+  sourceAutomationProbeMatches,
+} from "../../src/modules/employer-research/domain/source-automation";
+import {
   applyCandidateFingerprintPlans,
   applyCandidatePromotions,
   formatDiscoveryReport,
@@ -42,9 +46,10 @@ const rawOffset = Number(readFlag("offset") ?? "0");
 if (!Number.isInteger(rawOffset) || rawOffset < 0) {
   throw new Error("--offset must be a non-negative integer");
 }
-const dryRun = !process.argv.includes("--confirm");
-const verify = process.argv.includes("--verify");
-const promote = process.argv.includes("--promote");
+const automate = process.argv.includes("--automate");
+const dryRun = !automate && !process.argv.includes("--confirm");
+const verify = automate || process.argv.includes("--verify");
+const promote = automate || process.argv.includes("--promote");
 const homepageDiscovery = process.argv.includes("--homepage");
 
 const databaseUrl = process.env.DATABASE_MIGRATION_URL;
@@ -89,46 +94,89 @@ const report = await database.begin(async (transaction) => {
 
   let verifiedCount = 0;
   let verifyFailures = 0;
+  const verifiedCandidateIds = new Set<string>();
+  const verifiedEndpoints = new Map<string, string>();
   if (verify) {
-    // Verification is non-destructive (it only marks candidates verified or
-    // failed after a real robots-gated fetch), so it persists regardless of
-    // --confirm; --confirm remains the gate for fingerprint applies,
-    // promotions and homepage discovery.
     for (const plan of fingerprintPlans) {
-      const decision = await robotsGate.check(plan.url, "offerlab");
-      if (decision === "blocked") {
-        process.stdout.write(`  [robots blocked] ${plan.companyName}: ${plan.url}\n`);
+      const candidate = candidates.find((item) => item.candidateId === plan.candidateId)!;
+      const automationPlans = deriveSourceAutomationCandidates(
+        candidate.candidateUrl,
+        candidate.candidateEndpoint,
+        candidate.companyName,
+      );
+      if (automationPlans.length === 0) {
+        process.stdout.write(
+          `  [review required] ${plan.companyName}: no safe typed connector can be derived\n`,
+        );
         verifyFailures += 1;
         continue;
       }
-      try {
-        const response = await fetchText(plan.url, {
-          httpClient,
-          retryable: false,
-        });
-        if (response.status < 400) {
-          await markCandidateVerified(transaction, plan.candidateId, response.url);
-          verifiedCount += 1;
-        } else {
-          verifyFailures += 1;
-          process.stdout.write(
-            `  [verify failed] ${plan.companyName}: HTTP ${response.status} ${plan.url}\n`,
-          );
+      let verified = false;
+      let lastReason = "no matching provider response";
+      for (const automationPlan of automationPlans) {
+        const decision = await robotsGate.check(automationPlan.probe.url, "offerlab");
+        if (decision === "blocked") {
+          lastReason = "robots blocked";
+          continue;
         }
-      } catch (error) {
+        try {
+          const response = await fetchText(automationPlan.probe.url, {
+            httpClient,
+            ...(automationPlan.probe.method === "POST"
+              ? {
+                  body: automationPlan.probe.body ?? "",
+                  headers: { "content-type": "application/json" },
+                  method: "POST" as const,
+                }
+              : {}),
+            retryable: false,
+          });
+          if (!sourceAutomationProbeMatches(automationPlan, response.status, response.body)) {
+            lastReason = `response did not match ${automationPlan.platform}`;
+            continue;
+          }
+          await markCandidateVerified(
+            transaction,
+            plan.candidateId,
+            `Typed ${automationPlan.platform} API verified at ${response.url}`,
+            "typed_api_verified",
+            automationPlan.crawlEndpointUrl,
+          );
+          verifiedCandidateIds.add(plan.candidateId);
+          verifiedEndpoints.set(plan.candidateId, automationPlan.crawlEndpointUrl);
+          verifiedCount += 1;
+          verified = true;
+          break;
+        } catch (error) {
+          lastReason = error instanceof Error ? error.message : "unknown error";
+        }
+      }
+      if (!verified) {
         verifyFailures += 1;
-        const reason = error instanceof Error ? error.message : "unknown error";
-        process.stdout.write(`  [verify failed] ${plan.companyName}: ${reason}\n`);
+        process.stdout.write(`  [verify failed] ${plan.companyName}: ${lastReason}\n`);
       }
     }
   }
 
-  const promotions = planCandidatePromotions(candidates);
+  const promotions = planCandidatePromotions(
+    candidates.map((candidate) =>
+      verifiedCandidateIds.has(candidate.candidateId)
+        ? {
+            ...candidate,
+            atsVerificationStatus: "typed_api_verified",
+            candidateEndpoint:
+              verifiedEndpoints.get(candidate.candidateId) ?? candidate.candidateEndpoint,
+            status: "verified",
+            verifiedAt: new Date(),
+          }
+        : candidate,
+    ),
+  );
   if (!promote) {
     const promotable = promotions.filter((plan) => plan.promotable).length;
     if (promotable > 0) {
       process.stdout.write(
-        `\n${promotable} candidate(s) are verified and promotable; re-run with --promote to create paused sources.\n`,
+        `\n${promotable} candidate(s) are verified and automatable; re-run with --automate to activate and queue them.\n`,
       );
     }
   }
@@ -184,7 +232,7 @@ try {
       ),
     );
     process.stdout.write("\n");
-    if (verify && !dryRun) {
+    if (verify) {
       process.stdout.write(
         `Verification: ${report.verifiedCount} verified, ${report.verifyFailures} failed.\n`,
       );

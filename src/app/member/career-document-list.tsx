@@ -3,7 +3,6 @@ import type { CareerDocumentKind } from "../../modules/career-documents/domain/c
 import type { CareerDocument } from "../../modules/career-documents/infrastructure/career-repository";
 import { CareerDocumentNavigation } from "./career-document-navigation";
 import { CareerDocumentUploadForm } from "./career-document-upload-form";
-import { MemberApplicationsHeader } from "./applications/member-applications-header";
 
 export function CareerDocumentList({
   documents,
@@ -16,7 +15,6 @@ export function CareerDocumentList({
   const href = cv ? "/member/cvs" : "/member/cover-letters";
   return (
     <main className="applications-shell workspace-shell">
-      <MemberApplicationsHeader />
       <section className="workspace-hero compact-hero">
         <div>
           <p className="eyebrow">Documents</p>

@@ -487,8 +487,7 @@ export function CareerDocumentWorkspace({
           )}
           {!membershipActive && (
             <p className="membership-prompt">
-              Membership doubles your monthly review capacity.{" "}
-              <a href="/member/membership">Compare plans →</a>
+              Membership doubles your monthly review capacity. <a href="/plans">Compare plans →</a>
             </p>
           )}
           {dirty && (

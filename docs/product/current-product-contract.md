@@ -2,7 +2,7 @@
 
 **Status:** Active implementation contract
 **Owner:** Founder / Product
-**Last reviewed:** 2026-08-11
+**Last reviewed:** 2026-08-20
 **Authority:** This document consolidates already approved direction. It does not approve new commercial, access-control or marketplace scope. `../architecture/founder-decisions.md` remains the highest product authority.
 
 ## Current goal
@@ -34,14 +34,22 @@ The current implementation contract covers:
   publication pipelines, independently monitored official sources, owner-scoped member saves, honest freshness
   and official application links (see amended ADR 0023);
 - one combined Employers & sectors directory, with a researched UK employer
-  universe (the Top 1,000 sponsor-aware dataset is the scalable foundation; the
-  historical 500-employer ceiling is removed in favour of quality-based
-  visibility) and honest zero-current-role states; legacy standalone sector
-  routes redirect into this directory;
-- an employer-research layer (Top 1,000 research import): canonical employer
-  aliases, Home Office sponsor legal entities, dated research snapshots and
+  universe (the full licensed-sponsor register is the canonical identity
+  foundation; the Top 1,000 is the curated research and crawler-priority
+  overlay) and honest zero-current-role states; legacy standalone sector routes
+  redirect into this directory;
+- an employer-research layer: canonical employer aliases, the full dated Home
+  Office sponsor legal-entity register, curated Top 1,000 research snapshots and
   source-discovery candidates, kept separate from the live crawler source
-  registry and never activating crawling automatically;
+  registry; bounded exact-name web discovery may prepare separate general,
+  early-career, apprenticeship and professional-career candidates across the
+  sponsor universe, but import, search ranking or research evidence alone never
+  activates crawling or publishes an official link;
+- verified source automation: a researched candidate activates only after a
+  supported typed connector is derived and its official public API response is
+  live-verified; complete configuration and the first crawl are then queued
+  automatically, while unsupported or ambiguous candidates remain exceptions for
+  administrator review;
 - content-free, database-enforced member and account request ceilings for outbound job search;
 - preparation resources, taxonomy, learning paths and deterministic recommendations;
 - contextual evidence-building projects and curated, commercially disclosed external learning
@@ -71,13 +79,21 @@ in this contract still apply.
 - Monetisation readiness (founder direction 2026-08-15, ADR 0024): the free
   plan keeps every approved capability; membership adds clearly labelled
   capacity (double member review ceilings) and early access. Pricing,
-  entitlements, the plans page and member management are implemented;
-  provider-backed checkout remains an open decision below.
+  entitlements, the plans page and member management are implemented.
+- Self-serve membership checkout (founder direction 2026-08-20, ADR 0025): use
+  Stripe-hosted Checkout for £9 monthly recurring membership and a £39
+  non-renewing six-month recruitment-season pass. Use the Stripe-hosted Customer
+  Portal for recurring billing management. Provider-backed entitlements are
+  activated only from verified, idempotently processed webhooks; the success
+  redirect never grants access.
 
 ### Next, after an explicit decision
 
 - Human coach operations require a product and architecture decision covering the coach role, vetting, assignment, member consent, least-privilege record access, audit, retention and deletion.
-- In-product payments require a separate decision covering provider, pricing records, refunds, tax/accounting boundaries, entitlements and operational ownership. Stripe is not currently approved. The membership entitlement model (ADR 0024) is implemented and activated manually or in local test mode until that decision is recorded.
+- Payments for coach services, Group Mock one-off purchases, marketplace activity,
+  credits, coupons, trials or any product other than the two membership offers in
+  ADR 0025 require a separate decision. The membership checkout approval is not a
+  general payments platform approval.
 - A production AI provider requires the privacy, evaluation, model, cost and kill-switch gates in `ai-product-strategy.md`. AI-assisted job classification and enrichment additionally require the eligibility-pipeline gates in the founder's 10 August 2026 decision.
 - JSearch production use requires a fresh recorded decision: the founder's 10 August 2026 decision temporarily disables it in favour of the OfferLab catalogue. Re-enabling JSearch requires recorded approval of the provider's commercial display, retention and automated-use terms.
 - Production operation of the job catalogue requires the `JOB_CATALOG_ENABLED` gate. Official,
@@ -102,7 +118,8 @@ in this contract still apply.
 - confidential employer documents, exact restricted questions, personal data or copyrighted assessment material;
 - using member or previous-student content for model training;
 - granting coaches broad administrator access as a shortcut for a proper reviewer role;
-- production payment infrastructure without the explicit decision above.
+- production payment infrastructure outside the bounded membership checkout in
+  ADR 0025 without a separate explicit decision;
 
 ## Content and provenance
 
@@ -141,11 +158,10 @@ When documents conflict, use the precedence in `AGENTS.md`. Do not use an older 
 ## Decisions still intentionally open
 
 1. Whether bounded paid feedback remains founder-operated or introduces separate vetted coach accounts.
-2. Whether payments remain external/manual during validation or become an in-product capability.
-3. Whether DeepSeek passes the documented privacy and international-transfer gates for production
+2. Whether DeepSeek passes the documented privacy and international-transfer gates for production
    member content. Answer Coach and career-document adapters are approved only for local
    development and synthetic evaluation until that review is complete.
-4. Whether and when JSearch's commercial display, retention and automated-use terms would permit
+3. Whether and when JSearch's commercial display, retention and automated-use terms would permit
    re-enabling provider search. JSearch is temporarily disabled by the founder's 10 August 2026
    decision; manual job targets and the OfferLab catalogue are the production-safe paths.
 

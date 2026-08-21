@@ -20,7 +20,12 @@ export const ROLE_UNAVAILABLE_TITLE = "Role not available | OfferLab";
  */
 export function buildJobDetailMetadata(job: JobDetailRow | null, now: Date): Metadata {
   if (!job || !isPubliclyVisible(job, now)) {
-    return { robots: { index: false, follow: false }, title: ROLE_UNAVAILABLE_TITLE };
+    return {
+      openGraph: { images: [], title: ROLE_UNAVAILABLE_TITLE },
+      robots: { index: false, follow: false },
+      title: ROLE_UNAVAILABLE_TITLE,
+      twitter: { images: [], title: ROLE_UNAVAILABLE_TITLE },
+    };
   }
   const title = jobPageTitle(job);
   const description = jobMetaDescription(job);
@@ -28,13 +33,17 @@ export function buildJobDetailMetadata(job: JobDetailRow | null, now: Date): Met
     return {
       alternates: { canonical: `/jobs/${job.slug}` },
       description,
+      openGraph: { description, images: [], title, type: "website" },
       robots: { index: false, follow: true },
       title,
+      twitter: { description, images: [], title },
     };
   }
   return {
     alternates: { canonical: `/jobs/${job.slug}` },
     description,
+    openGraph: { description, images: [], title, type: "website" },
     title,
+    twitter: { description, images: [], title },
   };
 }

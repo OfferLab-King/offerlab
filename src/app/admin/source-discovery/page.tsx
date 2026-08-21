@@ -39,9 +39,9 @@ export default async function SourceDiscoveryPage({
           <p className="eyebrow">Administrator operations</p>
           <h1>Source discovery</h1>
           <p>
-            Research universe grouped by ATS/platform. Discovery runs via{" "}
-            <code>pnpm jobs:discover-source</code>; promoted candidates become paused sources in
-            /admin/job-sources and are never activated automatically.
+            Research universe grouped by ATS/platform. <code>pnpm jobs:sources:automate</code>{" "}
+            verifies typed ATS endpoints, creates complete active sources and queues their first
+            crawl. Only unsupported or ambiguous candidates stay here for review.
           </p>
         </div>
       </header>
@@ -285,19 +285,23 @@ export default async function SourceDiscoveryPage({
                   </td>
                   <td>{candidate.liveSources > 0 ? candidate.liveSources : "–"}</td>
                   <td>
-                    {candidate.status === "verified" || candidate.verifiedAt !== null ? (
+                    {candidate.atsVerificationStatus === "typed_api_verified" ? (
                       <form action={promoteVerifiedCandidate}>
                         <input type="hidden" name="candidateId" value={candidate.candidateId} />
                         <button
                           type="submit"
                           className="button-link"
-                          title="Creates a paused source in Job sources; never activates crawling automatically."
+                          title="Creates a configured active source and queues its first crawl."
                         >
-                          Promote (paused)
+                          Activate source
                         </button>
                       </form>
                     ) : (
-                      <span className="hint">–</span>
+                      <span className="hint">
+                        {candidate.status === "verified" || candidate.verifiedAt !== null
+                          ? "Run source automation"
+                          : "Review evidence"}
+                      </span>
                     )}
                   </td>
                 </tr>

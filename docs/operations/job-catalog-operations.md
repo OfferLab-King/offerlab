@@ -63,6 +63,10 @@ pnpm jobs:targets:validate   # parse and validate the workbook (no DB)
 pnpm jobs:targets:export     # regenerate data/generated/employer-targets/top-1000.json
 pnpm jobs:targets:import --dry-run   # diff the dataset against the database
 pnpm jobs:targets:import --confirm   # apply idempotently
+pnpm jobs:sponsors:import --file=/absolute/register.csv --snapshot=YYYY-MM-DD
+                                      # dry-run the full sponsor snapshot
+pnpm jobs:sponsors:import --file=/absolute/register.csv --snapshot=YYYY-MM-DD --confirm-local
+                                      # apply it to the local canonical universe
 ```
 
 The import is typed, deterministic, idempotent and provenance-preserving. It:
@@ -75,8 +79,8 @@ The import is typed, deterministic, idempotent and provenance-preserving. It:
 - stores dated research snapshots with scores, employee evidence, ownership
   and confidence (internal research data, never public rankings);
 - creates unverified `app.job_source_candidate` rows for researched career
-  URLs; candidates are never crawled and never auto-promoted to
-  `app.job_source`;
+  URLs; import alone never crawls or promotes them. The separate typed-API
+  verification pass may automate a candidate later;
 - never touches `app.job_source`; existing live sources are preserved.
 
 ### External URL-validation review pass
@@ -114,7 +118,7 @@ pnpm jobs:targets:merge-validation-reviews --input=<verdicts.json>  # merges ver
   sources and never touches `app.job_source`; the rank→company mapping comes
   from the latest research snapshot, and ranks without a researched company
   are reported and skipped. Verify the candidates with
-  `pnpm jobs:discover-source --verify` and promote them from
+  `pnpm jobs:sources:automate`; unsupported candidates remain visible in
   `/admin/source-discovery`.
 - Verdicts never edit anything: apply accepted corrections to the XLSX
   workbook (the source of truth) and regenerate with
@@ -160,41 +164,74 @@ discovery backlog without touching the crawler or activating anything.
 pnpm jobs:discover-source                      # fingerprint candidates (dry run)
 pnpm jobs:discover-source --confirm            # apply fingerprint updates
 pnpm jobs:discover-source --verify             # bounded HTTP verification of careers URLs
-pnpm jobs:discover-source --promote --confirm  # create paused sources for verified candidates
+pnpm jobs:sources:automate                      # verify typed APIs, activate and queue first crawls
+pnpm jobs:discover-source --promote --confirm  # promote candidates already verified by typed API
 pnpm jobs:discover-source --homepage           # discover careers links for P0/P1 employers without candidates
 pnpm jobs:discover-source --company=<slug>     # one employer
 pnpm jobs:discover-source --tier=P0 --limit=50 # a cohort, ordered by crawler priority
 pnpm jobs:discover-source --offset=500         # page through large candidate sets (limit caps at 500)
+pnpm jobs:careers:discover --max-queries=1000  # zero-cost plan for a sponsor discovery batch
+pnpm jobs:careers:discover --max-queries=1000 --execute
+                                                # explicitly authorise the bounded paid search batch
+pnpm jobs:careers:discover-free                 # free DNS/HTTPS identity and homepage-link pass
+pnpm jobs:careers:discover-free --dns-prefilter --concurrency=500
+                                                # eliminate nonexistent domains before HTTP verification
 ```
 
-Verification (`--verify`) persists independently of `--confirm`: it performs
-real robots-gated fetches and marks candidates verified or leaves them
-unverified — it is non-destructive. `--confirm` remains the gate for
-fingerprint applies, promotions and homepage discovery. Large candidate sets
-page with `--limit=500` plus `--offset`.
+Verification (`--verify`) persists independently of `--confirm`: it derives the
+typed connector, probes the provider's real public API and validates its response
+shape. `--automate` combines verification, complete configuration, activation and
+the first durable crawl request. `--confirm` remains the gate for standalone
+fingerprint applies, promotions and homepage discovery. Large candidate sets page
+with `--limit=500` plus `--offset`.
+
+Full-register discovery uses the official Brave web-search API only when
+`BRAVE_SEARCH_API_KEY` is configured and `--execute` is present. Every batch is
+hard-capped at 1,000 queries and prints the maximum provider cost before its first
+request. A versioned administrator-only ledger advances every successful or
+no-safe-match company and leaves provider failures eligible for retry, so each
+invocation resumes without a fragile numeric offset. One exact legal-name query can retain
+separate `general`, `early_careers`, `apprenticeships` and `professional`
+candidates. Corporate domains are filled only from strong identity evidence;
+government/company directories, job aggregators and social networks are
+rejected. Search results remain inactive in the administrator discovery queue.
+Run typed verification and automation separately; the search provider is never
+an activation authority.
+
+The free pass tries a deliberately small set of legal-suffix-free `.co.uk`,
+and `.com` domains, then requires matching employer identity in both the
+live hostname and homepage metadata before storing a website. It respects
+robots.txt, applies the crawler's SSRF and response bounds, rejects parked or
+unrelated domains, and stores a newly guessed website only when the verified
+homepage also exposes a careers link. It extracts that strongest careers link and records checked
+companies in its own versioned ledger. This has no provider fee and is safe to
+run over the full register, but its conservative recall is lower than exact-name
+web search.
 
 Behaviour:
 
 - fingerprinting is pure URL/host classification (Workday, Greenhouse, Lever,
   Ashby, SmartRecruiters, Oracle, SuccessFactors, TAL, iCIMS, Avature, Taleo,
   Teamtailor, Personio, Workable, PageUp, Recruitee, Eightfold) with no LLM;
-- `--verify` respects robots.txt through the crawler's `RobotsGate` and marks
-  candidates `verified` only after a successful bounded fetch;
+- `--verify` respects robots.txt through the crawler's `RobotsGate` and records
+  `typed_api_verified` only when the expected provider response shape is present;
 - `--homepage` fetches employer homepages (robots-gated, bounded) for P0/P1
   employers that have real website evidence but no discovery candidate, scores
   careers links deterministically and inserts new `job_source_candidate` rows;
-- `--promote` creates `app.job_source` rows in `paused` state for verified,
-  high-confidence candidates; sources are never activated by discovery;
-  re-running is idempotent and never overwrites existing sources for the same
-  URL or a manually-overridden source; verified candidates can also be
-  promoted from the `/admin/source-discovery` queue;
+- verified high-confidence typed candidates create complete active
+  `app.job_source` rows with the machine endpoint, connector configuration and a
+  queued first crawl. Re-running repairs incomplete non-overridden sources and is
+  idempotent; archived and manually overridden sources are never replaced;
+- unsupported, weakly fingerprinted, blocked or shape-mismatched candidates stay
+  inactive in `/admin/source-discovery` for exception review;
 - `/admin/source-discovery` shows platform-grouped coverage (employers per
   platform by tier, verified and live counts) and the candidate queue; live
   source operations remain in `/admin/job-sources`.
 
-The promotion guard uses the fingerprint high-confidence host match and the
-existing URL-identity check, so a spreadsheet row or guessed URL can never
-become an active crawler source.
+The activation guard requires both a high-confidence host fingerprint and a
+successful typed API response-shape probe, plus the existing URL-identity check.
+A spreadsheet row, guessed URL or generic HTTP 200 can never activate a crawler
+source.
 
 ## Platform adapter prioritisation (Phase C measurement)
 
@@ -359,8 +396,11 @@ pnpm jobs:crawl --company=<slug>           # crawl one source now
 pnpm jobs:crawl --company=<slug> --dry-run # crawl one source without DB writes
 pnpm jobs:crawl:due [--limit=N]            # crawl all due sources
 pnpm jobs:crawl:due --dry-run              # report due sources without crawling
+pnpm jobs:reclassify                       # re-run deterministic admission after rule changes
+pnpm jobs:resolve-locations --confirm --limit=500 # resolve remaining Workday exceptions
 pnpm jobs:enrich [--limit=N]               # enrich pending jobs
 pnpm jobs:enrich --dry-run                 # count pending jobs
+pnpm jobs:sources:automate                 # convert verified typed candidates into queued sources
 ```
 
 All scripts load `.env.local` and require `DATABASE_URL` to reach the
@@ -374,9 +414,9 @@ UK publication gate have been verified. Enrichment has a separate kill switch.
 
 ## Adding an employer source
 
-1. Verify the employer's careers site and robots policy, and confirm the ATS
-   board token (for Greenhouse/Lever/Ashby/SmartRecruiters the official public
-   job-board APIs are used).
+1. Run `pnpm jobs:sources:automate` first. For a supported ATS, OfferLab derives
+   the connector token, probes the official API shape, configures the source,
+   activates it and queues its first crawl without manual JSON entry.
 2. Create or reuse the `app.company` identity, then create one `app.job_source`
    for each distinct channel (for example early careers and professional roles).
    Connector tokens live in `configuration`:
@@ -384,11 +424,21 @@ UK publication gate have been verified. Enrichment has a separate kill switch.
    - Lever: `{"leverCompany": "<company>"}`
    - Ashby: `{"ashbyOrg": "<org>"}`
    - SmartRecruiters: `{"smartRecruitersCompany": "<company>"}`
-   - Workday: `{"raasEndpoint": "<tenant raas url>"}`
-3. Keep incomplete connector records paused; never guess an ATS identifier.
+   - Workday CXS: `{"cxsEndpoint": "https://<host>/wday/cxs/<tenant>/<site>"}`
+   - Workday RaaS: `{"raasEndpoint": "<tenant raas url>"}`
+3. Keep unsupported or incomplete connector records paused; never guess an ATS
+   identifier. Manual configuration is the exception path.
 4. Verify with `pnpm jobs:crawl --company=<slug> --source=<slug> --dry-run` first.
 5. Watch `pnpm jobs:status` for failures; repeated failures pause the source
    automatically. Resume or correct the source from `/admin/job-sources`.
+
+During ingestion, malformed individual vacancies are counted as rejected and
+quarantined; they do not fail a source that still returns valid vacancies.
+Workday aggregate locations are resolved from bounded detail JSON-LD first, with
+the official job path used only as a conservative UK-positive fallback. Run the
+location resolver after a large initial import; clear foreign records are
+suppressed automatically and only unresolved mixed evidence remains in the admin
+exception queue.
 
 Frequency tier guidance: tier 1 (large high-value employers) 720 min,
 tier 2 (important) 1440 min, tier 3 (lower priority) 2880 min. The scheduler

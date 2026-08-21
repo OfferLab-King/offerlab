@@ -36,8 +36,10 @@ There is no separate backend deployment. Route handlers and server actions are a
   deduplicated storage, owner-scoped member saves, and public SEO-friendly discovery. Crawling
   runs as a least-privilege CLI worker (`offerlab_crawler`), never inside the web process. Only
   eligible, published, active roles are publicly visible.
-- **Employer research:** the Top 1,000 sponsor-aware employer research layer. Versioned research
-  snapshots, Home Office sponsor legal entities (one employer to many entities), canonical employer
+- **Employer research:** the full dated licensed-sponsor identity universe with a curated Top 1,000
+  employer research and crawler-priority overlay. Bounded official-site discovery attempts are
+  versioned and recorded separately from inactive source candidates and live crawler sources.
+  Research snapshots, Home Office sponsor legal entities (one employer to many entities), canonical employer
   aliases and unverified source-discovery candidates feed the job-catalog source registry without
   ever activating crawling directly. Administrator-only RLS.
 - **Answer Bank:** private reusable stories, curated-question answers and explicit story-to-answer relationships. All member records are owner scoped.

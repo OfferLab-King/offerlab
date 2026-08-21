@@ -3,7 +3,6 @@ import Link from "next/link";
 import { requireMember } from "../../../modules/identity-access/application/authorization";
 import { readOnboardingProfile } from "../../../modules/member-profile/application/onboarding";
 import type { OnboardingAnswers } from "../../../modules/member-profile/domain/onboarding";
-import { MemberApplicationsHeader } from "../applications/member-applications-header";
 import { PageHeader } from "../../components/page-header";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -36,7 +35,6 @@ export default async function OnboardingPage() {
     : "/employers";
   return (
     <main className="onboarding-shell">
-      <MemberApplicationsHeader />
       <PageHeader
         eyebrow="Profile"
         intro="A short, structured profile helps OfferLab understand your goals. Required answers are marked clearly."

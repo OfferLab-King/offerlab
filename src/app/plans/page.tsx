@@ -9,6 +9,7 @@ import {
   isActiveMembership,
   MEMBERSHIP_PRICING,
 } from "../../modules/membership/domain/membership";
+import { activateTestMembershipAction, cancelMembershipAction } from "./actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,10 +17,10 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   alternates: { canonical: "/plans" },
   description:
-    "OfferLab is free to use. Membership doubles your review capacity, gives priority queue placement for practice rooms and early access to new capabilities.",
+    "Start with OfferLab for free. Add monthly membership or a six-month recruitment-season pass for twice the career-document review capacity.",
   openGraph: {
     description:
-      "OfferLab is free to use. Membership doubles your review capacity, gives priority queue placement for practice rooms and early access to new capabilities.",
+      "Start with OfferLab for free. Add monthly membership or a six-month recruitment-season pass for twice the career-document review capacity.",
     title: "Plans | OfferLab",
     type: "website",
   },
@@ -27,19 +28,39 @@ export const metadata: Metadata = {
 };
 
 const freeBenefits = [
-  "Private workspace for applications, deadlines and saved roles",
+  "Private application, deadline and saved-role workspace",
   "Evidence and Answer Bank with curated starting questions",
-  "CV and cover-letter workspace with version history",
-  "Official job catalogue and employer directory",
-  "Preparation resources, plans and recommendations",
+  "CV and cover-letter workspace with immutable version history",
+  "Official job catalogue, employer directory and preparation library",
+  "A useful baseline of career-document reviews",
 ] as const;
 
 const membershipBenefits = [
-  "Double the member review capacity for CV and cover-letter feedback",
-  "Early access to new capabilities as they launch",
-  "Priority queue placement for practice rooms",
-  "Support the direction of OfferLab's development",
+  "Twice the daily and monthly career-document review capacity",
+  "Selected new capabilities as they become available",
+  "The complete free workspace, with the same privacy protections",
 ] as const;
+
+const selfServeAllowed = process.env.APP_ENV !== "production" && process.env.APP_ENV !== "staging";
+
+function formatDate(value: Date | null): string {
+  if (!value) return "Not set";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(value);
+}
+
+function PlanBenefits({ benefits }: Readonly<{ benefits: readonly string[] }>) {
+  return (
+    <ul className="plan-benefits">
+      {benefits.map((benefit) => (
+        <li key={benefit}>{benefit}</li>
+      ))}
+    </ul>
+  );
+}
 
 export default async function PlansPage() {
   const access = await currentMemberAccess();
@@ -48,124 +69,196 @@ export default async function PlansPage() {
     memberSummary = await readMembershipSummary(access.authorization.userId);
   }
   const isMember = memberSummary !== null && isActiveMembership(memberSummary);
+  const freeHref = access.status === "eligible" ? "/member" : "/register";
 
   return (
     <>
       <SiteHeader />
-      <main className="marketing-main">
+      <main className="marketing-main plans-page">
         <section className="plans-hero">
-          <p className="eyebrow">OfferLab Membership</p>
-          <h1>Keep every application moving with structure you can trust</h1>
+          <p className="eyebrow">Simple, honest membership</p>
+          <h1>Build for free. Add more review capacity when it matters.</h1>
           <p className="marketing-lead">
-            OfferLab stays free to use for preparation and organisation. Membership raises your
-            review capacity and funds the judgement, practice and intelligence the free plan cannot
-            carry.
+            Every core preparation tool remains useful without payment. Membership is for the weeks
+            when several serious applications need focused document feedback at once.
           </p>
+          <div className="plans-assurance-row" aria-label="Membership assurances">
+            <span>No card on the free plan</span>
+            <span>Tax-inclusive GBP pricing</span>
+            <span>Your records stay private</span>
+          </div>
         </section>
 
-        <section className="plans-grid" aria-label="OfferLab plans">
-          <article className="plan-card">
-            <h2>Free</h2>
+        {memberSummary ? (
+          <section className="plans-current-plan" id="your-plan" aria-labelledby="your-plan-title">
+            <div>
+              <p className="eyebrow">Your plan</p>
+              <h2 id="your-plan-title">{isMember ? "OfferLab Membership" : "Free plan"}</h2>
+              <p>
+                {isMember
+                  ? "Your additional career-document review capacity is active."
+                  : memberSummary.status === "cancelled"
+                    ? "Your previous membership has ended. Your workspace continues on the free plan."
+                    : "Your complete core workspace is active with no artificial expiry."}
+              </p>
+            </div>
+            <div className="plans-current-plan__management">
+              <span className={`status-badge ${isMember ? "status-badge--positive" : ""}`}>
+                {isMember ? "Active" : "Current plan"}
+              </span>
+              {isMember ? (
+                <>
+                  <p className="plans-current-plan__date">
+                    Current period ends <strong>{formatDate(memberSummary.periodEnd)}</strong>
+                  </p>
+                  <form action={cancelMembershipAction}>
+                    <button className="button-link secondary" type="submit">
+                      Cancel membership
+                    </button>
+                  </form>
+                </>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="plans-grid plans-grid--three" aria-label="OfferLab plans">
+          <article className="plan-card plan-card--free">
+            <div className="plan-card-heading">
+              {memberSummary && !isMember ? <span className="status-badge">Current</span> : null}
+              <p className="eyebrow">Start here</p>
+              <h2>Free</h2>
+            </div>
             <p className="plan-price">£0</p>
-            <p className="plan-price-note">forever, no card required</p>
-            <ul className="plan-benefits">
-              {freeBenefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-            <Link
-              className="button-link"
-              href={access.status === "eligible" ? "/member" : "/register"}
-            >
-              {access.status === "eligible" ? "Open your workspace" : "Create free account"}
+            <p className="plan-price-note">No card required. No artificial expiry.</p>
+            <PlanBenefits benefits={freeBenefits} />
+            <Link className="button-link secondary" href={freeHref}>
+              {access.status === "eligible" ? "Open workspace" : "Create free account"}
             </Link>
           </article>
 
           <article className="plan-card plan-card-featured">
-            <span className="status-badge">Recommended</span>
-            <h2>Membership</h2>
+            <div className="plan-card-heading">
+              <span className="status-badge">Flexible</span>
+              <p className="eyebrow">Monthly membership</p>
+              <h2>Monthly</h2>
+            </div>
             <p className="plan-price">{formatPence(MEMBERSHIP_PRICING.membershipMonthlyPence)}</p>
-            <p className="plan-price-note">
-              per month, or {formatPence(MEMBERSHIP_PRICING.membershipSeasonPence)} for the
-              recruitment season
-            </p>
-            <ul className="plan-benefits">
-              {membershipBenefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-            {isMember ? (
-              <Link className="button-link" href="/member/membership">
-                Manage your membership
-              </Link>
-            ) : access.status === "eligible" ? (
-              <Link className="button-link" href="/member/membership">
-                Get membership
-              </Link>
-            ) : (
+            <p className="plan-price-note">per month · renews monthly until cancelled</p>
+            <PlanBenefits benefits={membershipBenefits} />
+            {access.status !== "eligible" ? (
               <Link className="button-link" href="/register">
-                Create account to get membership
+                Choose monthly
               </Link>
+            ) : isMember ? (
+              <span className="plan-card-current">Included in your active membership</span>
+            ) : selfServeAllowed ? (
+              <form action={activateTestMembershipAction} className="plan-card-action">
+                <button className="button-link" type="submit">
+                  Activate membership locally
+                </button>
+              </form>
+            ) : (
+              <p className="plan-card-availability">Contact OfferLab to activate this plan.</p>
+            )}
+          </article>
+
+          <article className="plan-card plan-card--season">
+            <div className="plan-card-heading">
+              <p className="eyebrow">One focused season</p>
+              <h2>Six months</h2>
+            </div>
+            <p className="plan-price">{formatPence(MEMBERSHIP_PRICING.membershipSeasonPence)}</p>
+            <p className="plan-price-note">one payment · does not renew automatically</p>
+            <PlanBenefits benefits={membershipBenefits} />
+            {access.status !== "eligible" ? (
+              <Link className="button-link secondary" href="/register">
+                Choose six months
+              </Link>
+            ) : isMember ? (
+              <span className="plan-card-current">Included in your active membership</span>
+            ) : selfServeAllowed ? (
+              <form action={activateTestMembershipAction} className="plan-card-action">
+                <button className="button-link secondary" type="submit">
+                  Activate membership locally
+                </button>
+              </form>
+            ) : (
+              <p className="plan-card-availability">Contact OfferLab to activate this plan.</p>
             )}
           </article>
         </section>
 
-        <section className="marketing-section">
-          <div className="section-introduction">
-            <p className="eyebrow">Honest availability</p>
-            <h2>What you pay for is clearly labelled</h2>
+        <section className="plans-value-section">
+          <div className="plans-value-intro">
+            <p className="eyebrow">What changes when you join</p>
+            <h2>The same trusted workspace. More room for important reviews.</h2>
             <p>
-              The free plan keeps every approved preparation capability available. Membership adds
-              capacity and early access; it never hides what was already free.
+              Membership never changes who owns your applications, documents or answers. It raises
+              your career-document review ceiling and may include access to explicitly labelled
+              selected new capabilities as they become available.
             </p>
           </div>
-          <div className="marketing-card-grid">
-            <article className="marketing-feature-card">
-              <p className="eyebrow">Review capacity</p>
-              <h3>2× member review limits</h3>
-              <p>
-                Membership doubles the member daily and monthly ceilings for career-document
-                feedback, so your most important applications are never blocked by a limit.
-              </p>
-            </article>
-            <article className="marketing-feature-card">
-              <p className="eyebrow">Early access</p>
-              <h3>New capabilities first</h3>
-              <p>
-                Members see and shape Answer Coach, Group Mock and intelligence improvements as they
-                are validated.
-              </p>
-            </article>
-            <article className="marketing-feature-card">
-              <p className="eyebrow">Privacy</p>
-              <h3>Your records stay yours</h3>
-              <p>
-                Membership changes nothing about ownership: applications, documents and answers
-                remain private, member-owned records with the same protections.
-              </p>
-            </article>
+          <dl className="plans-comparison">
+            <div>
+              <dt>Core preparation workspace</dt>
+              <dd>Included on Free and Membership</dd>
+            </div>
+            <div>
+              <dt>Career-document review capacity</dt>
+              <dd>2× the free member limits</dd>
+            </div>
+            <div>
+              <dt>New capabilities</dt>
+              <dd>Included when they are ready for members to use</dd>
+            </div>
+            <div>
+              <dt>Group Mock waitlists</dt>
+              <dd>Fair first-in order for every eligible member</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section className="home-final-cta plans-final-cta">
+          <p className="eyebrow">Begin with the work in front of you</p>
+          <h2>Your first useful artefact should cost nothing.</h2>
+          <p>
+            Create an application, save a role or build your first evidence story. Upgrade only when
+            the additional review capacity has a clear job to do.
+          </p>
+          <div className="marketing-actions">
+            <Link className="button-link home-primary-action" href={freeHref}>
+              {access.status === "eligible"
+                ? "Return to your workspace"
+                : "Create your free account"}
+            </Link>
+            <Link className="home-text-action" href="/jobs">
+              Browse current roles
+            </Link>
           </div>
         </section>
 
-        <section className="marketing-cta">
+        <footer className="home-footer">
           <div>
-            <p className="eyebrow">Start free</p>
-            <h2>Begin with what you already have, upgrade when it matters.</h2>
-            <p>Create your free account and build your first evidence story today.</p>
+            <Link className="brand" href="/">
+              <span aria-hidden="true" className="brand__mark" />
+              <span className="brand__word">OfferLab</span>
+            </Link>
+            <p>Evidence-led preparation for UK graduate recruitment.</p>
           </div>
-          <Link className="button-link marketing-primary-action" href="/register">
-            Create your free account
-          </Link>
-        </section>
-
-        <footer className="marketing-footer">
-          <Link className="brand" href="/">
-            OfferLab
-          </Link>
-          <p>Practical preparation for UK graduate recruitment.</p>
-          <Link href="/intelligence">Recruitment Intelligence</Link>
-          <Link href="/member">Open workspace</Link>
-          <Link href="/plans">Plans</Link>
+          <nav aria-label="Explore OfferLab">
+            <Link href="/jobs">Jobs</Link>
+            <Link href="/employers">Employers</Link>
+            <Link href="/intelligence">Intelligence</Link>
+          </nav>
+          <nav aria-label="Your OfferLab account">
+            <Link href="/register">Create account</Link>
+            <Link href="/sign-in">Sign in</Link>
+            <Link href="/member">Workspace</Link>
+          </nav>
+          <p className="home-footer-note">
+            Clear pricing. Honest availability. No outcome promises.
+          </p>
         </footer>
       </main>
     </>

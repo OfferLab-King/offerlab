@@ -4,7 +4,6 @@ import { requireMember } from "../../../../../modules/identity-access/applicatio
 import { communityTermsVersion } from "../../../../../modules/recruitment-intelligence/domain/community";
 import { industries } from "../../../../../modules/taxonomy/domain/industries";
 import { opportunityTypes } from "../../../../../modules/taxonomy/domain/opportunity-types";
-import { MemberApplicationsHeader } from "../../../applications/member-applications-header";
 import { LearnNavigation } from "../../learn-navigation";
 import { submitReportAction } from "../actions";
 
@@ -19,7 +18,6 @@ export default async function ShareIntelligencePage({
   const query = await searchParams;
   return (
     <main className="applications-shell intelligence-share-page">
-      <MemberApplicationsHeader />
       <LearnNavigation active="intelligence" />
       <div className="intelligence-back-link">
         <Link href="/member/learn/intelligence">← Recruitment Intelligence</Link>

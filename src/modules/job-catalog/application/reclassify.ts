@@ -6,6 +6,7 @@ import {
   type ReclassificationRow,
 } from "../infrastructure/job-repository";
 import type { DiscoveredJob } from "../domain/deduplication";
+import { workdayLocationTextWithPathHint } from "../domain/workday-location";
 
 export type ReclassificationResult = Readonly<{
   processed: number;
@@ -13,13 +14,14 @@ export type ReclassificationResult = Readonly<{
 }>;
 
 export function discoveredJobFromReclassificationRow(row: ReclassificationRow): DiscoveredJob {
+  const externalPath = sourcePayloadString(row.source_payload, "externalPath");
   return {
     applicationDeadline: row.application_deadline,
     applicationUrl: "https://invalid.offerlab.internal/reclassification",
     descriptionText: row.description_text ?? "",
     employmentType: null,
     externalJobId: null,
-    locationText: row.location_text ?? "",
+    locationText: workdayLocationTextWithPathHint(row.location_text ?? "", externalPath),
     locations: row.locations,
     postedAt: null,
     remoteType: null,
@@ -31,6 +33,12 @@ export function discoveredJobFromReclassificationRow(row: ReclassificationRow): 
     sourcePayload: row.source_payload,
     title: row.title,
   };
+}
+
+function sourcePayloadString(payload: unknown, key: string): string | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const value = (payload as Readonly<Record<string, unknown>>)[key];
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
 export async function reclassifyActiveJobs(): Promise<ReclassificationResult> {

@@ -91,6 +91,18 @@ export function evaluateUkLocation(
     };
   }
 
+  // A named foreign country, territory or US/Australian/Canadian state is
+  // sufficient negative evidence when the same text contains no UK city.
+  // Mixed-location and same-named-city cases deliberately remain ambiguous.
+  if (text && foreignPlaceSignals.test(text) && !ukCityNameIn(text)) {
+    return {
+      evidence: text.slice(0, 200),
+      reason: "non_uk_location",
+      status: "non_uk",
+      ukLocations: [],
+    };
+  }
+
   if (text && ukCityNameIn(text) && !foreignPlaceSignals.test(text)) {
     return {
       evidence: text.slice(0, 200),

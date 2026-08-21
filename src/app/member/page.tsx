@@ -12,7 +12,6 @@ import { readOnboardingProfile } from "../../modules/member-profile/application/
 import { readDashboardRecommendations } from "../../modules/recommendations/application/recommendations";
 import { recruitmentStages } from "../../modules/applications/domain/application";
 import { listSavedEmployersForMember } from "../../modules/job-catalog/application/saved-employers";
-import { MemberApplicationsHeader } from "./applications/member-applications-header";
 import { RecommendationList } from "./recommendation-list";
 import { formatDate } from "../jobs/job-display";
 
@@ -56,7 +55,6 @@ export default async function MemberPage() {
 
   return (
     <main className="applications-shell workspace-shell">
-      <MemberApplicationsHeader />
       <section className="workspace-hero">
         <div>
           <p className="eyebrow">Workspace</p>

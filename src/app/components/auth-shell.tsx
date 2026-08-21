@@ -10,7 +10,8 @@ export function AuthShell({
     <main className="auth-shell">
       <section className="card">
         <Link className="brand" href="/">
-          OfferLab
+          <span aria-hidden="true" className="brand__mark" />
+          <span className="brand__word">OfferLab</span>
         </Link>
         <h1>{title}</h1>
         <p>{description}</p>

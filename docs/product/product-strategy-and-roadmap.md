@@ -2,7 +2,7 @@
 
 **Status:** Approved product direction
 **Date:** 2026-07-23
-**Last reviewed:** 2026-08-07
+**Last reviewed:** 2026-08-20
 **Authority:** Defines product positioning, differentiation and priority. Read with `experience-principles.md`, which governs how each feature should behave.
 
 > **Current implementation boundary:** See `current-product-contract.md`. Delivery phases express validation order; they are not evidence that an already implemented pilot is unavailable, nor approval to add payments, coach access or marketplace infrastructure without the required decisions.
@@ -135,10 +135,22 @@ Do not begin with a broad volunteering marketplace, multi-city events operation 
 ## Commercial model to test
 
 - **Public proof:** selected videos, articles, question examples and partial annotated cases.
-- **Membership:** workspace, full premium cases, question collections, resources and recruitment intelligence.
+- **Free workspace:** every currently approved preparation capability, including
+  applications, documents, questions, cases, resources and recruitment
+  intelligence, remains usable without payment. This is the trustworthy product
+  foundation and acquisition path.
+- **Membership:** sell clearly bounded capacity and access advantages, not an
+  artificial removal of existing utility. The guaranteed benefit is double the
+  member daily and monthly career-document review ceilings. Name early-access
+  benefits only while a real member-only pilot is available and state its
+  availability honestly.
 - **Paid services:** Group Mock, coach feedback and mock interviews, sold as clear one-off services or credits.
 
-Do not require the full marketplace, community or payment vision to exist before testing willingness to pay. A manually operated service is acceptable while demand is uncertain.
+Self-serve membership uses the bounded Stripe-hosted flow in ADR 0025. Do not
+describe membership as providing priority Group Mock waitlisting: room promotion
+remains first-in waitlist order. Do not require the full marketplace or community
+vision to exist before testing willingness to pay. A manually operated service is
+acceptable while demand is uncertain.
 
 ## Return behaviour
 

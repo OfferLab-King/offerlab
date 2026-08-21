@@ -46,7 +46,7 @@ export async function POST(request: Request, context: { params: Promise<{ answer
       );
     if (code === "answer_coach_usage_capped")
       return NextResponse.json(
-        { message: "You have reached this month's Answer Coach pilot limit." },
+        { message: "You have reached this month's Answer Coach limit." },
         { status: 429 },
       );
     if (code === "answer_coach_consent_required")
