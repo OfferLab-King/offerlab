@@ -473,7 +473,13 @@ export async function promoteCandidateToSource(
     write.candidateUrl,
   );
   if (existing) {
-    if (existing.status === "archived" || existing.manuallyOverridden) return "already_present";
+    if (
+      existing.status === "active" ||
+      existing.status === "archived" ||
+      existing.manuallyOverridden
+    ) {
+      return "already_present";
+    }
     const updated = await database<{ id: string }[]>`
       update app.job_source
       set source_type = ${write.automation.sourceType},
