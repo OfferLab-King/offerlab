@@ -203,10 +203,15 @@ describe("source discovery pipeline", () => {
 
   it("never overwrites an existing live source for the same URL", async () => {
     const url = `https://acme-guard-${uniqueSlug("guard")}.wd1.myworkdayjobs.com/careers`;
-    const { companyId } = await setupCompanyAndCandidate({
+    const { companyId, candidateId } = await setupCompanyAndCandidate({
       candidateUrl: url,
       status: "verified",
     });
+    await migrationDatabase`
+      update app.job_source_candidate
+      set ats_verification_status = 'typed_api_verified'
+      where id = ${candidateId}::uuid
+    `;
     const liveSource = await migrationDatabase<{ id: string }[]>`
       insert into app.job_source (company_id, slug, name, channel, careers_url, source_type, status)
       values (${companyId}::uuid, 'live-general', 'Live general', 'general', ${url}, 'custom', 'active')
