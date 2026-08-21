@@ -441,3 +441,79 @@ credits, coupons, trials or usage-based billing.
   monitoring and a checkout kill switch.
 
 The member-facing flow and technical consequences are specified in ADR 0025.
+
+## Enterprise readiness for 1,000+ members (2026-08-21)
+
+Approve the sequenced production-readiness programme in
+`../operations/enterprise-readiness-plan.md`. This is the required operational
+path before OfferLab expands beyond a controlled beta; it does not approve new
+product scope.
+
+- Preserve the modular monolith, PostgreSQL system of record, London deployment
+  and separately operated crawler worker. More than 1,000 registered members is
+  a capacity-validation target, not justification for microservices,
+  Kubernetes, a separate API deployment or a speculative message broker.
+- Complete the work in this priority order: Stripe membership; privacy-safe
+  observability; staging and controlled releases; restore evidence and PITR;
+  administrator hardening; representative load testing; privacy/account
+  lifecycle; crawler operational hardening; controlled cohort expansion.
+- Production payment requires every activation gate in ADR 0025, including
+  verified idempotent webhooks, portal management, tax-inclusive prices,
+  published terms, live purchase/refund evidence, monitoring, reconciliation
+  and a kill switch that preserves the free workspace.
+- The 24-hour RPO remains acceptable only for the initial closed beta. Enable
+  PITR before the 1,000-member expansion gate and target an RPO of one hour or
+  less and RTO below four hours, supported by exercised restore evidence.
+- Require administrator MFA. Replacing the single-administrator bootstrap with
+  multiple operational roles requires a reviewed role-design decision and
+  least-privilege separation between platform, content, moderation, crawler and
+  support duties.
+- Use a London staging environment, protected production promotion,
+  migration/smoke checks and documented rollback. Destructive validation never
+  runs against persistent staging or production data.
+- Production readiness requires privacy-safe monitoring, named alert ownership,
+  incident and support procedures, account export/deletion operations,
+  retention rules, published privacy/terms/refund/contact information and
+  representative load evidence.
+- Expand through controlled cohorts: 25, then 100 with payments, then 300 after
+  restore and incident exercises, then 1,000+ only after the recorded launch
+  gates and two stable weeks.
+
+This decision does not approve hosted AI for member content, coach access,
+marketplace payments or commercial job aggregators. Their existing decision
+gates remain unchanged.
+
+## Library content and low-friction preparation (2026-08-21)
+
+Approve `../product/library-experience-implementation-plan.md`. Library must
+deliver useful guidance before asking a member to classify or fully structure
+their experience.
+
+- Simplify the Library sub-navigation to Library, Practice and Intelligence.
+  Answer Bank remains a primary workspace destination. Coaching Cases,
+  Resources and Preparation Plans become content types or optional collections
+  rather than equal-weight products.
+- Use quick capture, autosave and progressive disclosure for Stories, answers
+  and Intelligence contributions. Optional metadata never blocks draft saving,
+  and OfferLab must prefill application, job and employer context it already
+  knows.
+- Selecting a curated question opens directly into a focused answer editor.
+  Story creation begins with a title and one narrative capture. Intelligence
+  contribution begins with application/employer, stage/date, what happened and
+  what another candidate should know.
+- Add deterministic **Prepare for this application** bundles using current
+  questions, evidence gaps, checklists, cases, Intelligence and deadline
+  context. These bundles are optional projections, not courses, scores or
+  predictions.
+- Existing practice cases must provide useful solo practice without requiring a
+  scheduled room. Reflections may become member-approved Story drafts.
+- Every published Library item must contain a concise summary, concrete example,
+  exercise/checklist, honest provenance and one direct workspace action.
+- Publish a small founder-reviewed editorial core rather than generated or thin
+  catalogue filler. Unavailable destinations must not receive primary calls to
+  action.
+- Deterministic suggestions precede hosted AI. No suggestion silently edits a
+  member record, and all existing AI production gates remain in force.
+
+The required acceptance targets, content minimum and delivery sequence are in
+the implementation plan.

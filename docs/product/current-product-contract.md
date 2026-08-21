@@ -2,7 +2,7 @@
 
 **Status:** Active implementation contract
 **Owner:** Founder / Product
-**Last reviewed:** 2026-08-20
+**Last reviewed:** 2026-08-21
 **Authority:** This document consolidates already approved direction. It does not approve new commercial, access-control or marketplace scope. `../architecture/founder-decisions.md` remains the highest product authority.
 
 ## Current goal
@@ -70,6 +70,16 @@ in this contract still apply.
 
 ### Now
 
+- Execute the founder-approved enterprise-readiness sequence in
+  `../operations/enterprise-readiness-plan.md`. Stripe, observability,
+  controlled delivery, recovery evidence and administrator hardening precede
+  unrestricted growth; 1,000 registered members does not require a departure
+  from the modular monolith.
+- Implement `library-experience-implementation-plan.md`: reduce initial
+  creation to quick capture, progressively reveal optional structure, prefill
+  known application/employer context, make practice cases useful without a
+  scheduled room and publish the founder-reviewed editorial minimum before
+  promoting Library destinations.
 - Improve the quality, consistency and discoverability of the approved capabilities.
 - Validate whether members return to create a truthful job-specific CV or cover-letter version and
   whether the bounded review leads to useful member-owned edits.
@@ -166,3 +176,16 @@ When documents conflict, use the precedence in `AGENTS.md`. Do not use an older 
    decision; manual job targets and the OfferLab catalogue are the production-safe paths.
 
 Until those decisions are recorded, implementation must preserve the existing manual, local-fallback and least-privilege boundaries.
+
+## Production expansion boundary
+
+The launch gates in `../operations/enterprise-readiness-plan.md` are binding
+for production expansion:
+
+- Gate A precedes unrestricted registration;
+- Gate B precedes accepting membership payments;
+- Gate C precedes expansion beyond the controlled beta towards 1,000 members.
+
+Code completion alone does not satisfy a gate where deployed configuration,
+provider evidence, restore testing, incident exercises or published operational
+terms are required.

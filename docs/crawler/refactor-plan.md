@@ -1,5 +1,13 @@
 # Crawler refactor: implementation report (2026-08-15)
 
+> **Historical implementation snapshot:** This report records the focused
+> lifecycle refactor completed on 15 August 2026. It is not the current
+> operator guide or capability boundary. Source discovery, typed API
+> verification, automatic activation, full sponsor-register import and
+> exception-first administration were added later. Use
+> `../../crawler_readme.md`, `architecture.md` and
+> `../operations/job-catalog-operations.md` for current operation.
+
 Scope: evaluate an external crawler-refactor proposal against the existing
 architecture, then implement only the genuine gaps. Full review in
 `docs/crawler/architecture.md`.
@@ -68,10 +76,25 @@ than duplicated.
 ## Remaining limitations
 
 - Conditional fetching (ETag/If-None-Match) not implemented.
-- Scheduled source re-verification not automated.
+- Calendar-based source re-verification is not separately scheduled. On-demand
+  typed verification, response-shape probes, automatic activation/repair,
+  source health monitoring and automatic failure pause are implemented.
 - Programme intake windows (`career_programmes`/`programme_cycles`) not
   implemented; the channel model already covers per-programme sources, and a
   cycles model should be added together with a discovery integration that
   writes it.
 - Job events are written but no UI surface consumes them yet (foundation for
   "new today / recently updated / recently closed").
+
+## Capabilities delivered after this snapshot
+
+- full dated sponsor-register identity import;
+- free DNS/HTTPS official-site discovery with a resumable attempt ledger;
+- optional bounded web-search discovery with an explicit query/cost ceiling;
+- high-confidence ATS fingerprinting plus typed live API response-shape probes;
+- automatic complete source configuration, activation and first-crawl queueing;
+- idempotent repair that preserves archived and manually overridden sources;
+- malformed-vacancy quarantine and deterministic Workday detail-location
+  resolution;
+- administrator workflows separated into employer research, source discovery,
+  live source operations and job review.

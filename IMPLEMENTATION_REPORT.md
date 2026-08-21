@@ -1,5 +1,15 @@
 # IMPLEMENTATION_REPORT.md
 
+> **Historical handoff snapshot:** This document records the original job
+> catalogue implementation and its 10 August 2026 review. Later founder
+> decisions approved official-source crawling and the repository now includes
+> full sponsor-register import, free and bounded career-site discovery, typed
+> API verification, automatic source activation/repair, exception-first admin
+> operations and public jobs/employer experiences. Do not use the older release
+> status below as current guidance. Use `docs/product/current-product-contract.md`,
+> `crawler_readme.md`, `docs/crawler/architecture.md` and
+> `docs/operations/job-catalog-operations.md`.
+
 **Handoff report for the OfferLab job discovery and enrichment implementation.**
 Prepared for an independent senior-engineer review (see `CODEX_REVIEW_PROMPT.md`).
 This report is honest about what was verified, what was scaffolded, and what remains

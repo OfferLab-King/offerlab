@@ -2,7 +2,7 @@
 
 **Status:** Approved product direction
 **Date:** 2026-07-23
-**Last reviewed:** 2026-08-20
+**Last reviewed:** 2026-08-21
 **Authority:** Defines product positioning, differentiation and priority. Read with `experience-principles.md`, which governs how each feature should behave.
 
 > **Current implementation boundary:** See `current-product-contract.md`. Delivery phases express validation order; they are not evidence that an already implemented pilot is unavailable, nor approval to add payments, coach access or marketplace infrastructure without the required decisions.
@@ -85,6 +85,26 @@ The primary product is a searchable, moderated report database, not a chat feed.
 
 ## Delivery sequence
 
+### Phase 0 — production and enterprise readiness
+
+Before expanding product scope or opening to more than a controlled cohort,
+execute `../operations/enterprise-readiness-plan.md`:
+
+1. complete Stripe membership checkout and reconciliation;
+2. add privacy-safe observability, service objectives and incident response;
+3. establish London staging and controlled production promotion;
+4. prove restore operation and enable PITR before the 1,000-member gate;
+5. require administrator MFA and design least-privilege operational roles;
+6. demonstrate capacity with representative load tests;
+7. complete account lifecycle, privacy, legal and support operations;
+8. harden crawler monitoring and recovery;
+9. implement the low-friction Library and editorial plan in
+   `library-experience-implementation-plan.md`;
+10. expand through 25-, 100-, 300- and 1,000-member cohorts.
+
+This phase preserves the modular monolith. Reliability and operational evidence,
+not a distributed-architecture rewrite, are the priority.
+
 ### Foundation — available or in progress
 
 - Open member registration and trusted account access.
@@ -98,13 +118,17 @@ The primary product is a searchable, moderated report database, not a chat feed.
 
 ### Phase 1 — demonstrate proprietary value
 
-1. Publish a small founder-reviewed collection of annotated coaching cases.
-2. Curate the first Top Questions collections and connect them directly to Answer Bank drafting.
-3. Pilot structured recruitment reports with moderation, confidentiality controls and clearly dated provenance.
-4. Run the first Group Mock sessions as a manually scheduled pilot.
-5. Offer one or two bounded founder or vetted-coach feedback services.
-6. Rework public positioning so visitors can preview these formats and see honest availability before registration.
-7. Evaluate and prototype the bounded Answer Coach defined in `ai-product-strategy.md`, using Story Bank evidence and a founder-reviewed rubric before any member pilot.
+1. Implement the quick-capture, progressive-disclosure and context-prefill
+   foundation in `library-experience-implementation-plan.md`.
+2. Publish a small founder-reviewed collection of annotated coaching cases.
+3. Curate the first Top Questions collections and connect them directly to
+   focused Answer Bank drafting.
+4. Pilot structured recruitment reports with moderation, confidentiality controls and clearly dated provenance.
+5. Run the first Group Mock sessions as a manually scheduled pilot while making
+   existing cases useful for solo practice.
+6. Offer one or two bounded founder or vetted-coach feedback services.
+7. Rework public positioning so visitors can preview these formats and see honest availability before registration.
+8. Evaluate and prototype the bounded Answer Coach defined in `ai-product-strategy.md`, using Story Bank evidence and a founder-reviewed rubric before any member pilot.
 
 This phase tests whether members value OfferLab's judgement, current intelligence and live support, not merely its organisational tools. It does not require automatic matching, an open marketplace or a full social network.
 

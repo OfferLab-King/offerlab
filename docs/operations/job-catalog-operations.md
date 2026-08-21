@@ -1,5 +1,9 @@
 # Job catalog operations
 
+**Status:** Active operational reference
+
+**Last reviewed:** 2026-08-21
+
 This document describes how to seed, verify, schedule, deploy and debug the
 OfferLab job catalogue (module `src/modules/job-catalog`).
 
@@ -31,7 +35,7 @@ Relevant keys:
 
 | Variable                                                    | Default                        | Purpose                                                                       |
 | ----------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
-| `JOB_CATALOG_ENABLED`                                       | `false`                        | Master release gate; keep false until the required founder decision           |
+| `JOB_CATALOG_ENABLED`                                       | `false`                        | Deployment and emergency release gate; enable after operational checks        |
 | `JOB_CRAWLER_DATABASE_URL`                                  | —                              | Dedicated production crawler login connection string                          |
 | `JOB_CRAWLER_USER_AGENT`                                    | `OfferLabJobCrawler/1.0 (...)` | Crawler user agent                                                            |
 | `JOB_CRAWLER_MAX_CONCURRENCY`                               | `2`                            | Concurrent sources in `jobs:crawl:due`                                        |
@@ -51,9 +55,18 @@ Relevant keys:
 | `JOB_CRAWLER_MODEL_DATA_APPROVED`                           | —                              | Required `true` in production when enrichment is on and DeepSeek keys are set |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | —                              | Shared DeepSeek config reused by enrichment                                   |
 
-## Employer research universe (Top 1,000)
+## Employer identity and research universes
 
-The workbook at `data/research/employer-targets/` is the human research
+The full dated Home Office licensed-sponsor register is the canonical sponsor
+identity universe. Exact case-insensitive legal identities remain distinct;
+aliases may connect verified trading names without fuzzy-merging separate legal
+organisations. Sponsor-only employers remain outside the default curated
+directory but are available through exact search, the sponsor filter and member
+employer selection.
+
+The Top 1,000 workbook at `data/research/employer-targets/` is the curated
+research, evidence and crawler-priority overlay. It is not the catalogue ceiling.
+It is the human research
 artifact; the deterministic machine-readable derivative lives at
 `data/generated/employer-targets/top-1000.json` and is generated from the
 workbook so they cannot drift.
@@ -235,8 +248,9 @@ source.
 
 ## Platform adapter prioritisation (Phase C measurement)
 
-Measured coverage of the researched universe (2026-08-12 dataset, as of the
-2026-08-13 discovery run) drives adapter decisions:
+The figures below are a historical 2026-08-13 baseline from the researched
+dataset, not current full-register coverage. Re-run discovery and use the
+current admin coverage view before choosing an adapter:
 
 - **Workday: 15 employers, all P0** — the dominant reusable platform; the
   native Workday CXS/RaaS connectors already cover it.
@@ -268,11 +282,12 @@ contract between the researched universe and the public routes.
   URLs, current roles). Internal research fields (tier, rank, scores,
   confidence, notes) are never selected by the view and never reach public
   pages.
-- Visibility is quality-based: an employer is listed when it has current
-  published roles, is explicitly curated (`directory_visible`), or carries a
-  credible researched profile (verified industry plus size/ownership/sponsor
-  evidence and an official URL). Placeholder `employer.invalid` URLs are
-  treated as absent, so nothing public links to them.
+- Default visibility is curated: an employer is listed when it has current
+  published roles or `directory_visible` is set. Exact employer search,
+  sponsor filtering and member employer selection may additionally return
+  sponsor-only identities outside that default browse set. Placeholder
+  `employer.invalid` URLs are treated as absent, so nothing public links to
+  them.
 - Search and filters (industry, size, ownership, sponsor, hiring) are
   URL-backed; hiring-first, most-roles and A–Z sorts are supported; the
   directory is paginated (48 per page) and filtering/sorting happen in SQL.
@@ -444,14 +459,13 @@ Frequency tier guidance: tier 1 (large high-value employers) 720 min,
 tier 2 (important) 1440 min, tier 3 (lower priority) 2880 min. The scheduler
 adds ±10% jitter to every next-check time so sources do not burst together.
 
-## Priority UK employer cohort
+## Curated research and priority cohort
 
-The researched Top 1,000 employer universe (founder decision 2026-08-13)
-supersedes the historical 500-employer ceiling. Visibility is driven by data
-quality and product usefulness; researched employers, public profiles, source
-candidates, verified sources and active sources may each have different
-counts. The versioned cohort manifest remains a bootstrap/core source
-manifest.
+The full licensed-sponsor snapshot is the canonical identity universe. The
+researched Top 1,000 (founder decision 2026-08-13) supersedes the historical
+500-employer ceiling as the curated research and crawler-priority overlay.
+Researched employers, default directory profiles, source candidates, verified
+sources and active sources intentionally have different counts.
 `directory_priority_rank` is an internal processing order, not a public league
 table. `directory_visible` controls directory presence independently from each
 source's operational status.

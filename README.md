@@ -1,6 +1,6 @@
 # OfferLab development foundation
 
-This repository contains the OfferLab modular monolith and its implemented preparation workspace. Current capabilities include authentication and onboarding, applications, the Answer and Story Bank, preparation resources and paths, annotated coaching cases, moderated Recruitment Intelligence, manually operated practice/feedback pilots, and a bounded Answer Coach review mode.
+This repository contains the OfferLab modular monolith and its implemented preparation workspace. Current capabilities include authentication and onboarding, applications, the Answer Bank, the preparation Library, annotated coaching cases, moderated Recruitment Intelligence, manually operated practice/feedback pilots, bounded document and answer review, official-source job discovery, employer research and unified plan management.
 
 Read `docs/product/current-product-contract.md` for the current goal, approved capability boundary and explicit restrictions. Vertical Slice 01 is retained as an implemented historical foundation rather than the current scope limit.
 
@@ -72,6 +72,17 @@ pnpm test:e2e
 
 Run the dependency security policy separately with `pnpm security:audit`. CI also scans the Git history for secrets.
 
+## Production readiness
+
+The founder-approved sequence for paid launch and operation beyond 1,000
+registered members is in
+`docs/operations/enterprise-readiness-plan.md`. It defines the Stripe,
+observability, staging, recovery, administrator-security, capacity, privacy,
+crawler and controlled-launch gates. Code completion alone is insufficient
+where a gate requires deployed configuration or exercised operational evidence.
+The approved Library usability and content programme is documented in
+`docs/product/library-experience-implementation-plan.md`.
+
 ## Database workflow
 
 Create a migration:
@@ -109,21 +120,27 @@ Legacy invitation schema is retained but inactive; registration does not read or
 
 ## Job catalogue
 
-The catalogue implementation is dormant by default (`JOB_CATALOG_ENABLED=false`).
-The current founder decision approves gated JSearch/manual targets, so direct
-employer crawling and public catalogue launch require a further recorded decision.
+The catalogue keeps `JOB_CATALOG_ENABLED=false` as a deployment and emergency
+release gate. Founder decisions approve bounded crawling of official, public,
+unauthenticated employer and ATS sources, including browser rendering when
+required. Commercial aggregators remain excluded.
 
-The job catalogue (`src/modules/job-catalog`) collects UK graduate roles directly from employer career sites and supported ATS job-board APIs, deduplicates them, enriches them with a strict-schema DeepSeek step, and presents them at `/jobs` and `/jobs/[slug]`. Sources are only crawled after `crawl_allowed='allowed'` is recorded. Worker commands run as CLI scripts:
+The job catalogue (`src/modules/job-catalog`) collects UK graduate roles directly from employer career sites and supported ATS job-board APIs, deduplicates them, enriches them with a strict-schema DeepSeek step, and presents them at `/jobs` and `/jobs/[slug]`. Sources crawl only after the verified-source automation or an administrator exception produces an active, completely configured source. Worker commands run as CLI scripts:
 
 ```bash
 pnpm jobs:seed-companies --confirm-local   # seed the deterministic example cohort
 pnpm jobs:status                           # sources, runs and events snapshot
+pnpm jobs:sponsors:import --file=/absolute/register.csv --snapshot=YYYY-MM-DD
+pnpm jobs:careers:discover-free            # free official-site discovery
+pnpm jobs:sources:automate                 # typed verification, activation and first crawl
 pnpm jobs:crawl --company=<slug> [--dry-run]
 pnpm jobs:crawl:due [--limit=N] [--dry-run]
 pnpm jobs:enrich [--limit=N] [--dry-run]
 ```
 
-See `docs/operations/job-catalog-operations.md` for verification, scheduling (systemd timer) and Lightsail deployment, and ADR 0022 for the architecture decision.
+See `crawler_readme.md` for the operator workflow,
+`docs/operations/job-catalog-operations.md` for detailed verification,
+scheduling and deployment, and ADR 0022 for the architecture decision.
 
 ## Environments
 

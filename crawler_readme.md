@@ -1,238 +1,163 @@
-# OfferLab crawler — operator's guide
+# OfferLab crawler operator guide
 
-Everything needed to take the ChatGPT-validated employer URLs from spreadsheet
-to live crawled jobs. Run commands from the repo root.
+**Status:** Active operational guide
 
----
+**Last reviewed:** 2026-08-21
 
-## Stage 0 — Prerequisites
+This is the shortest supported path from employer identities to live official-source jobs. The crawler is designed for exception-first operation: supported ATS sources can be verified, configured, activated and queued automatically; administrators review only ambiguous, unsupported, blocked or unhealthy cases.
+
+The complete operational contract is in `docs/operations/job-catalog-operations.md`. Architecture and lifecycle invariants are in `docs/crawler/architecture.md`.
+
+## Safety boundary
+
+- Run import and discovery commands only against the intended local database unless a production run has been explicitly authorised and configured with the restricted crawler login.
+- Do not reset a local database that contains persistent accounts, sources or crawl history.
+- Crawl official, public, unauthenticated employer or ATS sources only. Commercial aggregators remain out of scope.
+- Respect robots decisions, rate limits, timeouts and source pause/archive controls. Never evade access controls.
+- `JOB_CATALOG_ENABLED` is a release and emergency kill switch, not a missing product decision.
+
+## 1. Check the environment
 
 ```bash
-pnpm db:start          # local Supabase (if not already running)
-pnpm dev               # web app on http://127.0.0.1:3000
-```
-
-Quick state check:
-
-```bash
+pnpm db:start
 pnpm jobs:status
 ```
 
----
-
-## Stage 1 — ChatGPT URL validation (one-off per dataset)
+For the local web app and queue poller together:
 
 ```bash
-# 1. Export the CSV to give ChatGPT (1000 rows, 7 columns, no internal fields)
-pnpm jobs:targets:export-validation-csv
-# → data/generated/employer-targets/url-validation.csv
-
-# 2. Paste batches (~200-250 rows) into ChatGPT with the validation prompt,
-#    asking for JSON-only verdicts:
-#    [{"rank":1,"verdict":"ok|suspect|better_url|needs_review",
-#      "suggestedUrl":"...","earlyCareerUrls":["..."],"reason":"...","confidence":"high|low"}]
-#    Combine all batches into one JSON array and save it, e.g.
-#    data/generated/chatgpt-verdicts.json
-
-# 3. Merge the verdicts into a review sheet + import them as unverified candidates
-pnpm jobs:targets:merge-validation-reviews --input=data/generated/chatgpt-verdicts.json
-pnpm jobs:targets:merge-validation-reviews --input=data/generated/chatgpt-verdicts.json --import-candidates
+pnpm dev:jobs
 ```
 
-The script unwraps markdown-wrapped URLs (`[https://a](https://a)`) automatically.
-Candidates are imported as `candidate_found` — nothing is trusted yet.
-Ranks without a researched company are reported and skipped.
+`pnpm dev` serves the UI but does not process queued crawler work.
 
-### Viewing candidates
+## 2. Import employer identities
 
-- Admin: `/admin/source-discovery` → filter Status = Verified
-- Database (DBeaver: host `127.0.0.1`, port `55322`, db/user/password `postgres`):
-
-```sql
-select c.name, jc.channel, jc.candidate_url, jc.status, jc.verified_at
-from app.job_source_candidate jc
-join app.company c on c.id = jc.company_id
-where jc.discovery_method = 'external_url_review'
-order by c.name;
-```
-
----
-
-## Stage 2 — Verify candidates (real HTTP checks)
-
-Each candidate is fetched with a robots.txt-gated, bounded HTTP request.
-2xx → `verified`. 403/404/timeouts stay unverified for manual review.
+The dated Home Office licensed-sponsor register is the canonical sponsor identity universe. Import the whole snapshot with exact case-insensitive legal-name identity; do not fuzzy-collapse distinct legal organisations.
 
 ```bash
-# Paged runs (limit caps at 500; verified count is what matters)
+pnpm jobs:sponsors:import --file=/absolute/register.csv --snapshot=YYYY-MM-DD
+pnpm jobs:sponsors:import --file=/absolute/register.csv --snapshot=YYYY-MM-DD --confirm-local
+```
+
+The first command is a dry run. The confirmed local import is idempotent and preserves dated sponsor history. Internal placeholder domains may exist until an official site is found, but they are never exposed as public links.
+
+The researched Top 1,000 is a curated evidence and crawler-priority overlay, not the complete employer universe:
+
+```bash
+pnpm jobs:targets:validate
+pnpm jobs:targets:export
+pnpm jobs:targets:import --dry-run
+pnpm jobs:targets:import --confirm
+```
+
+Its import creates research records and inactive candidates only. It never activates a source.
+
+## 3. Discover official career surfaces
+
+Start with the free, deterministic pass. It uses generated domain candidates, DNS, bounded HTTPS, employer-identity checks and official homepage links.
+
+```bash
+pnpm jobs:careers:discover-free --dns-prefilter --concurrency=500
+pnpm jobs:careers:discover-free
+```
+
+The DNS prefilter cheaply removes nonexistent domains. The full free pass records resumable discovery attempts and inserts only identity-supported candidates. It may discover general, early-career, professional and apprenticeship channels independently.
+
+For employers still unresolved, the Brave-backed pass is optional. Planning is free; execution requires an API key and explicit authorisation. Every batch is capped and prints its maximum provider cost before the first query.
+
+```bash
+pnpm jobs:careers:discover --max-queries=1000
+pnpm jobs:careers:discover --max-queries=1000 --execute
+```
+
+Discovery rejects aggregators and social profiles, retains multiple official career channels, and resumes from its attempt ledger. A discovered page remains an inactive candidate until the typed verification gate succeeds.
+
+## 4. Verify and automate supported sources
+
+Run the automation pass in pages when the candidate set is large:
+
+```bash
+pnpm jobs:sources:automate --limit=500 --offset=0
+pnpm jobs:sources:automate --limit=500 --offset=500
+```
+
+Automation activates a candidate only when all of these are true:
+
+1. the official host has a high-confidence ATS fingerprint;
+2. the ATS has a registered typed connector;
+3. a bounded live probe reaches the derived public machine endpoint; and
+4. the response matches the connector's expected shape and employer identity.
+
+On success, OfferLab writes a complete `app.job_source`, including its machine endpoint and connector configuration, activates it and queues its first crawl. Re-running is idempotent and can repair incomplete, non-manually-overridden sources. It never replaces archived or manually overridden sources.
+
+A spreadsheet value, AI verdict, hostname guess or generic HTTP 200 is not verification and cannot activate a source.
+
+Useful focused commands:
+
+```bash
+pnpm jobs:discover-source --company=<slug>
+pnpm jobs:discover-source --tier=P0 --limit=50
 pnpm jobs:discover-source --verify --limit=500 --offset=0
-pnpm jobs:discover-source --verify --limit=500 --offset=500
-pnpm jobs:discover-source --verify --limit=500 --offset=1000
+pnpm jobs:discover-source --promote --confirm --limit=500
+pnpm jobs:discover-source --homepage --tier=P0 --limit=50
 ```
 
-`--verify` persists on its own (non-destructive); `--confirm` is NOT needed for
-verification. Failures print `[verify failed]` lines with HTTP codes — those
-candidates remain `candidate_found` for review.
+`--verify` persists typed verification evidence without `--confirm`. Standalone fingerprint changes, homepage discovery and promotion require `--confirm`. Prefer `jobs:sources:automate` for normal operation.
 
----
+## 5. Review exceptions
 
-## Stage 3 — Promote verified candidates to paused sources
+Use `/admin/source-discovery` for candidates that automation did not activate. Typical reasons are:
 
-Creates `app.job_source` rows in **paused** state. Never activates anything;
-never overwrites an existing source for the same URL.
+- unsupported or ambiguous ATS platform;
+- weak employer identity evidence;
+- robots denial, timeout or access failure;
+- derived API response does not match the typed connector;
+- distinct career channels need clarification.
+
+Use `/admin/job-sources` for live-source operations: health, schedules, run requests, corrections, pause/resume and archive. Manual connector JSON is an exception path; never guess a board token or endpoint. Add a reusable connector only after repeated measured platform demand justifies it.
+
+## 6. Crawl and monitor
 
 ```bash
-pnpm jobs:discover-source --promote --confirm --limit=500 --offset=0
-pnpm jobs:discover-source --promote --confirm --limit=500 --offset=500
-pnpm jobs:discover-source --promote --confirm --limit=500 --offset=1000
+pnpm jobs:crawl --company=<slug> --source=<source-slug> --dry-run
+pnpm jobs:crawl:due --limit=25 --dry-run
+pnpm jobs:crawl:due --limit=25
+pnpm jobs:status
 ```
 
-Check how many paused sources were created:
+The production timer polls for due or manually requested sources; crawling never runs inside a web request.
 
-```sql
-select status, count(*) from app.job_source group by status;
-```
+Lifecycle invariants:
 
----
+- failed crawls never close jobs;
+- successful zero-result crawls never close jobs and can become admin anomalies;
+- disappearance requires repeated successful, non-empty listings;
+- malformed individual vacancies are quarantined without discarding valid vacancies;
+- Workday aggregate locations use bounded detail-page JSON-LD resolution before publication;
+- repeated source failures automatically pause that source without affecting others.
 
-## Stage 4 — Review the paused sources (DO NOT SKIP)
-
-"Verified" means the URL returned HTTP 2xx — NOT that it can crawl yet.
-
-### Why review
-
-1. **Connector configuration.** Each ATS needs its own config in the source's
-   `configuration` JSONB:
-   - **Workday**: needs a `raasEndpoint` (public Recruiting API for Search).
-     Without it the crawl fails with `not_configured`. Configure via
-     `/admin/job-sources` → "Edit official source URLs" area, or SQL.
-   - **Greenhouse / Lever / Ashby / SmartRecruiters**: official public
-     job-board APIs; board token/company slug is usually derivable from the
-     URL — confirm it.
-   - **direct_html / browser**: no token needed, but the page must be a real
-     job board, not a marketing landing page.
-2. **Channel sanity.** Early-careers URLs can be landing pages with no
-   machine-readable board — they would "crawl" but find nothing (zero-result
-   or parser failures). A zero-result source is NOT broken, but a landing
-   page is the wrong source.
-3. **Schedule & mode.** Set `crawl_frequency_minutes` sensibly and tick
-   `needs_browser` for JS-heavy pages (browser crawling is approved but
-   bounded).
-
-### How to review
-
-Open **/admin/job-sources** — each paused card shows channel, URL, ATS type,
-health and config. Check per row:
-
-- [ ] Is `careers_url` / `crawl_endpoint_url` a real job board?
-- [ ] Does the connector config exist (Workday `raasEndpoint`, board token)?
-- [ ] Is the channel right (`general` vs `early_careers`)?
-- [ ] Frequency sensible for this employer?
-
-Fix config problems from the admin page — the "Edit official source URLs"
-form now also accepts **Connector configuration (JSON)** — or via SQL:
+After a large Workday import, resolve remaining location exceptions with:
 
 ```bash
-# Auto-derive + live-verify connector configuration for ALL supported ATS
-# platforms (workday, greenhouse, lever, ashby, smartrecruiters)
-pnpm jobs:connector-config                # dry run report
-pnpm jobs:connector-config --confirm      # write the verified endpoints
+pnpm jobs:resolve-locations --confirm --limit=500
 ```
-
-Platforms without a typed connector (Workable, Teamtailor, iCIMS...) are
-reported as `unsupported` — add a connector in
-`src/modules/job-catalog/infrastructure/connectors/` when a platform shows
-repeated measured frequency (founder rule: 2-3+ verified employers).
-
----
-
-## Stage 5 — Activate and crawl
-
-Activation is deliberate: paused/archived sources never crawl.
-
-1. **Activate**: `/admin/job-sources` → "Resume source" on each reviewed
-   source (or SQL: `update app.job_source set status='active' where id=...`).
-2. **Run the crawler**:
-
-```bash
-pnpm dev:jobs                # web app + local poller (picks up runs ~every 5s)
-# or worker only:
-pnpm jobs:crawl:due --limit=5
-```
-
-3. **Watch results**: `/admin/job-sources` → Recent ingestion runs;
-   `pnpm jobs:status` for a snapshot.
-
-### Connector matrix (2026-08-15)
-
-| Platform        | Connector      | Config key               | Verified sources | Status                  |
-| --------------- | -------------- | ------------------------ | ---------------- | ----------------------- |
-| Workday         | CXS/RaaS API   | `cxsEndpoint`            | 20               | ✅ dry-run verified     |
-| Workable        | widget API     | `workableAccount`        | 4                | ✅ dry-run verified     |
-| Teamtailor      | jobs.json feed | `teamtailorCompany`      | 3                | ✅ dry-run verified     |
-| Ashby           | posting API    | `ashbyOrg`               | 1                | ✅ configured           |
-| Greenhouse      | boards API     | `greenhouseBoardToken`   | 0 real           | tooling ready           |
-| Lever           | postings API   | `leverCompany`           | 0 real           | tooling ready           |
-| SmartRecruiters | postings API   | `smartRecruitersCompany` | 0 real           | tooling ready           |
-| iCIMS / other   | —              | —                        | 1                | below adapter threshold |
-
-### First resume batch (recommended starter cohort)
-
-Start with the small, fully-verified connectors, then the Workday cohort:
-
-```sql
--- Batch 1: workable + teamtailor + ashby (8 sources, dry-run proven)
-update app.job_source set status = 'active'
-where slug in (
-  'apply-workable-com-workable',          -- 4 accounts
-  'bacb-teamtailor-com-teamtailor',
-  'ghanainternationalbank-1644937212-teamtailor-com-teamtailor',
-  'keplercheuvreux-teamtailor-com-teamtailor',
-  'jobs-ashbyhq-com-ashby'
-);
-
--- Batch 2: workday sources with a configured cxsEndpoint (20 sources)
-update app.job_source set status = 'active'
-where configuration ? 'cxsEndpoint' and status = 'paused';
-```
-
-Run `pnpm dev:jobs`, then verify each source's first crawl in
-`/admin/job-sources` → Recent ingestion runs. A source that fails (e.g.
-`http_403`) auto-pauses after `JOB_CRAWLER_FAILURE_PAUSE_THRESHOLD` — fix or
-pause it manually.
-
----
-
-## Stage 6 — Monitor
-
-- **Zero-result anomaly**: a source that had active jobs and suddenly returns
-  empty on a successful crawl is recorded as a `partial` run with a
-  `listing_empty_anomaly` event — jobs are NEVER closed by failed or
-  zero-result crawls. Check `consecutive_zero_results` /
-  `last_non_zero_result_at` on `/admin/job-sources`.
-- **Job lifecycle events** (`app.job_event`): discovered / updated /
-  possibly_closed / closed / reopened — the foundation for "new today",
-  "recently updated", "recently closed", alerts.
-- **Failures**: repeated failures auto-pause a source after
-  `JOB_CRAWLER_FAILURE_PAUSE_THRESHOLD` (default 5); `not_configured`,
-  `http_403`, `http_404`, `parser_changed` etc. are recorded per run.
-
----
 
 ## Troubleshooting
 
-| Symptom                        | Cause / fix                                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Crawl fails `not_configured`   | Workday source missing `cxsEndpoint`/`raasEndpoint` (Stage 4 — use `pnpm jobs:connector-config --confirm`)                                        |
-| `http_403`                     | Site blocks bots; keep unverified/blocked, don't bypass                                                                                           |
-| Zero jobs after crawl          | Could be a landing page (Stage 4) or legitimately empty board — check the run's `partial`/`listing_empty` events                                  |
-| `robots_blocked`               | Site disallows crawling; record as blocked, never evade                                                                                           |
-| Candidates not promoted        | Company has no researched snapshot, or source already exists for the URL (guarded, not duplicated)                                                |
-| Integration tests fail locally | The single-administrator constraint — local DB has a real admin; run `pnpm db:reset` for a fresh disposable DB (CI does this via `pnpm validate`) |
+| Symptom                      | Action                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Candidate remains inactive   | Read its evidence in `/admin/source-discovery`; unsupported, ambiguous and shape-mismatched candidates require an exception decision.       |
+| `not_configured`             | Re-run `jobs:sources:automate`; if the platform is supported, inspect the fingerprint and typed probe evidence before manual configuration. |
+| `http_403` or challenge page | Use the approved bounded browser path only for an official public source; do not evade authentication, robots or access controls.           |
+| `robots_blocked`             | Leave blocked and record the exception; never bypass it.                                                                                    |
+| Zero jobs                    | Check whether the source is a landing page or legitimately empty. Existing jobs are preserved on zero-result runs.                          |
+| Repeated failures            | Inspect recent ingestion runs, correct or pause the source; automatic pause prevents repeated damage.                                       |
+| Duplicate employer identity  | Resolve through aliases and exact sponsor legal entities; do not fuzzy-merge distinct register organisations.                               |
 
 ## Reference
 
-- Architecture & data model: `docs/crawler/architecture.md`
-- Operations (sources, env vars, scheduling): `docs/operations/job-catalog-operations.md`
-- Job/source lifecycle invariants: "never close on failed crawl",
-  "two-stage disappearance", "zero results ≠ invalid"
+- `docs/crawler/architecture.md` — data flow and lifecycle invariants
+- `docs/operations/job-catalog-operations.md` — environment, deployment and detailed commands
+- `docs/architecture/founder-decisions.md` — approved source automation and sponsor-universe policy
+- `data/research/employer-targets/README.md` — Top 1,000 research overlay
