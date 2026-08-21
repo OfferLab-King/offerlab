@@ -8,6 +8,19 @@ workspace-first behaviour in `experience-principles.md`.
 
 This bundle contains active product contracts and earlier documents retained as historical delivery evidence or non-binding capability context.
 
+Crawler and employer-universe operation is documented separately in
+`../../crawler_readme.md`, `../crawler/architecture.md` and
+`../operations/job-catalog-operations.md`. The full sponsor register is the
+canonical identity universe; the Top 1,000 dataset is its curated research and
+priority overlay.
+
+Production expansion, paid-launch and 1,000-member readiness are governed by
+`../operations/enterprise-readiness-plan.md`.
+
+Library content depth, quick capture, progressive disclosure, contextual
+preparation and solo-practice delivery are governed by
+`library-experience-implementation-plan.md`.
+
 ## Files
 
 1. `current-product-contract.md`
@@ -22,30 +35,34 @@ This bundle contains active product contracts and earlier documents retained as 
 4. `ai-product-strategy.md`
    Defines where AI creates distinctive value and the prompt, model, privacy, evaluation and cost controls required before release.
 
-5. `ai-prompts/answer-coach-v1.md`, `ai-prompts/cv-review-v1.md` and
+5. `library-experience-implementation-plan.md`
+   Defines the founder-approved Library information architecture, low-friction
+   creation flows, editorial minimum and delivery acceptance targets.
+
+6. `ai-prompts/answer-coach-v1.md`, `ai-prompts/cv-review-v1.md` and
    `ai-prompts/cover-letter-review-v1.md`
    Define the evidence-grounded Answer Coach and career-document review prompt contracts.
 
-6. `critical-user-journey.md`
+7. `critical-user-journey.md`
    Retains an earlier paid-member journey as a non-binding product hypothesis.
 
-7. `screen-map.md`
+8. `screen-map.md`
    Retains a possible functional inventory as non-binding screen context.
 
-8. `vertical-slice-01.md`
+9. `vertical-slice-01.md`
    Records the implemented first engineering slice; it no longer limits current scope.
 
-9. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
-   Record the implemented Increment 2 and Increment 3 data contracts and privacy boundaries.
+10. `onboarding-data-dictionary.md` and `application-tracking-data-dictionary.md`
+    Record the implemented Increment 2 and Increment 3 data contracts and privacy boundaries.
 
-10. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
+11. `recommendation-data-dictionary.md` and `knowledge-library-data-dictionary.md`
     Record the deterministic recommendation and canonical preparation-resource contracts.
 
-11. `phase-one-data-dictionary.md`
+12. `phase-one-data-dictionary.md`
     Records the bounded data and privacy contracts for annotated cases, moderated intelligence,
     manually operated practice/feedback pilots and the local Answer Coach prototype.
 
-12. `career-documents-and-job-discovery-data-dictionary.md`
+13. `career-documents-and-job-discovery-data-dictionary.md`
     Records private CV and cover-letter versions, bounded reviews, saved job targets, synchronous
     extraction and the gated job-discovery boundary.
 

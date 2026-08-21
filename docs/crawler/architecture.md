@@ -1,11 +1,10 @@
 # OfferLab crawler architecture
 
 **Status:** Active implementation reference
-**Last reviewed:** 2026-08-15
+**Last reviewed:** 2026-08-21
 
-This document records how the crawler actually works, reviews a proposed
-refactor against it, and describes the lifecycle improvements implemented on
-2026-08-15. It complements `docs/operations/job-catalog-operations.md`.
+This document records the current crawler, employer-discovery and job-lifecycle
+architecture. It complements `docs/operations/job-catalog-operations.md`.
 
 ## Entities and relationships
 
@@ -18,6 +17,9 @@ erDiagram
   COMPANY ||--o{ JOB_SOURCE_EVENT : "records"
   COMPANY ||--o{ JOB_SOURCE_CANDIDATE : "research"
   COMPANY ||--o{ EMPLOYER_RESEARCH_SNAPSHOT : "research"
+  COMPANY ||--o{ EMPLOYER_SPONSOR_ENTITY : "licensed identities"
+  COMPANY ||--o{ EMPLOYER_ALIAS : "known names"
+  COMPANY ||--o{ EMPLOYER_WEB_DISCOVERY_ATTEMPT : "discovery ledger"
   JOB_SOURCE ||--o{ JOB : "discovers"
   JOB_SOURCE ||--o{ JOB_INGESTION_RUN : "drives"
   JOB_SOURCE ||--o{ JOB_SOURCE_EVENT : "audits"
@@ -33,8 +35,8 @@ erDiagram
     text name
     text careers_url
     text website_url
-    text source_type
-    text crawl_allowed
+    text source_type "legacy company default"
+    text crawl_allowed "legacy compatibility; not a manual gate"
     boolean active
   }
   JOB_SOURCE {
@@ -46,7 +48,7 @@ erDiagram
     text careers_url
     text crawl_endpoint_url
     text ats_provider
-    text source_type "workday|greenhouse|lever|ashby|smartrecruiters|direct_html|custom|unknown"
+    text source_type "typed connector|direct_html|browser|custom|unknown"
     text status "active|paused|archived"
     int crawl_frequency_minutes
     int consecutive_failures
@@ -109,8 +111,55 @@ erDiagram
     text channel
     text candidate_url
     text status
+    text ats_provider
+    text ats_verification_status
+    text verified_endpoint_url
+  }
+  EMPLOYER_SPONSOR_ENTITY {
+    uuid company_id FK
+    text organisation_name
+    date snapshot_date
+    text routes
+  }
+  EMPLOYER_ALIAS {
+    uuid company_id FK
+    text alias
+  }
+  EMPLOYER_WEB_DISCOVERY_ATTEMPT {
+    uuid company_id FK
+    text discovery_version
+    text outcome
+    text query_or_host
   }
 ```
+
+## Employer discovery and source activation
+
+The full dated Home Office licensed-sponsor register is the canonical sponsor
+identity universe. Exact case-insensitive legal identities remain distinct;
+aliases connect verified trading or group names without fuzzy-collapsing legal
+organisations. The researched Top 1,000 is a curated evidence and priority
+overlay, not a catalogue ceiling.
+
+Source onboarding is an exception-first pipeline:
+
+1. Sponsor and research imports create employer identities, evidence and
+   inactive source candidates. Imports never activate sources.
+2. Free discovery uses DNS, bounded HTTPS, employer-identity checks and official
+   homepage links. An optional, explicitly bounded web-search pass handles
+   unresolved employers and records resumable attempts.
+3. ATS fingerprinting derives a candidate provider and endpoint configuration.
+4. Automatic activation requires a high-confidence fingerprint, a registered
+   typed connector and a bounded live probe whose response shape and employer
+   identity match that connector.
+5. Success creates or repairs a complete `app.job_source`, activates it and
+   queues the first crawl. Archived and manually overridden sources are never
+   replaced.
+6. Unsupported, ambiguous, blocked and shape-mismatched candidates remain
+   inactive for administrator exception review.
+
+A spreadsheet value, external-review verdict, hostname pattern or generic HTTP
+200 is evidence only. None can activate a crawler source by itself.
 
 ## How a crawl works
 
@@ -118,8 +167,8 @@ erDiagram
    dev) lists sources where `next_check_at <= now` or a run was requested.
 2. Per source: advisory lock, robots.txt gate (`RobotsGate`, 6h cache),
    connector dispatch by `source_type` (native adapters: Workday,
-   Greenhouse, Lever, Ashby, SmartRecruiters; `direct_html`; browser
-   variants; `custom`).
+   Greenhouse, Lever, Ashby, SmartRecruiters, Workable and Teamtailor;
+   `direct_html`; browser variants; `custom`).
 3. Discovered jobs are validated and normalised (`validateDiscoveredJob`),
    then matched to existing rows by deterministic identity
    (`resolveJobIdentity`: external ATS id when available, otherwise a
@@ -155,7 +204,7 @@ erDiagram
 - **Source health ≠ job availability.** A programme landing page can be a
   perfectly healthy source with zero current jobs.
 
-## Review of the proposed crawler refactor (2026-08-15)
+## Historical refactor review (2026-08-15)
 
 An external review proposed: employer master data with immutable `rank`;
 `career_sources` (1:N per employer); canonical ATS enums; programmes and
@@ -210,9 +259,10 @@ compatibility; admin observability; testing; and documentation.
 - **Conditional fetching (ETag/If-None-Match).** The HTTP client does not
   currently send conditional headers. Useful efficiency work; tracked as a
   future improvement, not required for correctness.
-- **Scheduled source re-verification.** Manual verification exists
-  (`jobs:verify-sources`, discovery `--verify`); automation is deferred
-  until the verification pipeline has a demonstrated manual cadence.
+- **Periodic re-verification scheduling.** On-demand typed verification and
+  automatic activation are implemented. A separate calendar-based
+  re-verification cadence remains future efficiency work; source health,
+  automatic pausing and explicit re-runs protect current operation.
 - **LLM extraction.** Deterministic extraction is used wherever structured
   data exists, per the founder's AI guardrails; LLM remains an optional
   classification/enrichment fallback behind the documented kill switches.

@@ -1,16 +1,20 @@
 # OfferLab Target Employer Research Dataset
 
-**Status:** Active research/input artifact  
-**Owner:** Founder / Product  
-**Dataset version:** 2026-08-12 enhanced v2  
-**Primary workbook:** `offerlab_target_employers_top_1000_enhanced.xlsx`  
-**Purpose:** Prioritise sponsor-licensed employers for OfferLab job-source discovery and crawler onboarding.
+**Status:** Active curated research overlay
+
+**Owner:** Founder / Product
+
+**Dataset version:** 2026-08-12 enhanced v2
+
+**Primary workbook:** `offerlab_target_employers_top_1000_enhanced.xlsx`
+
+**Purpose:** Prioritise and enrich employers for OfferLab discovery; this is not the complete sponsor identity universe.
 
 ---
 
 ## 1. What this dataset is
 
-This workbook is a **research and prioritisation artifact** for OfferLab's employer/job-source pipeline.
+This workbook is a **curated research and prioritisation overlay** for OfferLab's employer/job-source pipeline. The complete canonical sponsor identity universe comes from each dated Home Office register import; this Top 1,000 does not cap employer search, sponsor coverage or official-site discovery.
 
 It is not the production runtime database, not a live source of job data, and not a substitute for source-specific verification.
 
@@ -54,7 +58,9 @@ Home Office sponsor register + external research
                     ↓
      source verification / ATS discovery
                     ↓
-          approved source configuration
+      typed API verification or exception review
+                    ↓
+      verified active source and queued first crawl
                     ↓
       scheduled job collection / ingestion
                     ↓

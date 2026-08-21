@@ -20,6 +20,17 @@ Read these before changing behavior:
 
 If sources conflict, do not guess. Apply the precedence above, document the conflict, and ask the founder when it materially affects behavior, privacy, security, schema, or scope.
 
+Before implementing payments, deployment, production operations, administrator
+role expansion, recovery, monitoring, privacy/account lifecycle, load testing or
+public cohort expansion, also read
+`docs/operations/enterprise-readiness-plan.md`. It is the founder-approved
+delivery sequence and evidence checklist for operation beyond a controlled beta;
+it cannot override a higher-authority product or architecture decision.
+
+Before changing Library navigation, Answer/Story creation, preparation content,
+Recruitment Intelligence contribution or practice-case UX, also read
+`docs/product/library-experience-implementation-plan.md`.
+
 ## Architecture
 
 - One Next.js App Router application using React and strict TypeScript.

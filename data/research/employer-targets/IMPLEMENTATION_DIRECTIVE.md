@@ -2,12 +2,27 @@
 
 ## Post-PR #23 revision — crawler-capability-aware implementation plan
 
-**Status:** Founder-directed implementation guidance  
-**Repository:** `OfferLab-King/offerlab`  
-**Applies after:** PR #23 — `Targeted UK company crawler with CMS operations`  
-**Dataset:** `offerlab_target_employers_top_1000_enhanced.xlsx`  
-**Companion file:** employer-target dataset `README.md`  
+**Status:** Historical programme directive; implemented foundation, not current operations
+
+**Repository:** `OfferLab-King/offerlab`
+
+**Applies after:** PR #23 — `Targeted UK company crawler with CMS operations`
+
+**Dataset:** `offerlab_target_employers_top_1000_enhanced.xlsx`
+
+**Companion file:** employer-target dataset `README.md`
+
 **Purpose:** Use the Top 1,000 sponsor-aware employer dataset to expand OfferLab's public jobs/employers experience, member experience, employer intelligence, crawler coverage and administrator tooling.
+
+> **Current interpretation (2026-08-21):** The full dated Home Office sponsor
+> register is now the canonical employer identity universe. The Top 1,000
+> remains the curated research and crawler-priority overlay. Source discovery,
+> typed connector verification, automatic activation/repair and first-crawl
+> queueing are implemented, so the numbered implementation assignments later
+> in this document are historical sequencing rather than outstanding work.
+> Current operation is defined by `../../../crawler_readme.md`,
+> `../../../docs/crawler/architecture.md` and
+> `../../../docs/operations/job-catalog-operations.md`.
 
 ---
 

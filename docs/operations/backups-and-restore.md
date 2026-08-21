@@ -8,6 +8,12 @@
 
 Confirm provider behavior and retention before production launch because service terms can change.
 
+The founder-approved enterprise-readiness plan retains this 24-hour RPO only
+for the initial controlled beta. Before expansion towards 1,000 members, enable
+PITR, target an RPO of one hour or less and an RTO below four hours, and record
+two successful isolated recovery exercises. See
+`enterprise-readiness-plan.md`.
+
 ## Future PITR trigger
 
 Enable point-in-time recovery before any of these becomes true:
